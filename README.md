@@ -101,11 +101,13 @@ $$\text{Priority Score} = 40 \times \min\left(1.0, \frac{|\Delta P|}{\sigma_{20}
 
 ## 🛡️ Reliability & Edge-Case Handling (Standout Feature)
 
+![Edge Case Resilience: PENNYTEST & BROKENSTOCK](screenshots/11_edge_cases_pennytest_brokenstock.png)
+
 | Scenario / Edge Case | Handled Behavior | User-Facing Result |
 | :--- | :--- | :--- |
+| **Low-Liquidity / Microcaps (`PENNYTEST`)** | Evaluates **Rupee Turnover** ($\text{Turnover} = \text{Price} \times \text{Volume} < ₹2\text{ Cr}$). | Renders amber `⚠️ Low liquidity — score may be unreliable` badge. |
+| **Exchange Feed Outage (`BROKENSTOCK`)** | Try/catch isolation with structured fallback. | Renders isolated red `⚠️ Data Unavailable` error card without crashing the UI or blocking other stocks. |
 | **Market Closed Hours** | Time-aware IST clock (9:15 AM - 3:30 PM). | Shows `🔵 Closing price · 3:30 PM` instead of falsely claiming "Live" data. |
-| **Low-Liquidity / Microcaps (`PENNYTEST`)** | Evaluates **Rupee Turnover** ($\text{Turnover} = \text{Price} \times \text{Volume} < ₹2\text{ Cr}$). | Renders `⚠️ Low liquidity — score may be unreliable` badge. |
-| **Exchange Feed Outage (`BROKENSTOCK`)** | Try/catch isolation with structured fallback. | Renders `⚠️ Data Unavailable` error card without crashing the UI or blocking other stocks. |
 | **Connection Stability** | Supabase IPv4 transaction pooler with `pool_pre_ping=True`. | Eliminates dropped connections and IPv6 DNS timeouts. |
 
 ---
