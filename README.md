@@ -11,10 +11,39 @@ Standard stock watchlists are noisy, alphabetical, or sorted by raw % gainers—
 
 ## 📸 Visual Walkthrough & Product Interface
 
-### 1. Real-Time Anomaly Alert & Executive "Since You Checked" Briefing
-The dashboard automatically detects statistical breakouts (volume surge $> 2\times$, alpha divergence, volatility $Z$-score) and triggers push alerts with 1-click execution on Groww.
+### 1. Executive Briefing, Market Status Bar & Real-Time Anomaly Alert
+The dashboard automatically detects statistical breakouts ($Z$-score volatility, volume surges $> 2\times$, decoupled alpha) and provides plain-English summaries with 1-click Groww trading integration.
 
-![Real-Time Anomaly Alert & Dashboard Overview](screenshots/01_realtime_anomaly_alert.png)
+| Executive Briefing & Market Bar | Real-Time Push Anomaly Alert |
+| :---: | :---: |
+| ![Dashboard Overview](screenshots/01_dashboard_executive_briefing.png) | ![Real-Time Alert](screenshots/02_realtime_anomaly_alert.png) |
+
+---
+
+### 2. Multi-Factor Attribution & Session Checkpoint Shift Trajectory
+Each stock card provides exact quantitative decomposition (Price Move vs Normal $\sigma$, Volume Multiplier, vs NIFTY Alpha) and an interactive SVG trajectory sparkline tracking movements since the user's last visit.
+
+| ZOMATO Statistical Breakdown & Sparkline | Meaningful Change 3-Factor Framework |
+| :---: | :---: |
+| ![Stock Breakdown & Sparkline](screenshots/06_stock_breakdown_sparkline_zomato.png) | ![3-Factor Scoring Logic](screenshots/03_meaningful_change_framework.png) |
+
+---
+
+### 3. Smart Filtering, Sector Slicing & Plain-English Sorting
+Investors can filter by sector (Tech, Banking, Auto, Defense, FMCG) and sort across statistical dimensions (Highest Priority, Moving on Its Own / Alpha, Volume Surges, Top Gainers/Losers).
+
+| Banking Sector Filtered View | Multi-Factor Sorting Modes |
+| :---: | :---: |
+| ![Banking Sector View](screenshots/07_sector_filtering_banking.png) | ![Sorting Options](screenshots/09_sorting_dropdown_multifactors.png) |
+
+---
+
+### 4. Supabase Cloud Checkpoints & Watchlist Management
+Session timestamps and watchlists are persisted directly to Supabase PostgreSQL, ensuring cross-device consistency across desktop and mobile.
+
+| Cloud Checkpoint History | Multi-Watchlist Creation Modal |
+| :---: | :---: |
+| ![Cloud Checkpoint History](screenshots/04_checkpoint_history_cloud.png) | ![Create Watchlist Modal](screenshots/05_create_watchlist_modal.png) |
 
 ---
 

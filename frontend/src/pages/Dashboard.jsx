@@ -53,6 +53,7 @@ export default function Dashboard() {
   const [copiedSyncLink, setCopiedSyncLink] = useState(false);
   const [showScalingModal, setShowScalingModal] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [checkpointSaved, setCheckpointSaved] = useState(false);
 
   // In-Page Interactive Dialog States
   const [stockToDelete, setStockToDelete] = useState(null);
@@ -176,6 +177,8 @@ export default function Dashboard() {
     try {
       setActionLoading(true);
       await recordSessionCheckpoint(activeWatchlist.id);
+      setCheckpointSaved(true);
+      setTimeout(() => setCheckpointSaved(false), 2500);
       loadSignals(activeWatchlist.id);
     } catch (err) {
       alert(`Error saving checkpoint: ${err.message}`);
@@ -221,8 +224,12 @@ export default function Dashboard() {
     window.history.replaceState(null, "", `?user=${encodeURIComponent(clean)}`);
   };
 
-  // 7. View Session History
+  // 7. View Session History (Toggles open/close cleanly)
   const handleOpenHistory = async () => {
+    if (showHistory) {
+      setShowHistory(false);
+      return;
+    }
     if (!activeWatchlist) return;
     try {
       const history = await fetchSessionHistory(activeWatchlist.id);
@@ -1104,9 +1111,19 @@ export default function Dashboard() {
             </button>
             <button
               onClick={handleOpenHistory}
-              style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}
+              style={{
+                background: showHistory ? "rgba(56, 189, 248, 0.2)" : "none",
+                border: showHistory ? "1px solid #38bdf8" : "none",
+                color: showHistory ? "#38bdf8" : "#94a3b8",
+                padding: "3px 8px",
+                borderRadius: "14px",
+                cursor: "pointer",
+                fontSize: "12px",
+                fontWeight: "700",
+                transition: "all 0.15s ease"
+              }}
             >
-              📜 Checkpoints
+              {showHistory ? "✕ Close Checkpoints" : "📜 Checkpoints"}
             </button>
           </div>
         </div>
@@ -1199,19 +1216,29 @@ export default function Dashboard() {
             )}
 
             <button
-              onClick={() => loadSignals(activeWatchlist?.id)}
+              onClick={() => {
+                checkSystemHealth().then(setHealth);
+                if (activeWatchlist) loadSignals(activeWatchlist.id);
+              }}
+              disabled={loading}
+              title="Fetch fresh market quotes and recalculate anomaly scores"
               style={{
-                background: "#1e293b",
-                color: "#e2e8f0",
-                border: "1px solid #334155",
+                background: loading ? "rgba(56, 189, 248, 0.2)" : "#1e293b",
+                color: loading ? "#38bdf8" : "#e2e8f0",
+                border: loading ? "1px solid #38bdf8" : "1px solid #334155",
                 padding: "8px 16px",
                 borderRadius: "8px",
                 fontSize: "13px",
                 fontWeight: "600",
-                cursor: "pointer",
+                cursor: loading ? "wait" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                transition: "all 0.15s ease"
               }}
             >
-              🔄 Refresh Now
+              <span style={{ display: "inline-block" }}>{loading ? "⏳" : "🔄"}</span>
+              <span>{loading ? "Refreshing..." : "Refresh Now"}</span>
             </button>
           </div>
         </header>
@@ -1297,7 +1324,7 @@ export default function Dashboard() {
                 disabled={actionLoading}
                 title="Save a checkpoint so next time you return, you only see changes from this moment"
                 style={{
-                  background: "#0284c7",
+                  background: checkpointSaved ? "#16a34a" : "#0284c7",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: "8px",
@@ -1306,10 +1333,11 @@ export default function Dashboard() {
                   fontWeight: "700",
                   cursor: actionLoading ? "not-allowed" : "pointer",
                   whiteSpace: "nowrap",
-                  boxShadow: "0 4px 6px -1px rgba(2, 132, 199, 0.2)",
+                  boxShadow: checkpointSaved ? "0 4px 12px rgba(22, 163, 74, 0.4)" : "0 4px 6px -1px rgba(2, 132, 199, 0.2)",
+                  transition: "all 0.2s ease",
                 }}
               >
-                ✓ Got It, Mark Checked ({formatLastChecked(data?.last_checked_at)})
+                {checkpointSaved ? "✓ Checkpoint Saved to Cloud!" : `✓ Got It, Mark Checked (${formatLastChecked(data?.last_checked_at)})`}
               </button>
             </div>
           </div>
