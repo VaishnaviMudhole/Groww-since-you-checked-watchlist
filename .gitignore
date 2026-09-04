@@ -1,0 +1,16 @@
+# Environment variables
+.env
+*.env
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Builds
+dist/
+build/
+.DS_Store
+Thumbs.db
