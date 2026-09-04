@@ -4,8 +4,8 @@
 
 ---
 
-## 🚀 100-Word Pitch
-Standard stock watchlists are noisy, alphabetical, or sorted by raw % gainers—flooding investors with penny-stock volatility and missing true market developments. **"Since You Checked"** transforms the watchlist into an actionable intelligence feed. Using an end-to-end FastAPI and Supabase PostgreSQL architecture, it calculates statistical anomalies ($Z$-score volatility normalization, 20-day volume surges, and NIFTY 50 alpha) that occurred specifically since the user's last visit. With robust edge-case resilience (low-liquidity warnings, graceful error handling) and seamless cross-device persistence, it delivers high-conviction insights in plain English—directly connected to a 1-click Groww trading sheet.
+## 📌 Project Overview
+Standard stock watchlists are noisy, alphabetical, or sorted by raw % gainers—flooding investors with penny-stock volatility and missing true market developments. **"Since You Checked"** transforms the watchlist into an actionable intelligence feed. Built with an end-to-end FastAPI backend and Supabase PostgreSQL database, it dynamically calculates statistical anomalies ($Z$-score volatility normalization, 20-day volume surges, and NIFTY 50 alpha) that occurred specifically since the user's last session checkpoint. With robust edge-case resilience (low-liquidity warnings, graceful error handling) and seamless cross-device persistence, it delivers high-conviction insights in plain English—directly connected to a 1-click Groww trading sheet.
 
 ---
 
