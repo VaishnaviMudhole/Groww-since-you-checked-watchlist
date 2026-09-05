@@ -116,7 +116,29 @@ class WatchlistEngineTestSuite(unittest.TestCase):
         signals = compute_volatility_normalized_signals(broken, benchmark_return=0.0)
         self.assertEqual(signals["status"], "error")
         self.assertEqual(signals["relevance_score"], 0.0)
-        print("  [PASS] Graceful Degradation & Zero-Crash Resilience (BROKENSTOCK) Verified")
+    def test_08_authentication_security_layer(self):
+        """Verify User Signup, Login, and Password Security Layer."""
+        import random
+        uname = f"user_test_{random.randint(1000, 9999)}"
+        pwd = "securePassword123"
+
+        # 1. Sign Up
+        signup_res = self.client.post("/auth/signup", json={"username": uname, "password": pwd})
+        self.assertEqual(signup_res.status_code, 200)
+        data = signup_res.json()
+        self.assertEqual(data["status"], "success")
+        self.assertIn("token", data)
+        self.assertEqual(data["user_id"], uname)
+
+        # 2. Login with valid password
+        login_res = self.client.post("/auth/login", json={"username": uname, "password": pwd})
+        self.assertEqual(login_res.status_code, 200)
+        self.assertEqual(login_res.json()["status"], "success")
+
+        # 3. Login with invalid password
+        bad_login = self.client.post("/auth/login", json={"username": uname, "password": "wrongPassword"})
+        self.assertEqual(bad_login.status_code, 401)
+        print("  [PASS] User Authentication & Security Layer (Signup/Login) Verified")
 
 if __name__ == "__main__":
     print("\n=======================================================")

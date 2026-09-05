@@ -1,5 +1,28 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://groww-since-you-checked-watchlist.onrender.com";
 
+// --- Authentication API ---
+export async function signupUser(username, password) {
+  const res = await fetch(`${BASE_URL}/auth/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Signup failed");
+  return data;
+}
+
+export async function loginUser(username, password) {
+  const res = await fetch(`${BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Invalid credentials");
+  return data;
+}
+
 // Fetch watchlists from Supabase
 export async function fetchWatchlists(userId = "user_vaishnavi_demo") {
   const res = await fetch(`${BASE_URL}/db/watchlists?user_id=${encodeURIComponent(userId)}`);

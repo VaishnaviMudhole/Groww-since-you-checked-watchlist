@@ -9,6 +9,8 @@ import {
   fetchSessionHistory,
   checkSystemHealth,
 } from "../api/client";
+import AuthModal from "../components/AuthModal";
+import OnboardingWizard from "../components/OnboardingWizard";
 
 const SECTOR_GROUPS = [
   { label: "Tech & IT", symbols: ["TCS", "INFY", "WIPRO", "ZOMATO"] },
@@ -36,6 +38,12 @@ export default function Dashboard() {
   const [health, setHealth] = useState({ status: "healthy" });
   const [expandedStockSymbol, setExpandedStockSymbol] = useState(null);
   const [copiedSummary, setCopiedSummary] = useState(false);
+  
+  // Security & Authentication Layer
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [authToken, setAuthToken] = useState(() => localStorage.getItem("sw_auth_token"));
+
   // Cross-Device Identity Layer
   const getInitialUserId = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -372,8 +380,38 @@ export default function Dashboard() {
 
   const topStock = sortedStocks.length > 0 ? sortedStocks[0] : null;
 
+  if (showOnboarding) {
+    return (
+      <OnboardingWizard
+        userId={userId}
+        onComplete={(newWl) => {
+          setShowOnboarding(false);
+          setActiveWatchlist(newWl);
+          loadAllWatchlists(userId);
+          loadSignals(newWl.id);
+        }}
+      />
+    );
+  }
+
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#090d16", color: "#f8fafc", padding: "28px 16px", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+    <div className="dashboard-container" style={{ minHeight: "100vh", backgroundColor: "#090d16", color: "#f8fafc", padding: "28px 16px", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+        
+        /* Mobile / Phone Viewport Adaptations */
+        @media (max-width: 768px) {
+          .dashboard-container { padding: 16px 12px !important; }
+          .header-status-bar { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+          .header-nav-actions { width: 100% !important; justify-content: flex-start !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch; padding-bottom: 4px !important; }
+          .executive-briefing-cta { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; }
+          .stock-card-header { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
+          .stock-price-right { width: 100% !important; display: flex !important; justify-content: space-between !important; align-items: center !important; }
+          .sparkline-container { overflow-x: auto !important; }
+          .stock-attribution-grid { flex-direction: column !important; }
+        }
+      `}</style>
       <div style={{ maxWidth: "960px", margin: "0 auto" }}>
         
         {/* Groww Integration: Automated Anomaly Push Notification Toast / Demo Preview */}
@@ -1069,7 +1107,7 @@ export default function Dashboard() {
         )}
 
         {/* Top Reliability & Groww Integration Header Bar */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", fontSize: "13px", color: "#64748b", borderBottom: "1px solid #1e293b", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+        <div className="header-status-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", fontSize: "13px", color: "#64748b", borderBottom: "1px solid #1e293b", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: health.status === "healthy" ? "#22c55e" : "#eab308" }} />
@@ -1094,37 +1132,53 @@ export default function Dashboard() {
             >
               👤 User: {userId} (Sync)
             </button>
+            <button
+              onClick={() => setShowAuthModal(true)}
+              title="Manage Authentication & PIN Security"
+              style={{
+                background: "rgba(0, 208, 156, 0.12)",
+                border: "1px solid rgba(0, 208, 156, 0.3)",
+                color: "#00d09c",
+                padding: "2px 8px",
+                borderRadius: "12px",
+                cursor: "pointer",
+                fontSize: "11px",
+                fontWeight: "700"
+              }}
+            >
+              🔐 Auth PIN
+            </button>
             <span>·</span>
             <span style={{ color: data?.market?.is_open ? "#4ade80" : "#94a3b8" }}>
               {data?.market?.status_text || "Market Closed (Post 3:30 PM IST)"}
             </span>
           </div>
           
-          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+          <div className="header-nav-actions" style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
             <button
               onClick={() => setShowScalingModal(true)}
               style={{ background: "rgba(59, 130, 246, 0.15)", border: "1px solid #3b82f6", color: "#60a5fa", padding: "4px 10px", borderRadius: "14px", cursor: "pointer", fontSize: "12px", fontWeight: "700" }}
             >
-              🚀 Scaling Decisions
+              🚀 Scaling
             </button>
             <button
               onClick={() => setShowImpactEvaluation(true)}
               style={{ background: "rgba(56, 189, 248, 0.15)", border: "1px solid #38bdf8", color: "#38bdf8", padding: "4px 10px", borderRadius: "14px", cursor: "pointer", fontSize: "12px", fontWeight: "700" }}
             >
-              🛡️ Design Principles
+              🛡️ Principles
             </button>
             <button
               onClick={() => setShowNotificationPreview(true)}
               title="Real-time push notification generated from statistical volume & alpha breakouts"
               style={{ background: "rgba(0, 208, 156, 0.15)", border: "1px solid #00d09c", color: "#00d09c", padding: "3px 8px", borderRadius: "14px", cursor: "pointer", fontSize: "12px", fontWeight: "700" }}
             >
-              ⚡ Live Anomaly Alert
+              ⚡ Anomaly Alert
             </button>
             <button
               onClick={() => setShowExplainer(!showExplainer)}
-              style={{ background: "none", border: "none", color: "#38bdf8", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}
+              style={{ background: "none", border: "none", color: "#38bdf8", cursor: "pointer", fontSize: "12px", fontWeight: "600" }}
             >
-              {showExplainer ? "✕ Close Guide" : "💡 Meaningful Change"}
+              {showExplainer ? "✕ Guide" : "💡 Meaningful"}
             </button>
             <button
               onClick={handleOpenHistory}
@@ -1140,7 +1194,7 @@ export default function Dashboard() {
                 transition: "all 0.15s ease"
               }}
             >
-              {showHistory ? "✕ Close Checkpoints" : "📜 Checkpoints"}
+              {showHistory ? "✕ Close" : "📜 History"}
             </button>
           </div>
         </div>
@@ -1917,6 +1971,25 @@ export default function Dashboard() {
               );
             })}
           </div>
+        )}
+
+        {/* Security & Authentication Modal */}
+        {showAuthModal && (
+          <AuthModal
+            onLoginSuccess={(newUid, isNewSignUp) => {
+              setUserId(newUid);
+              setUserIdInput(newUid);
+              setShowAuthModal(false);
+              setAuthToken(localStorage.getItem("sw_auth_token"));
+              if (isNewSignUp) {
+                setShowOnboarding(true);
+              } else {
+                loadAllWatchlists(newUid);
+              }
+            }}
+            onClose={() => setShowAuthModal(false)}
+            canClose={true}
+          />
         )}
 
       </div>

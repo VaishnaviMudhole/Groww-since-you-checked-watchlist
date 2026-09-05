@@ -1,11 +1,13 @@
 import traceback
+import hashlib
+import secrets
 from datetime import datetime, timezone
 from pydantic import BaseModel
 from fastapi import FastAPI, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session as DBSession
-from db import get_db
+from db import get_db, engine
 import models
 from market_service import (
     fetch_real_stock_data,
@@ -14,6 +16,12 @@ from market_service import (
     generate_executive_briefing,
     is_market_open_now,
 )
+
+# Auto-create tables in Supabase PostgreSQL
+try:
+    models.Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"Table creation warning: {e}")
 
 app = FastAPI(title="Since You Checked - Watchlist Relevance Engine")
 
@@ -24,6 +32,88 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Password hashing utilities
+def hash_password(password: str, salt: str = None) -> str:
+    if not salt:
+        salt = secrets.token_hex(8)
+    h = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
+    return f"{salt}${h}"
+
+def verify_password(password: str, stored: str) -> bool:
+    if not stored or "$" not in stored:
+        return False
+    salt, h = stored.split("$", 1)
+    return hashlib.sha256((salt + password).encode("utf-8")).hexdigest() == h
+
+
+class AuthPayload(BaseModel):
+    username: str
+    password: str
+
+
+@app.post("/auth/signup")
+def signup(payload: AuthPayload, db: DBSession = Depends(get_db)):
+    clean_user = payload.username.strip().lower()
+    if not clean_user or len(clean_user) < 3:
+        raise HTTPException(status_code=400, detail="Username must be at least 3 characters")
+    if not payload.password or len(payload.password) < 4:
+        raise HTTPException(status_code=400, detail="Password must be at least 4 characters")
+
+    existing = db.query(models.User).filter(models.User.username == clean_user).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username already registered. Please sign in.")
+
+    pwd_hash = hash_password(payload.password)
+    user = models.User(username=clean_user, password_hash=pwd_hash)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    token = f"groww_tok_{user.id}_{secrets.token_hex(16)}"
+    return {
+        "status": "success",
+        "user_id": clean_user,
+        "token": token,
+        "message": "Account created successfully"
+    }
+
+
+@app.post("/auth/login")
+def login(payload: AuthPayload, db: DBSession = Depends(get_db)):
+    clean_user = payload.username.strip().lower()
+    user = db.query(models.User).filter(models.User.username == clean_user).first()
+
+    # Legacy demo users auto-provisioning
+    if not user and clean_user in ["vaishnavi_groww", "user_vaishnavi_demo", "demo_judge"]:
+        pwd_hash = hash_password(payload.password)
+        user = models.User(username=clean_user, password_hash=pwd_hash)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    if not user or not verify_password(payload.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+
+    token = f"groww_tok_{user.id}_{secrets.token_hex(16)}"
+    return {
+        "status": "success",
+        "user_id": clean_user,
+        "token": token,
+        "message": "Logged in successfully"
+    }
+
+
+@app.get("/auth/me")
+def get_current_user(user_id: str = Query("vaishnavi_groww"), db: DBSession = Depends(get_db)):
+    clean_user = user_id.strip().lower()
+    user = db.query(models.User).filter(models.User.username == clean_user).first()
+    return {
+        "authenticated": True,
+        "user_id": clean_user,
+        "created_at": user.created_at if user else datetime.now(timezone.utc).isoformat()
+    }
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -61,7 +151,7 @@ class CreateWatchlistPayload(BaseModel):
     user_id: str = "user_vaishnavi_demo"
 
 @app.get("/db/watchlists")
-def list_watchlists(user_id: str = Query("user_vaishnavi_demo"), db: DBSession = Depends(get_db)):
+def list_watchlists(user_id: str = Query("user_vaishnavi_demo"), auto_seed: bool = Query(False), db: DBSession = Depends(get_db)):
     """Returns all watchlists stored in Supabase for the specified user_id."""
     clean_user = user_id.strip() or "user_vaishnavi_demo"
     watchlists = (
@@ -71,14 +161,13 @@ def list_watchlists(user_id: str = Query("user_vaishnavi_demo"), db: DBSession =
         .all()
     )
     
-    # If a new user ID arrives with 0 watchlists, seed a default cloud watchlist
-    if not watchlists:
+    # If auto_seed is True (or legacy default), seed starter stocks
+    if not watchlists and auto_seed:
         default_wl = models.Watchlist(name="Primary Watchlist", user_id=clean_user)
         db.add(default_wl)
         db.commit()
         db.refresh(default_wl)
         
-        # Pre-seed essential stocks
         starter_symbols = ["RELIANCE", "TCS", "HDFCBANK", "INFY", "TATAMOTORS"]
         for sym in starter_symbols:
             db.add(models.WatchlistItem(watchlist_id=default_wl.id, symbol=sym))
