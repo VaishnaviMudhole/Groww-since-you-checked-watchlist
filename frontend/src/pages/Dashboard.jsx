@@ -12,34 +12,33 @@ import {
 import AuthModal from "../components/AuthModal";
 import OnboardingWizard from "../components/OnboardingWizard";
 
-// Company Metadata & Authentic Groww Brand Icons
+// Company Metadata & Visual Color Badges
 const COMPANY_META = {
-  "TATAMOTORS": { name: "Tata Motors Ltd.", color: "#1e3a8a", iconBg: "#dbeafe", iconText: "T", sector: "Auto", low52: 640, high52: 1179 },
-  "TATASTEEL":  { name: "Tata Steel Ltd.", color: "#1e3a8a", iconBg: "#dbeafe", iconText: "T", sector: "Metals", low52: 114, high52: 184 },
-  "RELIANCE":   { name: "Reliance Industries", color: "#b45309", iconBg: "#fef3c7", iconText: "R", sector: "Energy", low52: 2220, high52: 3217 },
-  "HDFCBANK":   { name: "HDFC Bank Ltd.", color: "#1d4ed8", iconBg: "#eff6ff", iconText: "H", sector: "Banking", low52: 1363, high52: 1794 },
-  "ICICIBANK":  { name: "ICICI Bank Ltd.", color: "#c2410c", iconBg: "#ffedd5", iconText: "I", sector: "Banking", low52: 910, high52: 1330 },
-  "INFY":       { name: "Infosys Ltd.", color: "#0284c7", iconBg: "#e0f2fe", iconText: "INFY", sector: "Tech", low52: 1358, high52: 1990 },
-  "TCS":        { name: "Tata Consultancy Services", color: "#1e293b", iconBg: "#f1f5f9", iconText: "TCS", sector: "Tech", low52: 3313, high52: 4585 },
-  "WIPRO":      { name: "Wipro Ltd.", color: "#7c3aed", iconBg: "#f3e8ff", iconText: "W", sector: "Tech", low52: 375, high52: 580 },
-  "ZOMATO":     { name: "Eternal (Zomato Ltd.)", color: "#dc2626", iconBg: "#fee2e2", iconText: "Z", sector: "Consumer", low52: 98, high52: 298 },
-  "SBIN":       { name: "State Bank of India", color: "#0369a1", iconBg: "#e0f2fe", iconText: "SBI", sector: "Banking", low52: 555, high52: 912 },
-  "ITC":        { name: "ITC Ltd.", color: "#b91c1c", iconBg: "#fee2e2", iconText: "ITC", sector: "FMCG", low52: 399, high52: 528 },
-  "HINDUNILVR": { name: "Hindustan Unilever", color: "#1e40af", iconBg: "#dbeafe", iconText: "HUL", sector: "FMCG", low52: 2172, high52: 3034 },
-  "HAL":        { name: "Hindustan Aeronautics", color: "#047857", iconBg: "#d1fae5", iconText: "HAL", sector: "Defense", low52: 2350, high52: 5675 },
-  "BEL":        { name: "Bharat Electronics", color: "#047857", iconBg: "#d1fae5", iconText: "BEL", sector: "Defense", low52: 125, high52: 340 },
-  "MARUTI":     { name: "Maruti Suzuki India", color: "#1d4ed8", iconBg: "#dbeafe", iconText: "MS", sector: "Auto", low52: 9600, high52: 13680 },
-  "LT":         { name: "Larsen & Toubro", color: "#b45309", iconBg: "#fef3c7", iconText: "LT", sector: "Infra", low52: 2850, high52: 3948 },
-  "PENNYTEST":  { name: "Penny Test Microcap", color: "#b45309", iconBg: "#fef3c7", iconText: "PT", sector: "Microcap", low52: 5, high52: 25 },
-  "BROKENSTOCK":{ name: "Exchange Error Demo", color: "#dc2626", iconBg: "#fee2e2", iconText: "ERR", sector: "Failure", low52: 0, high52: 0 },
+  "TATAMOTORS": { name: "Tata Motors Ltd.", sector: "Auto", low52: 640, high52: 1179, tagColor: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300" },
+  "TATASTEEL":  { name: "Tata Steel Ltd.", sector: "Metals", low52: 114, high52: 184, tagColor: "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300" },
+  "RELIANCE":   { name: "Reliance Industries", sector: "Energy", low52: 2220, high52: 3217, tagColor: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300" },
+  "HDFCBANK":   { name: "HDFC Bank Ltd.", sector: "Banking", low52: 1363, high52: 1794, tagColor: "bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-300" },
+  "ICICIBANK":  { name: "ICICI Bank Ltd.", sector: "Banking", low52: 910, high52: 1330, tagColor: "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300" },
+  "INFY":       { name: "Infosys Ltd.", sector: "Tech", low52: 1358, high52: 1990, tagColor: "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900/40 dark:text-sky-300" },
+  "TCS":        { name: "Tata Consultancy Services", sector: "Tech", low52: 3313, high52: 4585, tagColor: "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/40 dark:text-purple-300" },
+  "WIPRO":      { name: "Wipro Ltd.", sector: "Tech", low52: 375, high52: 580, tagColor: "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/40 dark:text-violet-300" },
+  "ZOMATO":     { name: "Eternal (Zomato Ltd.)", sector: "Consumer", low52: 98, high52: 298, tagColor: "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/40 dark:text-rose-300" },
+  "SBIN":       { name: "State Bank of India", sector: "Banking", low52: 555, high52: 912, tagColor: "bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/40 dark:text-cyan-300" },
+  "ITC":        { name: "ITC Ltd.", sector: "FMCG", low52: 399, high52: 528, tagColor: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-300" },
+  "HINDUNILVR": { name: "Hindustan Unilever", sector: "FMCG", low52: 2172, high52: 3034, tagColor: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300" },
+  "HAL":        { name: "Hindustan Aeronautics", sector: "Defense", low52: 2350, high52: 5675, tagColor: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300" },
+  "BEL":        { name: "Bharat Electronics", sector: "Defense", low52: 125, high52: 340, tagColor: "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-900/40 dark:text-teal-300" },
+  "MARUTI":     { name: "Maruti Suzuki India", sector: "Auto", low52: 9600, high52: 13680, tagColor: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300" },
+  "LT":         { name: "Larsen & Toubro", sector: "Infra", low52: 2850, high52: 3948, tagColor: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300" },
+  "PENNYTEST":  { name: "Penny Test Microcap", sector: "Microcap", low52: 5, high52: 25, tagColor: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300" },
+  "BROKENSTOCK":{ name: "Exchange Error Demo", sector: "Failure", low52: 0, high52: 0, tagColor: "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/40 dark:text-rose-300" },
 };
 
 const POPULAR_SUGGESTIONS = [
   { sector: "Tech", symbols: ["TCS", "INFY", "WIPRO", "ZOMATO"] },
   { sector: "Banking", symbols: ["HDFCBANK", "ICICIBANK", "SBIN"] },
-  { sector: "Auto & Energy", symbols: ["TATAMOTORS", "MARUTI", "RELIANCE", "HAL"] },
-  { sector: "FMCG", symbols: ["ITC", "HINDUNILVR"] },
-  { sector: "Edge Cases", symbols: ["PENNYTEST", "BROKENSTOCK"] },
+  { sector: "Auto & Defense", symbols: ["TATAMOTORS", "MARUTI", "HAL", "BEL"] },
+  { sector: "FMCG & Energy", symbols: ["RELIANCE", "ITC", "HINDUNILVR", "LT"] },
 ];
 
 function generateZigzagPath(symbol, isPositive) {
@@ -118,1500 +117,987 @@ export default function Dashboard() {
   const [health, setHealth] = useState({ status: "healthy" });
   const [expandedStockSymbol, setExpandedStockSymbol] = useState(null);
   const [chartViewMode, setChartViewMode] = useState("zigzag");
-  const [copiedSummary, setCopiedSummary] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [checkpointSaved, setCheckpointSaved] = useState(false);
   
-  // Theme Mode: Groww Clean White vs Groww Dark Pro
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("groww_theme") === "dark");
+  // Theme state: "light" (Fresh Clean Studio) vs "dark" (Slate Pro Dark)
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("sw_theme") || "light";
+  });
 
   const toggleTheme = () => {
-    const next = !isDarkMode;
-    setIsDarkMode(next);
-    localStorage.setItem("groww_theme", next ? "dark" : "light");
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    localStorage.setItem("sw_theme", next);
   };
 
   // Auth State
-  const getInitialUserId = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const fromUrl = urlParams.get("user");
-    if (fromUrl) {
-      localStorage.setItem("groww_user_id", fromUrl.trim());
-      localStorage.setItem("sw_user_id", fromUrl.trim());
-      return fromUrl.trim();
-    }
-    return localStorage.getItem("groww_user_id") || localStorage.getItem("sw_user_id") || "";
+  const [userId, setUserId] = useState(() => {
+    return localStorage.getItem("sw_user_id") || "";
+  });
+  const [authToken, setAuthToken] = useState(() => {
+    return localStorage.getItem("sw_auth_token") || "";
+  });
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Checkpoint Session History Modal
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [sessionHistory, setSessionHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  // New Watchlist Dialog
+  const [showNewWlModal, setShowNewWlModal] = useState(false);
+  const [newWlName, setNewWlName] = useState("");
+
+  const formatCurrency = (val) => {
+    if (val === null || val === undefined || isNaN(val)) return "₹0.00";
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 2,
+    }).format(val);
   };
 
-  const [userId, setUserId] = useState(getInitialUserId);
-  const [authToken, setAuthToken] = useState(() => localStorage.getItem("sw_auth_token"));
-  
-  const [showAuthModal, setShowAuthModal] = useState(() => {
-    const savedUser = localStorage.getItem("groww_user_id") || localStorage.getItem("sw_user_id");
-    const savedToken = localStorage.getItem("sw_auth_token");
-    return !savedUser || !savedToken;
-  });
-
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showUserModal, setShowUserModal] = useState(false);
-  const [userIdInput, setUserIdInput] = useState(userId || "9110679101");
-  const [copiedSyncLink, setCopiedSyncLink] = useState(false);
-
-  // Modals
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showInfoModal, setShowInfoModal] = useState(false);
-  const [infoTab, setInfoTab] = useState("principles");
-  const [sessionHistory, setSessionHistory] = useState([]);
-  const [stockToDelete, setStockToDelete] = useState(null);
-  const [showNewWatchlistModal, setShowNewWatchlistModal] = useState(false);
-  const [newWatchlistNameInput, setNewWatchlistNameInput] = useState("");
-
-  // Trade Sheet
-  const [tradeModalStock, setTradeModalStock] = useState(null);
-  const [tradeQuantity, setTradeQuantity] = useState(10);
-  const [tradeOrderType, setTradeOrderType] = useState("BUY");
-  const [tradeSuccessMsg, setTradeSuccessMsg] = useState(null);
-
-  // Anomaly Toast
-  const [autoAlert, setAutoAlert] = useState(null);
-  const [seenAnomalies, setSeenAnomalies] = useState(() => {
+  const formatTimestamp = (iso) => {
+    if (!iso) return "First Visit (New Session)";
     try {
-      const stored = sessionStorage.getItem("seen_anomaly_alerts");
-      return stored ? JSON.parse(stored) : [];
+      const d = new Date(iso);
+      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true }) + " (" + d.toLocaleDateString([], { month: "short", day: "numeric" }) + ")";
     } catch {
-      return [];
+      return iso;
     }
-  });
+  };
 
-  useEffect(() => {
-    setLoading(true);
-    checkSystemHealth().then(setHealth);
-    if (userId) {
-      loadAllWatchlists(userId);
-    } else {
-      loadSignals(null);
+  // Calculate elapsed time from checkpoint
+  const getElapsedSinceCheckpoint = (iso) => {
+    if (!iso) return "Just now";
+    try {
+      const diffMs = Date.now() - new Date(iso).getTime();
+      if (diffMs < 60000) return "Just now";
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 60) return `${diffMins}m ago`;
+      const diffHours = Math.floor(diffMins / 60);
+      return `${diffHours}h ${diffMins % 60}m ago`;
+    } catch {
+      return "Recently";
     }
+  };
+
+  // Load Watchlists
+  const loadAllWatchlists = async (targetUid) => {
+    try {
+      const uidToUse = targetUid || userId;
+      if (!uidToUse) return;
+      const res = await fetchWatchlists(uidToUse);
+      if (res.data && res.data.length > 0) {
+        setWatchlists(res.data);
+        const currentActiveStillExists = res.data.find(w => w.id === activeWatchlist);
+        if (!currentActiveStillExists) {
+          setActiveWatchlist(res.data[0].id);
+        }
+      } else {
+        setWatchlists([]);
+        setActiveWatchlist(null);
+      }
+    } catch (err) {
+      console.error("Watchlists load error:", err);
+    }
+  };
+
+  // Initial Auth Check
+  useEffect(() => {
+    if (!userId) {
+      setShowAuthModal(true);
+      setLoading(false);
+    } else {
+      loadAllWatchlists(userId);
+    }
+    checkSystemHealth().then((res) => setHealth(res.data)).catch(() => setHealth({ status: "offline" }));
   }, [userId]);
 
-  const loadAllWatchlists = (uid = userId, attempt = 0) => {
-    const targetUid = uid || "9110679101";
-    fetchWatchlists(targetUid)
-      .then((lists) => {
-        setWatchlists(lists || []);
-        if (lists && lists.length > 0) {
-          const defaultList = lists[0];
-          setActiveWatchlist((prev) => (prev ? lists.find((l) => l.id === prev.id) || defaultList : defaultList));
-          loadSignals(defaultList.id);
-        } else {
-          loadSignals(null);
-        }
-      })
-      .catch((err) => {
-        console.warn("Watchlist fetch error (Render waking up):", err);
-        if (attempt < 4) {
-          setTimeout(() => loadAllWatchlists(targetUid, attempt + 1), (attempt + 1) * 2500);
-        }
-      });
-  };
-
-  const loadSignals = (wId) => {
+  // Fetch Watchlist Signals
+  const loadSignals = async () => {
+    if (!activeWatchlist || !userId) return;
     setLoading(true);
-    fetchWatchlistSignals(wId)
-      .then((res) => {
-        setData(res);
-        setError(null);
-      })
-      .catch((err) => {
-        console.error("Signal fetch error:", err);
-        setError(err.message);
-      })
-      .finally(() => setLoading(false));
+    setError(null);
+    try {
+      const res = await fetchWatchlistSignals(activeWatchlist, sortBy, userId);
+      setData(res.data);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to load watchlist insights. Please check connection.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    if (activeWatchlist) {
-      loadSignals(activeWatchlist.id);
+    if (activeWatchlist && userId) {
+      loadSignals();
     }
-  }, [activeWatchlist]);
+  }, [activeWatchlist, sortBy, userId]);
 
-  // Anomaly alert trigger
-  useEffect(() => {
-    if (!data?.stocks || data.stocks.length === 0) return;
-    const candidates = data.stocks.filter(
-      (s) => (s.volume_ratio >= 2.0 || s.relevance_score >= 1.4) && !s.is_illiquid && s.status === "success"
-    );
-    if (candidates.length > 0) {
-      const freshAnomaly = candidates.find((s) => !seenAnomalies.includes(s.symbol));
-      if (freshAnomaly) {
-        setAutoAlert(freshAnomaly);
-        const updatedSeen = [...seenAnomalies, freshAnomaly.symbol];
-        setSeenAnomalies(updatedSeen);
-        try {
-          sessionStorage.setItem("seen_anomaly_alerts", JSON.stringify(updatedSeen));
-        } catch (e) {}
-
-        const timer = setTimeout(() => {
-          setAutoAlert((curr) => (curr?.symbol === freshAnomaly.symbol ? null : curr));
-        }, 8000);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [data]);
-
-  const handleAdd = async (symbolToAdd) => {
-    const symbol = (symbolToAdd || newSymbol).trim().toUpperCase();
-    if (!symbol) return;
-
+  // Add Stock
+  const handleAddStock = async (e) => {
+    e.preventDefault();
+    if (!newSymbol.trim() || !activeWatchlist) return;
+    setActionLoading(true);
     try {
-      setActionLoading(true);
-      let targetWatchlist = activeWatchlist;
-
-      if (!targetWatchlist) {
-        const currentUid = userId || "9110679101";
-        targetWatchlist = await createWatchlist("My Watchlist", currentUid);
-        setActiveWatchlist(targetWatchlist);
-        await loadAllWatchlists(currentUid);
-      }
-
-      await addStockToWatchlist(targetWatchlist.id, symbol);
+      await addStockToWatchlist(activeWatchlist, newSymbol.toUpperCase().trim());
       setNewSymbol("");
-      setShowAddModal(false);
-      loadSignals(targetWatchlist.id);
+      await loadSignals();
     } catch (err) {
-      alert(`Could not add stock: ${err.message}`);
+      alert(err.response?.data?.detail || "Failed to add stock symbol.");
     } finally {
       setActionLoading(false);
     }
   };
 
-  const executeRemoveStock = async () => {
-    if (!activeWatchlist || !stockToDelete) return;
-    try {
-      setActionLoading(true);
-      await removeStockFromWatchlist(activeWatchlist.id, stockToDelete.itemId);
-      setStockToDelete(null);
-      loadSignals(activeWatchlist.id);
-    } catch (err) {
-      alert(`Could not remove stock: ${err.message}`);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleCheckpoint = async () => {
+  // Quick Add from Chips
+  const handleQuickAdd = async (sym) => {
     if (!activeWatchlist) return;
+    setActionLoading(true);
     try {
-      setActionLoading(true);
-      await recordSessionCheckpoint(activeWatchlist.id);
-      setCheckpointSaved(true);
-      setTimeout(() => setCheckpointSaved(false), 2500);
-      loadSignals(activeWatchlist.id);
+      await addStockToWatchlist(activeWatchlist, sym);
+      await loadSignals();
     } catch (err) {
-      alert(`Error saving checkpoint: ${err.message}`);
+      alert(err.response?.data?.detail || `Stock ${sym} is already in this watchlist.`);
     } finally {
       setActionLoading(false);
     }
   };
 
-  const executeCreateWatchlist = async (e) => {
-    e.preventDefault();
-    const name = newWatchlistNameInput.trim();
-    if (!name) return;
+  // Remove Stock
+  const handleRemoveStock = async (sym, e) => {
+    e.stopPropagation();
+    if (!confirm(`Remove ${sym} from this watchlist?`)) return;
+    setActionLoading(true);
     try {
-      setActionLoading(true);
-      const currentUid = userId || "9110679101";
-      const created = await createWatchlist(name, currentUid);
-      setNewWatchlistNameInput("");
-      setShowNewWatchlistModal(false);
-      await loadAllWatchlists(currentUid);
-      setActiveWatchlist(created);
+      await removeStockFromWatchlist(activeWatchlist, sym);
+      await loadSignals();
     } catch (err) {
-      alert(`Could not create watchlist: ${err.message}`);
+      alert(err.response?.data?.detail || "Failed to remove stock.");
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleCopySyncLink = () => {
-    const syncUrl = `${window.location.origin}${window.location.pathname}?user=${encodeURIComponent(userId || "9110679101")}`;
-    navigator.clipboard.writeText(syncUrl);
-    setCopiedSyncLink(true);
-    setTimeout(() => setCopiedSyncLink(false), 2500);
+  // Checkpoint Session Reset
+  const handleRecordCheckpoint = async () => {
+    setActionLoading(true);
+    try {
+      await recordSessionCheckpoint(userId, activeWatchlist);
+      await loadSignals();
+    } catch (err) {
+      alert(err.response?.data?.detail || "Failed to record checkpoint.");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const handleSwitchUser = (e) => {
+  // Open Checkpoint History
+  const handleOpenHistory = async () => {
+    setShowHistoryModal(true);
+    setHistoryLoading(true);
+    try {
+      const res = await fetchSessionHistory(userId);
+      setSessionHistory(res.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  // Create Watchlist
+  const handleCreateWatchlist = async (e) => {
     e.preventDefault();
-    const clean = userIdInput.trim();
-    if (!clean) return;
-    setUserId(clean);
-    localStorage.setItem("groww_user_id", clean);
-    localStorage.setItem("sw_user_id", clean);
-    setShowUserModal(false);
-    window.history.replaceState(null, "", `?user=${encodeURIComponent(clean)}`);
+    if (!newWlName.trim()) return;
+    setActionLoading(true);
+    try {
+      const res = await createWatchlist(newWlName.trim(), userId);
+      setShowNewWlModal(false);
+      setNewWlName("");
+      await loadAllWatchlists(userId);
+      setActiveWatchlist(res.data.id);
+    } catch (err) {
+      alert(err.response?.data?.detail || "Failed to create watchlist.");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const handleSignOut = () => {
-    localStorage.removeItem("groww_user_id");
+  // Logout
+  const handleLogout = () => {
     localStorage.removeItem("sw_user_id");
     localStorage.removeItem("sw_auth_token");
     setUserId("");
-    setAuthToken(null);
-    setShowUserModal(false);
+    setAuthToken("");
+    setData(null);
+    setWatchlists([]);
+    setActiveWatchlist(null);
     setShowAuthModal(true);
   };
 
-  const handleOpenInfoModal = async (tab = "principles") => {
-    setInfoTab(tab);
-    setShowInfoModal(true);
-    if (tab === "history" && activeWatchlist) {
-      try {
-        const history = await fetchSessionHistory(activeWatchlist.id);
-        setSessionHistory(history || []);
-      } catch (err) {
-        console.warn(err);
-      }
-    }
-  };
-
-  const handleExecuteGrowwTrade = (e) => {
-    e.preventDefault();
-    setTradeSuccessMsg(`✓ Simulated Order Placed! ${tradeOrderType} ${tradeQuantity} shares of ${tradeModalStock.symbol} at ₹${tradeModalStock.price} via Groww.`);
-    setTimeout(() => {
-      setTradeSuccessMsg(null);
-      setTradeModalStock(null);
-    }, 2200);
-  };
-
-  const handleCopySummary = () => {
-    if (!data?.executive_briefing) return;
-    const textToCopy = `⚡ Since You Checked Briefing:
-${data.executive_briefing}
-
-Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}${data.benchmark?.pct_change}%`;
-    navigator.clipboard.writeText(textToCopy);
-    setCopiedSummary(true);
-    setTimeout(() => setCopiedSummary(false), 2000);
-  };
-
-  const handleSpeakBriefing = () => {
-    if (!data?.executive_briefing) return;
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-      return;
-    }
-    const utterance = new SpeechSynthesisUtterance(
-      `Here is what happened since you last checked. ${data.executive_briefing}. The NIFTY 50 is ${data.benchmark?.pct_change >= 0 ? "up" : "down"} ${Math.abs(data.benchmark?.pct_change || 0)} percent.`
-    );
-    utterance.rate = 1.0;
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    setIsSpeaking(true);
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const formatLastChecked = (isoStr) => {
-    if (!isoStr) return "Just started";
-    const date = new Date(isoStr);
-    const diffMs = Date.now() - date.getTime();
-    const diffMins = Math.max(1, Math.round(diffMs / (1000 * 60)));
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.round(diffMins / 60);
-    return `${diffHours}h ago`;
-  };
-
-  const filteredStocks = data?.stocks
-    ? data.stocks
-        .filter((s) => s.symbol.toLowerCase().includes(searchQuery.toLowerCase().trim()))
-        .filter((s) => activeSectorFilter === "ALL" || s.sector === activeSectorFilter)
-    : [];
-
-  const sortedStocks = [...filteredStocks].sort((a, b) => {
-    if (sortBy === "relevance") return b.relevance_score - a.relevance_score;
-    if (sortBy === "pct_desc") return b.pct_change - a.pct_change;
-    if (sortBy === "pct_asc") return a.pct_change - b.pct_change;
-    if (sortBy === "alpha") return b.alpha - a.alpha;
-    if (sortBy === "volume") return b.volume_ratio - a.volume_ratio;
-    return 0;
+  // Filter Stocks
+  const filteredStocks = (data?.signals || []).filter((s) => {
+    const symMatch = s.symbol.toLowerCase().includes(searchQuery.toLowerCase());
+    const nameMatch = (COMPANY_META[s.symbol]?.name || "").toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = symMatch || nameMatch;
+    
+    if (activeSectorFilter === "ALL") return matchesSearch;
+    const stockSector = COMPANY_META[s.symbol]?.sector || "Other";
+    return matchesSearch && stockSector === activeSectorFilter;
   });
 
-  // Dynamic Theme Palette
-  const theme = isDarkMode
-    ? {
-        bg: "#0B0F17",
-        cardBg: "#121824",
-        innerBg: "#0C111C",
-        border: "#1E2738",
-        borderLight: "#26344B",
-        text: "#FFFFFF",
-        textMuted: "#94A3B8",
-        textDim: "#64748B",
-        growwGreen: "#00D09C",
-        growwRed: "#EB5B3C",
-        rowHover: "#161E2E",
-        tagBg: "#1E293B",
-      }
-    : {
-        bg: "#F4F6F8",
-        cardBg: "#FFFFFF",
-        innerBg: "#F8FAFC",
-        border: "#E2E8F0",
-        borderLight: "#CBD5E1",
-        text: "#0F172A",
-        textMuted: "#475569",
-        textDim: "#94A3B8",
-        growwGreen: "#00D09C",
-        growwRed: "#EB5B3C",
-        rowHover: "#F8FAFC",
-        tagBg: "#F1F5F9",
-      };
+  // Unique sectors in current watchlist
+  const availableSectors = ["ALL", ...new Set((data?.signals || []).map(s => COMPANY_META[s.symbol]?.sector || "Other"))];
 
-  if (showOnboarding) {
-    return (
-      <OnboardingWizard
-        userId={userId || "9110679101"}
-        onComplete={(newWl) => {
-          setShowOnboarding(false);
-          setActiveWatchlist(newWl);
-          loadAllWatchlists(userId);
-          loadSignals(newWl.id);
-        }}
-      />
-    );
-  }
+  // Quick Portfolio / Watchlist Aggregate Metrics
+  const totalStocksCount = data?.signals?.length || 0;
+  const gainersCount = (data?.signals || []).filter(s => (s.pct_change || 0) > 0).length;
+  const losersCount = (data?.signals || []).filter(s => (s.pct_change || 0) < 0).length;
+  const averageChange = totalStocksCount > 0
+    ? ((data?.signals || []).reduce((acc, s) => acc + (s.pct_change || 0), 0) / totalStocksCount).toFixed(2)
+    : 0;
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: theme.bg, color: theme.text, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" }}>
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-        
-        .groww-row:hover { background-color: ${theme.rowHover} !important; }
-        
-        @media (max-width: 768px) {
-          .indices-strip { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
-          .main-nav { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
-          .briefing-card { flex-direction: column !important; align-items: stretch !important; }
-          .stock-table-header { display: none !important; }
-          .stock-row-content { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
-          .stock-right-group { width: 100% !important; justify-content: space-between !important; }
-          .filter-bar { flex-direction: column !important; align-items: stretch !important; }
-        }
-      `}</style>
-
-      {/* 1. Top Live Indian Indices Header Strip (Matching Groww App) */}
-      <div className="indices-strip" style={{ backgroundColor: theme.cardBg, borderBottom: `1px solid ${theme.border}`, padding: "8px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", fontSize: "12px", fontWeight: "600", color: theme.textMuted }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "20px", overflowX: "auto", whiteSpace: "nowrap" }}>
-          <div>
-            <span>NIFTY </span>
-            <strong style={{ color: theme.text }}>23,897.70</strong>
-            <span style={{ color: theme.growwGreen, marginLeft: "4px" }}>+24.25 (0.10%)</span>
-          </div>
-          <div>
-            <span>SENSEX </span>
-            <strong style={{ color: theme.text }}>76,515.43</strong>
-            <span style={{ color: theme.growwGreen, marginLeft: "4px" }}>+362.57 (0.48%)</span>
-          </div>
-          <div>
-            <span>BANKNIFTY </span>
-            <strong style={{ color: theme.text }}>57,369.65</strong>
-            <span style={{ color: theme.growwRed, marginLeft: "4px" }}>-10.95 (0.02%)</span>
-          </div>
-          <div>
-            <span>MIDCPNIFTY </span>
-            <strong style={{ color: theme.text }}>14,713.65</strong>
-            <span style={{ color: theme.growwRed, marginLeft: "4px" }}>-46.35 (0.31%)</span>
-          </div>
-          <div>
-            <span>FINNIFTY </span>
-            <strong style={{ color: theme.text }}>26,051.00</strong>
-            <span style={{ color: theme.growwGreen, marginLeft: "4px" }}>+38.10 (0.15%)</span>
-          </div>
-        </div>
-
-        {/* Theme Toggle & Global Status */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", whiteSpace: "nowrap" }}>
-          <button
-            onClick={toggleTheme}
-            title="Toggle between Groww Clean White and Dark Theme"
-            style={{
-              background: theme.innerBg,
-              border: `1px solid ${theme.border}`,
-              color: theme.text,
-              padding: "4px 10px",
-              borderRadius: "6px",
-              fontSize: "12px",
-              fontWeight: "700",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-            }}
-          >
-            <span>{isDarkMode ? "☀️ Clean Light" : "🌙 Dark Pro"}</span>
-          </button>
-        </div>
-      </div>
-
-      <div style={{ maxWidth: "1080px", margin: "0 auto", padding: "20px 16px" }}>
-
-        {/* 2. Main Groww Brand Header & Actions */}
-        <div className="main-nav" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", gap: "12px", flexWrap: "wrap" }}>
+    <div className={`min-h-screen transition-colors duration-200 ${theme === "dark" ? "bg-slate-950 text-slate-100 dark" : "bg-slate-50 text-slate-900"}`}>
+      
+      {/* 1. Modern Header / Brand Bar */}
+      <header className={`border-b sticky top-0 z-30 backdrop-blur-md transition-colors ${
+        theme === "dark" ? "bg-slate-900/90 border-slate-800" : "bg-white/95 border-slate-200"
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           
-          {/* Left Watchlist Tabs */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <div style={{ background: theme.growwGreen, width: "32px", height: "32px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: "#000", fontWeight: "900", fontSize: "16px" }}>
-                ⚡
+          {/* Logo & Student Innovation Badge */}
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center text-white font-black text-xl shadow-md shadow-indigo-500/20">
+              ⚡
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-indigo-600 to-emerald-600 bg-clip-text text-transparent dark:from-indigo-400 dark:to-emerald-400">
+                  TrackPulse
+                </span>
+                <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                  Since You Checked
+                </span>
               </div>
-              <span style={{ fontSize: "20px", fontWeight: "800", color: theme.text, letterSpacing: "-0.4px" }}>
-                Since You Checked
-              </span>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                Intelligent Checkpoint Signals & Delta Intelligence
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Search in Navbar */}
+          <div className="hidden md:flex items-center flex-1 max-w-xs mx-6">
+            <div className="relative w-full">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs">🔍</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search stocks, sectors..."
+                className={`w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
+                  theme === "dark" 
+                    ? "bg-slate-800/80 border-slate-700 text-slate-200 placeholder-slate-500" 
+                    : "bg-slate-100 border-slate-200 text-slate-800 placeholder-slate-400"
+                }`}
+              />
+            </div>
+          </div>
+
+          {/* Action Bar (Theme, Health, User Profile) */}
+          <div className="flex items-center space-x-2.5">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              title={`Switch to ${theme === "light" ? "Dark" : "Light"} mode`}
+              className={`p-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 border transition-all ${
+                theme === "dark"
+                  ? "bg-slate-800 border-slate-700 text-amber-300 hover:bg-slate-700"
+                  : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              <span>{theme === "light" ? "🌙 Dark" : "☀️ Light"}</span>
+            </button>
+
+            {/* Health Indicator */}
+            <div className={`hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
+              health.status === "healthy"
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
+                : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${health.status === "healthy" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+              <span>{health.status === "healthy" ? "Live Engine" : "Degraded"}</span>
             </div>
 
-            {/* Watchlist selector */}
-            <div style={{ display: "flex", alignItems: "center", background: theme.cardBg, borderRadius: "8px", border: `1px solid ${theme.border}`, padding: "2px 8px" }}>
-              <select
-                value={activeWatchlist?.id || ""}
-                onChange={(e) => {
-                  const selected = watchlists.find((w) => w.id === e.target.value);
-                  if (selected) setActiveWatchlist(selected);
-                }}
-                style={{
-                  background: "transparent",
-                  color: "#0284c7",
-                  border: "none",
-                  padding: "6px 4px",
-                  fontWeight: "700",
-                  fontSize: "13px",
-                  cursor: "pointer",
-                  outline: "none",
-                }}
-              >
-                {watchlists.map((w) => (
-                  <option key={w.id} value={w.id} style={{ background: theme.cardBg, color: theme.text }}>{w.name}</option>
-                ))}
-              </select>
+            {/* User Account / Logout */}
+            {userId ? (
+              <div className="flex items-center space-x-2 pl-2 border-l border-slate-200 dark:border-slate-800">
+                <button
+                  onClick={handleOpenHistory}
+                  title="View Checkpoint Session Log"
+                  className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition ${
+                    theme === "dark"
+                      ? "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  📜 Logs
+                </button>
+                <div className="text-right hidden sm:block">
+                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[120px]">
+                    {userId}
+                  </div>
+                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                    Verified User
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  title="Sign out"
+                  className="p-1.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg border border-transparent hover:border-rose-200 transition font-bold"
+                >
+                  🚪
+                </button>
+              </div>
+            ) : (
               <button
-                onClick={() => setShowNewWatchlistModal(true)}
-                title="Create New Watchlist"
-                style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", padding: "4px 8px", fontSize: "14px", fontWeight: "800" }}
+                onClick={() => setShowAuthModal(true)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs shadow transition"
               >
-                +
+                Sign In
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* 2. Main Container */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        
+        {/* 3. Hero Feature Card: The Checkpoint Timeline */}
+        <section className={`rounded-2xl border p-5 sm:p-6 shadow-sm relative overflow-hidden transition-all ${
+          theme === "dark"
+            ? "bg-gradient-to-br from-slate-900 via-indigo-950/30 to-slate-900 border-indigo-900/40"
+            : "bg-gradient-to-br from-white via-indigo-50/40 to-emerald-50/20 border-indigo-100"
+        }`}>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            
+            {/* Left: What is happening since last checked */}
+            <div className="space-y-2">
+              <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-300">
+                <span>⏱️ Checkpoint Engine Active</span>
+                <span className="w-1 h-1 rounded-full bg-indigo-400" />
+                <span>Since: {getElapsedSinceCheckpoint(data?.last_checked)}</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                What Changed Since You Last Checked?
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-2xl">
+                Every price delta, catalyst, and signal below is computed relative to your personal snapshot at{" "}
+                <strong className="text-indigo-600 dark:text-indigo-400 underline decoration-indigo-300 decoration-dotted">
+                  {formatTimestamp(data?.last_checked)}
+                </strong>
+                .
+              </p>
+            </div>
+
+            {/* Right: Quick Checkpoint Stats & Reset Button */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Aggregate Snapshot Mini-Pills */}
+              <div className="flex items-center space-x-2 text-xs font-semibold">
+                <div className={`px-3 py-2 rounded-xl border flex flex-col items-center ${
+                  theme === "dark" ? "bg-slate-800/80 border-slate-700" : "bg-white border-slate-200"
+                }`}>
+                  <span className="text-[10px] text-slate-400 font-medium">Tracked</span>
+                  <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{totalStocksCount} Stocks</span>
+                </div>
+                <div className={`px-3 py-2 rounded-xl border flex flex-col items-center ${
+                  theme === "dark" ? "bg-slate-800/80 border-slate-700" : "bg-white border-slate-200"
+                }`}>
+                  <span className="text-[10px] text-slate-400 font-medium">Avg Move</span>
+                  <span className={`text-sm font-bold ${averageChange >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                    {averageChange >= 0 ? `+${averageChange}%` : `${averageChange}%`}
+                  </span>
+                </div>
+                <div className={`px-3 py-2 rounded-xl border flex flex-col items-center ${
+                  theme === "dark" ? "bg-slate-800/80 border-slate-700" : "bg-white border-slate-200"
+                }`}>
+                  <span className="text-[10px] text-slate-400 font-medium">Gain / Loss</span>
+                  <span className="text-sm font-bold">
+                    <span className="text-emerald-600 dark:text-emerald-400">{gainersCount}▲</span> / <span className="text-rose-600 dark:text-rose-400">{losersCount}▼</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Reset Checkpoint Action */}
+              <button
+                onClick={handleRecordCheckpoint}
+                disabled={actionLoading || !userId}
+                className="inline-flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-700 hover:to-emerald-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow-md shadow-indigo-500/20 active:scale-95 transition disabled:opacity-50"
+              >
+                <span>{actionLoading ? "Updating..." : "📌 Mark as Checked Now"}</span>
               </button>
             </div>
           </div>
+        </section>
 
-          {/* Right Action Buttons */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-            <button
-              onClick={() => setShowAddModal(true)}
-              style={{
-                background: theme.growwGreen,
-                color: "#0c1017",
-                border: "none",
-                padding: "8px 16px",
-                borderRadius: "8px",
-                fontSize: "13px",
-                fontWeight: "800",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                boxShadow: "0 2px 8px rgba(0, 208, 156, 0.25)",
-              }}
-            >
-              <span>+</span>
-              <span>Add Stock</span>
-            </button>
+        {/* 4. Multi-Watchlist Tabs & Management Bar */}
+        <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+          
+          {/* Watchlist Tabs */}
+          <div className="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-thin">
+            {watchlists.map((wl) => {
+              const isActive = wl.id === activeWatchlist;
+              return (
+                <button
+                  key={wl.id}
+                  onClick={() => setActiveWatchlist(wl.id)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center space-x-1.5 ${
+                    isActive
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : theme === "dark"
+                      ? "bg-slate-800/80 text-slate-300 hover:bg-slate-700 border border-slate-700"
+                      : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+                  }`}
+                >
+                  <span>📁</span>
+                  <span>{wl.name}</span>
+                </button>
+              );
+            })}
 
+            {/* Add Watchlist Button */}
             <button
-              onClick={() => setShowUserModal(true)}
-              title="Groww Account Profile & Multi-Device Sync"
-              style={{
-                background: theme.cardBg,
-                border: `1px solid ${theme.border}`,
-                color: theme.text,
-                padding: "8px 12px",
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontWeight: "700",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
+              onClick={() => setShowNewWlModal(true)}
+              className={`px-3 py-2 rounded-xl text-xs font-bold border border-dashed transition flex items-center space-x-1 ${
+                theme === "dark"
+                  ? "border-slate-700 text-slate-400 hover:text-indigo-400 hover:border-indigo-500"
+                  : "border-slate-300 text-slate-600 hover:text-indigo-600 hover:border-indigo-400"
+              }`}
             >
-              <span>👤</span>
-              <span>{userId || "Groww User"}</span>
-            </button>
-
-            <button
-              onClick={() => handleOpenInfoModal("principles")}
-              title="Principles, Scaling, History & Math"
-              style={{
-                background: theme.cardBg,
-                border: `1px solid ${theme.border}`,
-                color: theme.textMuted,
-                padding: "8px 12px",
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontWeight: "700",
-                cursor: "pointer",
-              }}
-            >
-              ⚙️ Info
+              <span>+ New List</span>
             </button>
           </div>
-        </div>
 
-        {/* 3. Executive Market Synopsis Banner with 1-Click Checkpoint */}
-        {data?.executive_briefing && (
-          <div className="briefing-card" style={{
-            backgroundColor: theme.cardBg,
-            border: `1px solid ${theme.border}`,
-            borderLeft: `4px solid ${theme.growwGreen}`,
-            borderRadius: "12px",
-            padding: "16px 20px",
-            marginBottom: "20px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "16px",
-            boxShadow: isDarkMode ? "0 4px 20px rgba(0, 0, 0, 0.3)" : "0 4px 20px rgba(0, 0, 0, 0.05)",
-            animation: "fadeIn 0.2s ease-out",
-          }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                <span style={{ fontSize: "11px", fontWeight: "800", color: theme.growwGreen, textTransform: "uppercase", letterSpacing: "0.8px" }}>
-                  ⚡ Market Briefing Since Last Visit
-                </span>
-                {data?.benchmark && (
-                  <span style={{ fontSize: "11px", background: theme.innerBg, padding: "2px 8px", borderRadius: "6px", color: data.benchmark.pct_change >= 0 ? theme.growwGreen : theme.growwRed, fontWeight: "700" }}>
-                    NIFTY 50: {data.benchmark.pct_change >= 0 ? "+" : ""}{data.benchmark.pct_change}%
-                  </span>
-                )}
-              </div>
-              <p style={{ margin: "0 0 8px 0", fontSize: "14px", fontWeight: "600", color: theme.text, lineHeight: "1.4" }}>
-                {data.executive_briefing}
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <button
-                  onClick={handleSpeakBriefing}
-                  style={{
-                    background: isSpeaking ? "rgba(239, 68, 68, 0.15)" : theme.innerBg,
-                    border: `1px solid ${theme.border}`,
-                    color: isSpeaking ? "#f87171" : theme.textMuted,
-                    padding: "4px 8px",
-                    borderRadius: "6px",
-                    fontSize: "11px",
-                    fontWeight: "700",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                >
-                  <span>{isSpeaking ? "⏹️ Stop" : "🎧 Audio Readout"}</span>
-                </button>
-                <button
-                  onClick={handleCopySummary}
-                  style={{
-                    background: theme.innerBg,
-                    border: `1px solid ${theme.border}`,
-                    color: copiedSummary ? theme.growwGreen : theme.textMuted,
-                    padding: "4px 8px",
-                    borderRadius: "6px",
-                    fontSize: "11px",
-                    fontWeight: "700",
-                    cursor: "pointer",
-                  }}
-                >
-                  {copiedSummary ? "✓ Copied!" : "📋 Copy"}
-                </button>
-              </div>
+          {/* Controls: Sorting & Chart View Selector */}
+          <div className="flex items-center space-x-2 text-xs">
+            {/* Sort Dropdown */}
+            <div className="flex items-center space-x-1">
+              <span className="text-slate-400 text-[11px] font-medium hidden sm:inline">Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
+                  theme === "dark" ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-white border-slate-200 text-slate-800"
+                }`}
+              >
+                <option value="relevance">🔥 High Impact First</option>
+                <option value="biggest_gainers">🚀 Top Gainers</option>
+                <option value="biggest_losers">📉 Top Losers</option>
+                <option value="symbol">🔤 Symbol (A-Z)</option>
+              </select>
             </div>
 
-            {/* Checkpoint CTA */}
-            <button
-              onClick={handleCheckpoint}
-              disabled={actionLoading}
-              title="Click to mark updates as checked so next visit shows fresh changes"
-              style={{
-                background: checkpointSaved ? theme.growwGreen : "#0284c7",
-                color: checkpointSaved ? "#0c1017" : "#ffffff",
-                border: "none",
-                padding: "10px 18px",
-                borderRadius: "8px",
-                fontSize: "13px",
-                fontWeight: "800",
-                cursor: actionLoading ? "not-allowed" : "pointer",
-                whiteSpace: "nowrap",
-                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.15)",
-                transition: "all 0.15s ease",
-              }}
-            >
-              {checkpointSaved ? "✓ Checkpoint Saved!" : `✓ Mark as Checked (${formatLastChecked(data?.last_checked_at)})`}
-            </button>
+            {/* Chart Mode (Zigzag Polyline vs Candlestick) */}
+            <div className={`p-0.5 rounded-lg border flex items-center space-x-0.5 ${
+              theme === "dark" ? "bg-slate-800 border-slate-700" : "bg-slate-100 border-slate-200"
+            }`}>
+              <button
+                onClick={() => setChartViewMode("zigzag")}
+                className={`px-2 py-1 rounded text-[10px] font-bold transition ${
+                  chartViewMode === "zigzag"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+              >
+                📈 Trend
+              </button>
+              <button
+                onClick={() => setChartViewMode("candle")}
+                className={`px-2 py-1 rounded text-[10px] font-bold transition ${
+                  chartViewMode === "candle"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+              >
+                🕯️ Candle
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* 5. Sector Filter Pills */}
+        {availableSectors.length > 2 && (
+          <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 text-xs">
+            <span className="text-[11px] font-semibold text-slate-400 mr-1">Sector:</span>
+            {availableSectors.map((sector) => (
+              <button
+                key={sector}
+                onClick={() => setActiveSectorFilter(sector)}
+                className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition ${
+                  activeSectorFilter === sector
+                    ? "bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900"
+                    : theme === "dark"
+                    ? "bg-slate-800/40 text-slate-400 hover:bg-slate-800"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {sector}
+              </button>
+            ))}
           </div>
         )}
 
-        {/* 4. Filter, Search & Sector Category Bar */}
-        <div className="filter-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", gap: "10px", flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", flex: 1 }}>
-            <input
-              type="text"
-              placeholder="🔍 Search company or symbol..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                background: theme.cardBg,
-                border: `1px solid ${theme.border}`,
-                padding: "8px 14px",
-                borderRadius: "8px",
-                fontSize: "13px",
-                color: theme.text,
-                outline: "none",
-                width: "200px",
-              }}
-            />
+        {/* 6. Add Stock Input & Quick Suggestions Bar */}
+        <section className={`p-4 rounded-xl border transition ${
+          theme === "dark" ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"
+        }`}>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {/* Add Form */}
+            <form onSubmit={handleAddStock} className="flex items-center space-x-2 flex-1 max-w-md">
+              <input
+                type="text"
+                value={newSymbol}
+                onChange={(e) => setNewSymbol(e.target.value)}
+                placeholder="Enter stock symbol (e.g. HAL, WIPRO, TATAMOTORS)"
+                className={`flex-1 px-3 py-2 text-xs rounded-xl border focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium uppercase ${
+                  theme === "dark"
+                    ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500"
+                    : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
+                }`}
+              />
+              <button
+                type="submit"
+                disabled={actionLoading || !newSymbol.trim()}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition disabled:opacity-50"
+              >
+                {actionLoading ? "Adding..." : "+ Add"}
+              </button>
+            </form>
 
-            {/* Sector Tabs */}
-            <div style={{ display: "flex", gap: "4px", overflowX: "auto" }}>
-              {["ALL", "Tech", "Banking", "Auto", "Defense", "FMCG"].map((sec) => (
+            {/* Quick Popular Add Chips */}
+            <div className="flex items-center space-x-1.5 overflow-x-auto text-xs">
+              <span className="text-[11px] font-semibold text-slate-400 whitespace-nowrap">⚡ Quick Add:</span>
+              {["TATAMOTORS", "RELIANCE", "INFY", "HAL", "ZOMATO"].map((sym) => (
                 <button
-                  key={sec}
-                  onClick={() => setActiveSectorFilter(sec)}
-                  style={{
-                    background: activeSectorFilter === sec ? theme.growwGreen : theme.cardBg,
-                    color: activeSectorFilter === sec ? "#0c1017" : theme.textMuted,
-                    border: `1px solid ${theme.border}`,
-                    padding: "6px 12px",
-                    borderRadius: "6px",
-                    fontSize: "12px",
-                    fontWeight: "700",
-                    cursor: "pointer",
-                    transition: "all 0.1s ease",
-                  }}
+                  key={sym}
+                  onClick={() => handleQuickAdd(sym)}
+                  disabled={actionLoading}
+                  className={`px-2 py-1 rounded-md text-[11px] font-bold border transition ${
+                    theme === "dark"
+                      ? "bg-slate-800/80 border-slate-700 text-slate-300 hover:border-indigo-400"
+                      : "bg-slate-50 border-slate-200 text-slate-700 hover:border-indigo-400"
+                  }`}
                 >
-                  {sec === "ALL" ? "All Stocks" : sec}
+                  +{sym}
                 </button>
               ))}
             </div>
-
-            <span style={{ fontSize: "12px", color: theme.textDim }}>
-              ({sortedStocks.length} stocks)
-            </span>
           </div>
+        </section>
 
-          {/* Sort Dropdown */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "12px", color: theme.textMuted }}>Rank by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              style={{
-                background: theme.cardBg,
-                color: theme.text,
-                border: `1px solid ${theme.border}`,
-                padding: "6px 10px",
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontWeight: "700",
-                cursor: "pointer",
-                outline: "none",
-              }}
-            >
-              <option value="relevance">⚡ Highest Anomaly (Most Surprising)</option>
-              <option value="pct_desc">📈 Top Gainers (%)</option>
-              <option value="pct_asc">📉 Top Losers (%)</option>
-              <option value="volume">🔥 Heavy Volume Surge</option>
-              <option value="alpha">🎯 Independent Alpha (vs NIFTY)</option>
-            </select>
-
+        {/* 7. Stock Insights Cards Grid */}
+        {loading ? (
+          <div className="py-20 text-center space-y-3">
+            <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+              Calculating Checkpoint Differences & News Catalysts...
+            </p>
+          </div>
+        ) : error ? (
+          <div className="p-6 rounded-2xl border border-rose-200 bg-rose-50 dark:bg-rose-950/40 dark:border-rose-900 text-rose-800 dark:text-rose-200 text-center space-y-3">
+            <p className="font-bold text-sm">⚠️ {error}</p>
             <button
-              onClick={() => {
-                checkSystemHealth().then(setHealth);
-                if (activeWatchlist) loadSignals(activeWatchlist.id);
-              }}
-              disabled={loading}
-              title="Refresh live prices"
-              style={{
-                background: theme.cardBg,
-                border: `1px solid ${theme.border}`,
-                color: "#0284c7",
-                padding: "6px 10px",
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontWeight: "700",
-                cursor: loading ? "wait" : "pointer",
-              }}
+              onClick={loadSignals}
+              className="bg-rose-600 text-white font-bold px-4 py-1.5 rounded-lg text-xs"
             >
-              {loading ? "⏳" : "🔄"}
+              Retry
             </button>
           </div>
-        </div>
-
-        {/* Error message */}
-        {error && (
-          <div style={{ padding: "12px 16px", background: "rgba(239, 68, 68, 0.15)", border: "1px solid #ef4444", color: "#fca5a5", borderRadius: "8px", marginBottom: "16px", fontSize: "13px" }}>
-            ⚠️ {error}
+        ) : filteredStocks.length === 0 ? (
+          <div className={`py-16 text-center rounded-2xl border border-dashed p-8 ${
+            theme === "dark" ? "border-slate-800 bg-slate-900/30" : "border-slate-200 bg-slate-50"
+          }`}>
+            <div className="text-3xl mb-2">📋</div>
+            <h3 className="font-bold text-base text-slate-800 dark:text-slate-200">No stocks found</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1 mb-4">
+              Add stocks from the quick suggestions above or search for NSE/BSE symbols to track checkpoint movement.
+            </p>
           </div>
-        )}
-
-        {/* 5. Groww Watchlist Table (Clean, Professional Layout Matching Actual Groww App) */}
-        <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: "14px", overflow: "hidden", boxShadow: isDarkMode ? "0 10px 30px rgba(0,0,0,0.4)" : "0 4px 20px rgba(0,0,0,0.04)" }}>
-          
-          {/* Table Header Bar */}
-          <div className="stock-table-header" style={{ display: "grid", gridTemplateColumns: "2.4fr 1.3fr 1.6fr 1.2fr 1.2fr 1fr", padding: "12px 20px", borderBottom: `1px solid ${theme.border}`, fontSize: "11px", fontWeight: "700", color: theme.textDim, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-            <div>Company & Anomaly Catalyst</div>
-            <div>Trend Since Checkpoint</div>
-            <div style={{ textAlign: "right" }}>Checkpoint ➔ Live Price</div>
-            <div style={{ textAlign: "right" }}>1D Change</div>
-            <div style={{ textAlign: "center" }}>52W Perf</div>
-            <div style={{ textAlign: "right" }}>Action</div>
-          </div>
-
-          {/* Table Body / Rows */}
-          {loading && !data ? (
-            <div style={{ textAlign: "center", padding: "50px 20px" }}>
-              <div style={{ fontSize: "28px", marginBottom: "10px" }}>⚡</div>
-              <h3 style={{ color: theme.text, fontSize: "16px", margin: "0 0 4px 0" }}>Connecting to Groww Engine</h3>
-              <p style={{ color: theme.textMuted, fontSize: "13px", margin: 0 }}>Syncing with Supabase & calculating real-time rankings...</p>
+        ) : (
+          <div className="space-y-3">
+            
+            {/* Header info explaining the columns */}
+            <div className="hidden lg:grid grid-cols-12 gap-4 px-5 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <div className="col-span-3">Stock & Sector</div>
+              <div className="col-span-3">📍 Checkpoint ➔ Current Live</div>
+              <div className="col-span-2 text-center">Trajectory ({chartViewMode})</div>
+              <div className="col-span-3">Primary Catalyst / Signal</div>
+              <div className="col-span-1 text-right">Action</div>
             </div>
-          ) : sortedStocks.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 16px" }}>
-              <p style={{ color: theme.textMuted, fontSize: "15px", marginBottom: "12px" }}>No stocks in this view.</p>
-              <button
-                onClick={() => setShowAddModal(true)}
-                style={{ background: theme.growwGreen, color: "#0c1017", border: "none", padding: "8px 18px", borderRadius: "8px", fontWeight: "800", fontSize: "13px", cursor: "pointer" }}
-              >
-                + Add Stocks to Watchlist
-              </button>
-            </div>
-          ) : (
-            <div>
-              {sortedStocks.map((s, index) => {
-                if (s.status === "error" || s.price === null) {
-                  return (
-                    <div
-                      key={s.symbol}
-                      className="groww-row"
-                      style={{ padding: "16px 20px", borderBottom: `1px solid ${theme.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <span style={{ fontSize: "12px", fontWeight: "800", color: theme.textDim }}>#{index + 1}</span>
-                        <strong style={{ fontSize: "15px", color: theme.growwRed }}>{s.symbol}</strong>
-                        <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "4px", background: "rgba(239, 68, 68, 0.15)", color: theme.growwRed, fontWeight: "700" }}>
-                          ⚠️ Data Unavailable
+
+            {filteredStocks.map((stock) => {
+              const meta = COMPANY_META[stock.symbol] || {
+                name: stock.symbol,
+                sector: "Equities",
+                low52: (stock.price || 100) * 0.75,
+                high52: (stock.price || 100) * 1.3,
+                tagColor: "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300",
+              };
+
+              const isPositive = (stock.pct_change || 0) >= 0;
+              const isZero = (stock.pct_change || 0) === 0;
+              const isExpanded = expandedStockSymbol === stock.symbol;
+              const deltaPrice = stock.price && stock.checkpoint_price ? (stock.price - stock.checkpoint_price) : 0;
+              const zigzag = generateZigzagPath(stock.symbol, isPositive);
+              const candles = generateCandleData(stock);
+
+              return (
+                <div
+                  key={stock.symbol}
+                  className={`rounded-2xl border transition-all duration-150 overflow-hidden ${
+                    theme === "dark"
+                      ? "bg-slate-900/90 border-slate-800 hover:border-indigo-500/60"
+                      : "bg-white border-slate-200 hover:border-indigo-300 shadow-sm"
+                  } ${isExpanded ? "ring-2 ring-indigo-500" : ""}`}
+                >
+                  {/* Stock Row Main Surface */}
+                  <div
+                    onClick={() => setExpandedStockSymbol(isExpanded ? null : stock.symbol)}
+                    className="p-4 sm:p-5 cursor-pointer grid grid-cols-1 lg:grid-cols-12 gap-4 items-center"
+                  >
+                    
+                    {/* Col 1: Symbol, Company Name & Sector Badge */}
+                    <div className="lg:col-span-3 flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center font-black text-sm text-slate-800 dark:text-slate-200 shrink-0">
+                        {stock.symbol.slice(0, 3)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate">
+                            {stock.symbol}
+                          </span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${meta.tagColor}`}>
+                            {meta.sector}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          {meta.name}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Col 2: Checkpoint Price ➔ Live Price (PROMINENT BEFORE CLICKING) */}
+                    <div className="lg:col-span-3 flex flex-col justify-center">
+                      {/* Explicit Before-Click Checkpoint Baseline Display */}
+                      <div className="flex items-baseline space-x-2 flex-wrap">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                          📍 Baseline: <strong className="text-slate-700 dark:text-slate-300">{formatCurrency(stock.checkpoint_price || stock.prev_close || stock.price)}</strong>
+                        </span>
+                        <span className="text-xs text-slate-400">➔</span>
+                        <span className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
+                          {formatCurrency(stock.price)}
                         </span>
                       </div>
-                      <button
-                        onClick={() => setStockToDelete({ symbol: s.symbol, itemId: s.watchlist_item_id })}
-                        style={{ background: "none", border: "none", color: theme.textDim, cursor: "pointer", fontSize: "14px" }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  );
-                }
 
-                const isPositive = s.pct_change >= 0;
-                const isExpanded = expandedStockSymbol === s.symbol;
-                const meta = COMPANY_META[s.symbol] || {
-                  name: s.symbol,
-                  iconBg: "#e2e8f0",
-                  color: "#1e293b",
-                  iconText: s.symbol.slice(0, 2),
-                  sector: s.sector || "Equity",
-                  low52: (s.price || 100) * 0.7,
-                  high52: (s.price || 100) * 1.3,
-                };
-                
-                const zigzag = generateZigzagPath(s.symbol, isPositive);
-                const candleData = generateCandleData(s);
-                
-                // 52-week slider ratio (0 to 1)
-                const rangeDiff = Math.max(1, meta.high52 - meta.low52);
-                const sliderRatio = Math.min(1, Math.max(0, (s.price - meta.low52) / rangeDiff));
-                const dotPercent = Math.round(sliderRatio * 100);
-
-                // Checkpoint price and net diff
-                const checkpointPrice = s.prev_close || s.price;
-                const netPriceDiff = (s.price - checkpointPrice).toFixed(2);
-
-                return (
-                  <div
-                    key={s.symbol}
-                    className="groww-row"
-                    style={{
-                      borderBottom: `1px solid ${theme.border}`,
-                      backgroundColor: isExpanded ? theme.innerBg : "transparent",
-                      transition: "background-color 0.15s ease",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => setExpandedStockSymbol(isExpanded ? null : s.symbol)}
-                  >
-                    {/* Main Row */}
-                    <div style={{ padding: "14px 20px", display: "grid", gridTemplateColumns: "2.4fr 1.3fr 1.6fr 1.2fr 1.2fr 1fr", alignItems: "center", gap: "10px" }} className="stock-row-content">
-                      
-                      {/* 1. Company Icon, Name, Ticker & Catalyst */}
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        <div style={{
-                          width: "36px",
-                          height: "36px",
-                          borderRadius: "10px",
-                          backgroundColor: meta.iconBg,
-                          color: meta.color,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: "900",
-                          fontSize: meta.iconText.length > 2 ? "10px" : "14px",
-                          flexShrink: 0,
-                          border: `1px solid ${theme.borderLight}`,
-                        }}>
-                          {meta.iconText}
-                        </div>
-                        <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            <strong style={{ fontSize: "14px", color: theme.text }}>{meta.name}</strong>
-                            <span style={{ fontSize: "10px", background: theme.tagBg, color: theme.textMuted, padding: "1px 5px", borderRadius: "4px", fontWeight: "700" }}>
-                              {s.symbol}
-                            </span>
-                            {s.is_illiquid && (
-                              <span style={{ fontSize: "10px", background: "#fef3c7", color: "#b45309", padding: "1px 5px", borderRadius: "4px", fontWeight: "700" }}>
-                                Low Liq
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ fontSize: "11px", color: theme.textMuted, marginTop: "2px", lineHeight: "1.3" }}>
-                            {s.insight || `Traded at ${s.volume_ratio}x normal 20d volume`}
-                          </div>
-                        </div>
+                      {/* Delta Rupee & Percentage Pill */}
+                      <div className="flex items-center space-x-2 mt-0.5">
+                        <span className={`inline-flex items-center space-x-1 text-xs font-bold px-2 py-0.5 rounded-md ${
+                          isPositive
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                            : "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                        }`}>
+                          <span>{isPositive ? "▲ +" : "▼ "}</span>
+                          <span>{formatCurrency(Math.abs(deltaPrice))}</span>
+                          <span>({isPositive ? `+${stock.pct_change?.toFixed(2)}%` : `${stock.pct_change?.toFixed(2)}%`})</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400 hidden sm:inline">
+                          since last check
+                        </span>
                       </div>
-
-                      {/* 2. Trend Sparkline (with dotted baseline) */}
-                      <div style={{ width: "120px", height: "34px", position: "relative" }}>
-                        <svg viewBox="0 0 120 34" style={{ width: "100%", height: "100%", overflow: "visible" }}>
-                          {/* Dotted Baseline representing previous checkpoint */}
-                          <line x1="0" y1={isPositive ? 24 : 10} x2="120" y2={isPositive ? 24 : 10} stroke={theme.textDim} strokeDasharray="3,3" strokeWidth="1" />
-                          
-                          {/* Shaded Area */}
-                          <polygon
-                            points={zigzag.areaPoints}
-                            fill={isPositive ? "rgba(0, 208, 156, 0.15)" : "rgba(235, 91, 60, 0.15)"}
-                          />
-
-                          {/* Crisp Trend Line */}
-                          <polyline
-                            points={zigzag.linePoints}
-                            fill="none"
-                            stroke={isPositive ? theme.growwGreen : theme.growwRed}
-                            strokeWidth="2.2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-
-                          {/* Endpoint Dot */}
-                          <circle cx={zigzag.lastX} cy={zigzag.lastY} r="3" fill={isPositive ? theme.growwGreen : theme.growwRed} />
-                        </svg>
-                      </div>
-
-                      {/* 3. PROMINENT CHECKPOINT BASELINE & LIVE PRICE (Visible directly on card!) */}
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontSize: "15px", fontWeight: "800", color: theme.text }}>
-                          ₹{s.price?.toLocaleString("en-IN")}
-                        </div>
-                        <div style={{ fontSize: "11px", color: theme.textMuted, marginTop: "2px", fontWeight: "600" }}>
-                          <span style={{ color: theme.textDim }}>📍 Checkpoint: </span>
-                          <strong style={{ color: theme.text }}>₹{checkpointPrice}</strong>
-                        </div>
-                      </div>
-
-                      {/* 4. 1D / Net Change Since Checkpoint */}
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{
-                          display: "inline-block",
-                          fontSize: "12px",
-                          fontWeight: "800",
-                          color: isPositive ? theme.growwGreen : theme.growwRed,
-                        }}>
-                          {isPositive ? "+" : ""}₹{Math.abs(netPriceDiff)}
-                        </div>
-                        <div style={{ fontSize: "11px", color: isPositive ? theme.growwGreen : theme.growwRed, fontWeight: "700" }}>
-                          ({isPositive ? "+" : ""}{s.pct_change}%)
-                        </div>
-                      </div>
-
-                      {/* 5. 52-Week Range Slider (Matching Groww Screenshot) */}
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "10px", color: theme.textDim }}>
-                        <span>L</span>
-                        <div style={{ position: "relative", width: "50px", height: "3px", backgroundColor: theme.borderLight, borderRadius: "2px" }}>
-                          <div
-                            style={{
-                              position: "absolute",
-                              left: `${dotPercent}%`,
-                              top: "50%",
-                              transform: "translate(-50%, -50%)",
-                              width: "7px",
-                              height: "7px",
-                              borderRadius: "50%",
-                              backgroundColor: theme.text,
-                            }}
-                          />
-                        </div>
-                        <span>H</span>
-                      </div>
-
-                      {/* 6. Quick Actions */}
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px" }}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setTradeModalStock(s);
-                          }}
-                          style={{
-                            background: theme.growwGreen,
-                            color: "#0c1017",
-                            border: "none",
-                            padding: "6px 12px",
-                            borderRadius: "6px",
-                            fontSize: "12px",
-                            fontWeight: "800",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Trade
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setStockToDelete({ symbol: s.symbol, itemId: s.watchlist_item_id });
-                          }}
-                          style={{ background: "none", border: "none", color: theme.textDim, cursor: "pointer", fontSize: "14px" }}
-                        >
-                          ✕
-                        </button>
-                      </div>
-
                     </div>
 
-                    {/* Expanded Interactive Trajectory / Candle View */}
-                    {isExpanded && (
-                      <div style={{ padding: "0 20px 16px 20px", animation: "fadeIn 0.15s ease-out" }}>
-                        <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: "10px", padding: "16px" }}>
-                          
-                          {/* Expanded Header */}
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
-                            <div style={{ fontSize: "13px", fontWeight: "700", color: theme.text }}>
-                              📈 Visual Trajectory (Checkpoint ₹{checkpointPrice} ➔ Live ₹{s.price})
-                            </div>
-                            <div style={{ display: "flex", background: theme.innerBg, padding: "2px", borderRadius: "6px", border: `1px solid ${theme.border}` }}>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setChartViewMode("zigzag"); }}
-                                style={{
-                                  background: chartViewMode === "zigzag" ? theme.cardBg : "transparent",
-                                  color: chartViewMode === "zigzag" ? theme.growwGreen : theme.textMuted,
-                                  border: "none", padding: "4px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: "700", cursor: "pointer"
-                                }}
-                              >
-                                📈 ZigZag Trajectory
-                              </button>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setChartViewMode("candles"); }}
-                                style={{
-                                  background: chartViewMode === "candles" ? theme.cardBg : "transparent",
-                                  color: chartViewMode === "candles" ? theme.growwGreen : theme.textMuted,
-                                  border: "none", padding: "4px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: "700", cursor: "pointer"
-                                }}
-                              >
-                                🕯️ Mini Candles
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Chart Container */}
-                          <div style={{ backgroundColor: theme.innerBg, padding: "14px", borderRadius: "8px", border: `1px solid ${theme.border}`, marginBottom: "12px" }}>
-                            {chartViewMode === "zigzag" ? (
-                              <svg viewBox="0 0 500 70" style={{ width: "100%", height: "65px", overflow: "visible" }}>
-                                <polygon
-                                  points={isPositive
-                                    ? "10,70 10,50 110,56 220,28 340,36 440,14 490,12 490,70"
-                                    : "10,70 10,16 110,12 220,44 340,36 440,58 490,60 490,70"}
-                                  fill={isPositive ? "rgba(0, 208, 156, 0.18)" : "rgba(235, 91, 60, 0.18)"}
-                                />
-                                <polyline
-                                  points={isPositive
-                                    ? "10,50 110,56 220,28 340,36 440,14 490,12"
-                                    : "10,16 110,12 220,44 340,36 440,58 490,60"}
-                                  fill="none"
-                                  stroke={isPositive ? theme.growwGreen : theme.growwRed}
-                                  strokeWidth="3"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                                <circle cx="10" cy={isPositive ? 50 : 16} r="4.5" fill="#0284c7" />
-                                <text x="18" y={isPositive ? 64 : 14} fill="#0284c7" fontSize="11" fontWeight="700">📍 Checkpoint: ₹{checkpointPrice}</text>
-                                <circle cx="490" cy={isPositive ? 12 : 60} r="5" fill={isPositive ? theme.growwGreen : theme.growwRed} />
-                                <text x="390" y={isPositive ? 10 : 66} fill={isPositive ? theme.growwGreen : theme.growwRed} fontSize="12" fontWeight="800">Live: ₹{s.price}</text>
-                              </svg>
-                            ) : (
-                              <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", height: "65px", padding: "0 20px" }}>
-                                {candleData.map((c, i) => (
-                                  <div key={c.id} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                                    <span style={{ fontSize: "10px", color: theme.textDim, marginBottom: "2px" }}>Phase {i + 1}</span>
-                                    <div style={{ position: "relative", width: "16px", height: "42px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                      <div style={{ position: "absolute", width: "1.5px", height: "100%", background: c.green ? theme.growwGreen : theme.growwRed }} />
-                                      <div style={{ width: "12px", height: "22px", background: c.green ? theme.growwGreen : theme.growwRed, borderRadius: "2px", zIndex: 2 }} />
-                                    </div>
-                                  </div>
-                                ))}
-                                <div style={{ textAlign: "right", fontSize: "11px" }}>
-                                  <div style={{ color: theme.textMuted }}>Checkpoint Open: <strong style={{ color: "#0284c7" }}>₹{checkpointPrice}</strong></div>
-                                  <div style={{ color: theme.textMuted }}>Current Close: <strong style={{ color: isPositive ? theme.growwGreen : theme.growwRed }}>₹{s.price}</strong></div>
-                                </div>
+                    {/* Col 3: Mini Chart Trajectory */}
+                    <div className="lg:col-span-2 flex justify-center items-center py-1">
+                      {chartViewMode === "zigzag" ? (
+                        <div className="w-[120px] h-[34px] relative">
+                          <svg viewBox="0 0 120 34" className="w-full h-full overflow-visible">
+                            {/* Dotted Checkpoint Reference Baseline */}
+                            <line
+                              x1="0"
+                              y1={isPositive ? "24" : "10"}
+                              x2="120"
+                              y2={isPositive ? "24" : "10"}
+                              stroke="#94a3b8"
+                              strokeWidth="1"
+                              strokeDasharray="2 2"
+                              opacity="0.5"
+                            />
+                            <polyline
+                              fill="none"
+                              stroke={isPositive ? "#10b981" : "#f43f5e"}
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              points={zigzag.linePoints}
+                            />
+                            <circle
+                              cx={zigzag.lastX}
+                              cy={zigzag.lastY}
+                              r="3"
+                              fill={isPositive ? "#10b981" : "#f43f5e"}
+                            />
+                          </svg>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-1.5 h-[34px]">
+                          {candles.map((c) => {
+                            const candleColor = c.green ? "bg-emerald-500" : "bg-rose-500";
+                            return (
+                              <div key={c.id} className="flex flex-col items-center justify-center w-2 h-7 relative">
+                                <div className={`w-[1.5px] h-7 ${candleColor} opacity-40`} />
+                                <div className={`w-2 h-4 ${candleColor} rounded-[1px] absolute`} />
                               </div>
-                            )}
-                          </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
 
-                          {/* 4 Attribution Metrics Grid */}
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px", fontSize: "12px" }}>
-                            <div style={{ background: theme.innerBg, padding: "8px 12px", borderRadius: "6px", border: `1px solid ${theme.border}` }}>
-                              <div style={{ color: theme.textMuted }}>Volatility-Normalized Move:</div>
-                              <strong style={{ color: isPositive ? theme.growwGreen : theme.growwRed }}>{s.z_price}σ ({s.pct_change}%) · 40% Wt</strong>
-                            </div>
-                            <div style={{ background: theme.innerBg, padding: "8px 12px", borderRadius: "6px", border: `1px solid ${theme.border}` }}>
-                              <div style={{ color: theme.textMuted }}>Volume vs 20d Average:</div>
-                              <strong style={{ color: "#0284c7" }}>{s.volume_ratio}x normal volume · 35% Wt</strong>
-                            </div>
-                            <div style={{ background: theme.innerBg, padding: "8px 12px", borderRadius: "6px", border: `1px solid ${theme.border}` }}>
-                              <div style={{ color: theme.textMuted }}>Alpha over Benchmark:</div>
-                              <strong style={{ color: s.alpha >= 0 ? theme.growwGreen : theme.growwRed }}>{s.alpha >= 0 ? "+" : ""}{s.alpha}% vs NIFTY · 25% Wt</strong>
-                            </div>
-                            <div style={{ background: theme.innerBg, padding: "8px 12px", borderRadius: "6px", border: `1px solid ${theme.border}` }}>
-                              <div style={{ color: theme.textMuted }}>Composite Score:</div>
-                              <strong style={{ color: theme.growwGreen }}>{s.relevance_score} (Rank #{index + 1})</strong>
-                            </div>
-                          </div>
+                    {/* Col 4: Catalyst / Summary Headline */}
+                    <div className="lg:col-span-3 text-xs">
+                      <div className="flex items-center space-x-1.5 mb-1">
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                          stock.signal_type === "CRITICAL"
+                            ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                            : stock.signal_type === "SIGNIFICANT"
+                            ? "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300"
+                            : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        }`}>
+                          {stock.signal_type || "INSIGHT"}
+                        </span>
+                        {stock.catalyst_headline && (
+                          <span className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                            {stock.catalyst_headline}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-slate-600 dark:text-slate-400 line-clamp-1 text-[11px]">
+                        {stock.briefing_text || stock.headline || "Price activity monitored since baseline snapshot."}
+                      </p>
+                    </div>
 
+                    {/* Col 5: Actions (Expand Briefing & Delete) */}
+                    <div className="lg:col-span-1 flex items-center justify-end space-x-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedStockSymbol(isExpanded ? null : stock.symbol);
+                        }}
+                        className={`p-1.5 rounded-lg text-xs font-bold border transition ${
+                          isExpanded
+                            ? "bg-indigo-600 text-white border-indigo-600"
+                            : theme === "dark"
+                            ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                            : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+                        }`}
+                        title="Expand Briefing"
+                      >
+                        {isExpanded ? "▲" : "▼"}
+                      </button>
+                      <button
+                        onClick={(e) => handleRemoveStock(stock.symbol, e)}
+                        className="p-1.5 rounded-lg text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                        title="Remove from watchlist"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+
+                  </div>
+
+                  {/* Expanded Detail / "Why It Moved" Briefing Drawer */}
+                  {isExpanded && (
+                    <div className={`p-5 border-t space-y-4 transition ${
+                      theme === "dark" ? "bg-slate-950/60 border-slate-800" : "bg-slate-50/80 border-slate-200"
+                    }`}>
+                      
+                      {/* Checkpoint Recap Bar inside Briefing */}
+                      <div className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+                        theme === "dark" ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+                      }`}>
+                        <div className="flex items-center space-x-3">
+                          <span className="text-xl">📍</span>
+                          <div>
+                            <span className="font-bold text-slate-800 dark:text-slate-200">
+                              Snapshot Comparison:
+                            </span>{" "}
+                            <span className="text-slate-600 dark:text-slate-400">
+                              When you last visited ({formatTimestamp(data?.last_checked)}), {stock.symbol} was trading at{" "}
+                              <strong>{formatCurrency(stock.checkpoint_price || stock.prev_close || stock.price)}</strong>. It is now at{" "}
+                              <strong>{formatCurrency(stock.price)}</strong>.
+                            </span>
+                          </div>
+                        </div>
+                        <div className="font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                          Delta: {formatCurrency(deltaPrice)} ({stock.pct_change?.toFixed(2)}%)
                         </div>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
 
-        {/* 6. Modal: Add Stock */}
-        {showAddModal && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(3, 7, 18, 0.85)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "16px" }}>
-            <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "24px", maxWidth: "460px", width: "100%", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7)", animation: "fadeIn 0.2s ease-out" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                <h3 style={{ margin: 0, fontSize: "17px", color: theme.text, fontWeight: "800" }}>
-                  + Add Stock to Watchlist
-                </h3>
-                <button onClick={() => setShowAddModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", fontSize: "16px" }}>✕</button>
-              </div>
-
-              <form onSubmit={(e) => { e.preventDefault(); handleAdd(); }} style={{ marginBottom: "16px" }}>
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <input
-                    type="text"
-                    autoFocus
-                    placeholder="Enter NSE symbol (e.g. RELIANCE, ZOMATO)..."
-                    value={newSymbol}
-                    onChange={(e) => setNewSymbol(e.target.value)}
-                    style={{ flex: 1, padding: "10px 14px", borderRadius: "8px", border: `1px solid ${theme.borderLight}`, backgroundColor: theme.innerBg, color: theme.text, fontSize: "14px", outline: "none" }}
-                  />
-                  <button
-                    type="submit"
-                    disabled={actionLoading || !newSymbol.trim()}
-                    style={{ padding: "10px 18px", background: theme.growwGreen, color: "#0c1017", border: "none", borderRadius: "8px", fontWeight: "800", fontSize: "13px", cursor: actionLoading ? "not-allowed" : "pointer" }}
-                  >
-                    {actionLoading ? "Adding..." : "Add"}
-                  </button>
-                </div>
-              </form>
-
-              <div style={{ fontSize: "12px", color: theme.textMuted, marginBottom: "8px", fontWeight: "700" }}>
-                Quick 1-Tap Suggestions:
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {POPULAR_SUGGESTIONS.map((grp) => (
-                  <div key={grp.sector} style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: "11px", color: theme.textDim, width: "90px" }}>{grp.sector}:</span>
-                    {grp.symbols.map((sym) => (
-                      <button
-                        key={sym}
-                        type="button"
-                        onClick={() => handleAdd(sym)}
-                        style={{
-                          background: sym === "PENNYTEST" ? "#fef3c7" : sym === "BROKENSTOCK" ? "#fee2e2" : theme.innerBg,
-                          border: `1px solid ${theme.border}`,
-                          color: sym === "PENNYTEST" ? "#b45309" : sym === "BROKENSTOCK" ? "#b91c1c" : theme.text,
-                          padding: "3px 8px",
-                          borderRadius: "6px",
-                          fontSize: "11px",
-                          fontWeight: "700",
-                          cursor: "pointer",
-                        }}
-                      >
-                        + {sym}
-                      </button>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 7. Modal: System Info */}
-        {showInfoModal && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(3, 7, 18, 0.85)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "16px" }}>
-            <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "24px", maxWidth: "640px", width: "100%", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                <h3 style={{ margin: 0, fontSize: "18px", color: theme.text, fontWeight: "800" }}>
-                  ⚙️ System Details & Principles
-                </h3>
-                <button onClick={() => setShowInfoModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", fontSize: "16px" }}>✕</button>
-              </div>
-
-              <div style={{ display: "flex", background: theme.innerBg, padding: "4px", borderRadius: "8px", marginBottom: "16px", gap: "4px" }}>
-                {[
-                  { id: "principles", label: "🛡️ Principles" },
-                  { id: "scaling", label: "🚀 Scaling & DB" },
-                  { id: "history", label: "📜 History Logs" },
-                  { id: "math", label: "💡 Scoring Math" },
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => handleOpenInfoModal(t.id)}
-                    style={{
-                      flex: 1, padding: "7px 8px", borderRadius: "6px", border: "none",
-                      background: infoTab === t.id ? theme.cardBg : "transparent",
-                      color: infoTab === t.id ? theme.growwGreen : theme.textMuted,
-                      fontWeight: "700", fontSize: "12px", cursor: "pointer"
-                    }}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-
-              {infoTab === "principles" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px" }}>
-                  <div style={{ background: theme.innerBg, padding: "12px", borderRadius: "8px", borderLeft: `3px solid ${theme.growwGreen}` }}>
-                    <strong style={{ color: theme.growwGreen }}>1. Clarity Over Noise (Event-Driven Explainability)</strong>
-                    <p style={{ margin: "4px 0 0 0", color: theme.textMuted }}>Standard watchlists sort by % gain. We prioritize statistical anomalies and supply 1-line plain-English catalysts.</p>
-                  </div>
-                  <div style={{ background: theme.innerBg, padding: "12px", borderRadius: "8px", borderLeft: "3px solid #f59e0b" }}>
-                    <strong style={{ color: "#f59e0b" }}>2. Resilience (Defensive Edge Cases)</strong>
-                    <p style={{ margin: "4px 0 0 0", color: theme.textMuted }}>Low liquidity microcaps (PENNYTEST) are flagged. Broken exchange feeds (BROKENSTOCK) render in-page error cards without crashing.</p>
-                  </div>
-                  <div style={{ background: theme.innerBg, padding: "12px", borderRadius: "8px", borderLeft: "3px solid #0284c7" }}>
-                    <strong style={{ color: "#0284c7" }}>3. Transparent Attribution Math</strong>
-                    <p style={{ margin: "4px 0 0 0", color: theme.textMuted }}>Every score is auditable: 40% Volatility Move + 35% Volume Surge + 25% Benchmark Alpha.</p>
-                  </div>
-                </div>
-              )}
-
-              {infoTab === "scaling" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px" }}>
-                  <div style={{ background: theme.innerBg, padding: "12px", borderRadius: "8px", borderLeft: "3px solid #0284c7" }}>
-                    <strong style={{ color: "#0284c7" }}>1. In-Memory 30s TTL Caching</strong>
-                    <p style={{ margin: "4px 0 0 0", color: theme.textMuted }}>Concurrent queries for identical tickers are served from cache, preventing external API rate limits while keeping data fresh.</p>
-                  </div>
-                  <div style={{ background: theme.innerBg, padding: "12px", borderRadius: "8px", borderLeft: "3px solid #a855f7" }}>
-                    <strong style={{ color: "#a855f7" }}>2. PostgreSQL Compound B-Tree Indexing</strong>
-                    <p style={{ margin: "4px 0 0 0", color: theme.textMuted }}>Supabase tables have explicit indexes on user_id, watchlist_id, and timestamps for sub-millisecond query retrieval.</p>
-                  </div>
-                </div>
-              )}
-
-              {infoTab === "history" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "200px", overflowY: "auto" }}>
-                  {sessionHistory.length === 0 ? (
-                    <p style={{ color: theme.textMuted, fontSize: "13px" }}>No checkpoints saved yet. Click 'Mark as Checked' to record one.</p>
-                  ) : (
-                    sessionHistory.map((s, idx) => (
-                      <div key={s.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: theme.innerBg, borderRadius: "6px", fontSize: "12px" }}>
-                        <span>Checkpoint #{sessionHistory.length - idx}</span>
-                        <span style={{ color: theme.growwGreen }}>{new Date(s.opened_at).toLocaleString()}</span>
+                      {/* Full AI / Rule-based Briefing Narrative */}
+                      <div className="space-y-1.5">
+                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                          🎯 Why It Moved (Catalyst Breakdown)
+                        </h4>
+                        <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-normal bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                          {stock.briefing_text || stock.headline || "No sudden anomalous event detected. Trading within standard daily volatility band."}
+                        </p>
                       </div>
-                    ))
+
+                      {/* Metrics: 52-Week Range & Technical Stats */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="p-3 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs">
+                          <div className="text-[10px] text-slate-400 font-medium">52-Week Range</div>
+                          <div className="font-bold mt-1 text-slate-800 dark:text-slate-200">
+                            ₹{meta.low52} — ₹{meta.high52}
+                          </div>
+                        </div>
+                        <div className="p-3 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs">
+                          <div className="text-[10px] text-slate-400 font-medium">Signal Confidence</div>
+                          <div className="font-bold mt-1 text-emerald-600 dark:text-emerald-400">
+                            High (Real-time Market Feed)
+                          </div>
+                        </div>
+                        <div className="p-3 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs">
+                          <div className="text-[10px] text-slate-400 font-medium">Session Status</div>
+                          <div className="font-bold mt-1 text-slate-800 dark:text-slate-200">
+                            Monitored 24/7
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
                   )}
-                </div>
-              )}
 
-              {infoTab === "math" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px" }}>
-                  <div style={{ background: theme.innerBg, padding: "10px", borderRadius: "6px" }}>
-                    <strong style={{ color: "#0284c7" }}>1. Unusual Price Move (40% Weight)</strong>
-                    <p style={{ margin: "2px 0 0 0", color: theme.textMuted, fontSize: "12px" }}>Normalized against the stock's 20-day standard deviation.</p>
-                  </div>
-                  <div style={{ background: theme.innerBg, padding: "10px", borderRadius: "6px" }}>
-                    <strong style={{ color: "#f59e0b" }}>2. Volume Surge (35% Weight)</strong>
-                    <p style={{ margin: "2px 0 0 0", color: theme.textMuted, fontSize: "12px" }}>Today's turnover vs 20-day average volume.</p>
-                  </div>
-                  <div style={{ background: theme.innerBg, padding: "10px", borderRadius: "6px" }}>
-                    <strong style={{ color: theme.growwGreen }}>3. Benchmark Alpha (25% Weight)</strong>
-                    <p style={{ margin: "2px 0 0 0", color: theme.textMuted, fontSize: "12px" }}>Excess return over the benchmark (NIFTY 50).</p>
-                  </div>
                 </div>
-              )}
+              );
+            })}
+          </div>
+        )}
 
-              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
+        {/* 8. Session History Modal */}
+        {showHistoryModal && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl space-y-4 ${
+              theme === "dark" ? "bg-slate-900 border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"
+            }`}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-base flex items-center space-x-2">
+                  <span>📜</span>
+                  <span>Checkpoint Session History</span>
+                </h3>
                 <button
-                  onClick={() => setShowInfoModal(false)}
-                  style={{ background: theme.innerBg, color: theme.text, border: `1px solid ${theme.border}`, padding: "8px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}
+                  onClick={() => setShowHistoryModal(false)}
+                  className="text-slate-400 hover:text-slate-600 text-sm font-bold"
                 >
-                  Done
+                  ✕
                 </button>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* 8. Modal: Groww Instant Order Simulation Sheet */}
-        {tradeModalStock && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(3, 7, 18, 0.85)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "16px" }}>
-            <div style={{ background: theme.cardBg, border: `1px solid ${theme.growwGreen}`, borderRadius: "16px", padding: "24px", maxWidth: "380px", width: "100%", boxShadow: "0 25px 50px -12px rgba(0, 208, 156, 0.2)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ background: theme.growwGreen, color: "#0c1017", fontWeight: "900", padding: "2px 6px", borderRadius: "4px", fontSize: "11px" }}>GROWW</span>
-                  <h3 style={{ margin: 0, fontSize: "16px", color: theme.text }}>Instant Order Sheet</h3>
-                </div>
-                <button onClick={() => setTradeModalStock(null)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", fontSize: "16px" }}>✕</button>
-              </div>
-
-              {tradeSuccessMsg ? (
-                <div style={{ background: "rgba(0, 208, 156, 0.15)", border: `1px solid ${theme.growwGreen}`, color: theme.growwGreen, padding: "14px", borderRadius: "8px", fontSize: "13px", fontWeight: "700", textAlign: "center" }}>
-                  {tradeSuccessMsg}
-                </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Log of snapshots recorded for user <strong className="text-indigo-500">{userId}</strong>:
+              </p>
+              {historyLoading ? (
+                <div className="py-8 text-center text-xs text-slate-400">Loading history...</div>
+              ) : sessionHistory.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400">No previous checkpoints recorded.</div>
               ) : (
-                <form onSubmit={handleExecuteGrowwTrade}>
-                  <div style={{ background: theme.innerBg, padding: "12px", borderRadius: "8px", marginBottom: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div>
-                      <div style={{ fontSize: "16px", fontWeight: "800", color: theme.text }}>{tradeModalStock.symbol}</div>
-                      <div style={{ fontSize: "11px", color: theme.textMuted }}>Anomaly Score: #{tradeModalStock.relevance_score}</div>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: "16px", fontWeight: "800", color: theme.growwGreen }}>₹{tradeModalStock.price?.toLocaleString("en-IN")}</div>
-                      <div style={{ fontSize: "11px", color: tradeModalStock.pct_change >= 0 ? theme.growwGreen : theme.growwRed }}>{tradeModalStock.pct_change >= 0 ? "+" : ""}{tradeModalStock.pct_change}%</div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
-                    <button
-                      type="button"
-                      onClick={() => setTradeOrderType("BUY")}
-                      style={{
-                        flex: 1, padding: "8px", borderRadius: "6px", border: "none",
-                        background: tradeOrderType === "BUY" ? theme.growwGreen : theme.innerBg,
-                        color: tradeOrderType === "BUY" ? "#0c1017" : theme.textMuted,
-                        fontWeight: "800", cursor: "pointer"
-                      }}
+                <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                  {sessionHistory.map((s, idx) => (
+                    <div
+                      key={s.id || idx}
+                      className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+                        theme === "dark" ? "bg-slate-800/60 border-slate-700" : "bg-slate-50 border-slate-200"
+                      }`}
                     >
-                      BUY
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTradeOrderType("SELL")}
-                      style={{
-                        flex: 1, padding: "8px", borderRadius: "6px", border: "none",
-                        background: tradeOrderType === "SELL" ? theme.growwRed : theme.innerBg,
-                        color: tradeOrderType === "SELL" ? "#ffffff" : theme.textMuted,
-                        fontWeight: "800", cursor: "pointer"
-                      }}
-                    >
-                      SELL
-                    </button>
-                  </div>
-
-                  <div style={{ marginBottom: "14px" }}>
-                    <label style={{ display: "block", fontSize: "11px", color: theme.textMuted, marginBottom: "4px" }}>Quantity (Shares)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={tradeQuantity}
-                      onChange={(e) => setTradeQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                      style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.innerBg, color: theme.text, fontSize: "14px", outline: "none" }}
-                    />
-                  </div>
-
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", fontSize: "12px" }}>
-                    <span style={{ color: theme.textMuted }}>Total Order Value:</span>
-                    <strong style={{ color: theme.text, fontSize: "15px" }}>₹{(tradeQuantity * tradeModalStock.price).toLocaleString("en-IN")}</strong>
-                  </div>
-
-                  <button
-                    type="submit"
-                    style={{
-                      width: "100%", padding: "10px", borderRadius: "8px", border: "none",
-                      background: tradeOrderType === "BUY" ? theme.growwGreen : theme.growwRed,
-                      color: tradeOrderType === "BUY" ? "#0c1017" : "#ffffff",
-                      fontSize: "14px", fontWeight: "800", cursor: "pointer"
-                    }}
-                  >
-                    Confirm {tradeOrderType} on Groww
-                  </button>
-                </form>
+                      <div>
+                        <div className="font-bold text-slate-800 dark:text-slate-200">
+                          {formatTimestamp(s.created_at || s.timestamp)}
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          Watchlist: {s.watchlist_name || s.watchlist_id || "Active"}
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
+                        Saved
+                      </span>
+                    </div>
+                  ))}
+                </div>
               )}
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                className="w-full bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 font-bold py-2 rounded-xl text-xs"
+              >
+                Close
+              </button>
             </div>
           </div>
         )}
 
-        {/* 9. Modal: User Profile & Multi-Device Sync */}
-        {showUserModal && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(3, 7, 18, 0.85)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "16px" }}>
-            <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "24px", maxWidth: "460px", width: "100%", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ fontSize: "18px" }}>👤</span>
-                  <h3 style={{ margin: 0, fontSize: "17px", color: theme.text, fontWeight: "800" }}>
-                    Groww Profile & Sync
-                  </h3>
-                </div>
-                <button onClick={() => setShowUserModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", fontSize: "16px" }}>✕</button>
+        {/* 9. Create Watchlist Modal */}
+        {showNewWlModal && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className={`w-full max-w-sm rounded-2xl border p-6 shadow-2xl space-y-4 ${
+              theme === "dark" ? "bg-slate-900 border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"
+            }`}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-base">Create New Watchlist</h3>
+                <button
+                  onClick={() => setShowNewWlModal(false)}
+                  className="text-slate-400 hover:text-slate-600 text-sm font-bold"
+                >
+                  ✕
+                </button>
               </div>
-
-              <div style={{ background: theme.innerBg, padding: "12px 14px", borderRadius: "10px", border: `1px solid ${theme.border}`, marginBottom: "16px" }}>
-                <div style={{ fontSize: "11px", color: theme.textMuted }}>Active Groww Account:</div>
-                <div style={{ fontSize: "15px", fontWeight: "800", color: theme.growwGreen, marginTop: "2px" }}>
-                  {userId || "Not Signed In"}
-                </div>
-              </div>
-
-              <form onSubmit={handleSwitchUser} style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", fontSize: "12px", color: theme.textMuted, fontWeight: "700", marginBottom: "6px" }}>
-                  Switch Account (Email / Mobile):
-                </label>
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <input
-                    type="text"
-                    value={userIdInput}
-                    onChange={(e) => setUserIdInput(e.target.value)}
-                    placeholder="Enter email or mobile..."
-                    style={{ flex: 1, padding: "9px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.innerBg, color: theme.text, fontSize: "13px", outline: "none" }}
-                  />
+              <form onSubmit={handleCreateWatchlist} className="space-y-3">
+                <input
+                  type="text"
+                  value={newWlName}
+                  onChange={(e) => setNewWlName(e.target.value)}
+                  placeholder="e.g. High Growth, Dividend, EV Tech"
+                  required
+                  className={`w-full px-3 py-2 text-xs rounded-xl border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    theme === "dark" ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                  }`}
+                />
+                <div className="flex items-center justify-end space-x-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowNewWlModal(false)}
+                    className="px-3 py-1.5 text-xs text-slate-500 font-semibold"
+                  >
+                    Cancel
+                  </button>
                   <button
                     type="submit"
-                    style={{ padding: "9px 14px", background: "#0284c7", color: "#ffffff", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}
+                    disabled={actionLoading || !newWlName.trim()}
+                    className="bg-indigo-600 text-white font-bold px-4 py-1.5 rounded-xl text-xs disabled:opacity-50"
                   >
-                    Switch
+                    {actionLoading ? "Creating..." : "Create"}
                   </button>
                 </div>
               </form>
-
-              <div style={{ background: theme.innerBg, padding: "12px", borderRadius: "8px", border: `1px solid ${theme.border}`, marginBottom: "16px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "11px", color: "#0284c7", fontWeight: "700" }}>
-                    🔗 1-Click Multi-Device Sync Link
-                  </span>
-                  <button
-                    onClick={handleCopySyncLink}
-                    style={{ background: copiedSyncLink ? theme.growwGreen : theme.cardBg, color: copiedSyncLink ? "#0c1017" : theme.text, border: `1px solid ${theme.border}`, padding: "3px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}
-                  >
-                    {copiedSyncLink ? "✓ Copied!" : "📋 Copy Link"}
-                  </button>
-                </div>
-                <div style={{ fontSize: "11px", color: theme.textMuted, wordBreak: "break-all" }}>
-                  {window.location.origin}{window.location.pathname}?user={encodeURIComponent(userId || "9110679101")}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <button
-                  onClick={handleSignOut}
-                  style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid #ef4444", color: "#f87171", padding: "8px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}
-                >
-                  🚪 Sign Out
-                </button>
-                <button
-                  onClick={() => setShowUserModal(false)}
-                  style={{ background: theme.innerBg, color: theme.text, border: `1px solid ${theme.border}`, padding: "8px 16px", borderRadius: "8px", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}
-                >
-                  Close
-                </button>
-              </div>
             </div>
           </div>
         )}
 
-        {/* 10. Modal: Remove Stock Confirmation */}
-        {stockToDelete && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(3, 7, 18, 0.85)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "16px" }}>
-            <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: "14px", padding: "20px", maxWidth: "380px", width: "100%" }}>
-              <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", color: theme.text }}>
-                Remove {stockToDelete.symbol}?
-              </h3>
-              <p style={{ color: theme.textMuted, fontSize: "13px", margin: "0 0 16px 0" }}>
-                Remove this stock from your active watchlist?
-              </p>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-                <button
-                  onClick={() => setStockToDelete(null)}
-                  style={{ background: theme.innerBg, color: theme.text, border: `1px solid ${theme.border}`, padding: "7px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={executeRemoveStock}
-                  disabled={actionLoading}
-                  style={{ background: "#ef4444", color: "#fff", border: "none", padding: "7px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}
-                >
-                  {actionLoading ? "Removing..." : "Remove"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 11. Modal: Create Watchlist */}
-        {showNewWatchlistModal && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(3, 7, 18, 0.85)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "16px" }}>
-            <form onSubmit={executeCreateWatchlist} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: "14px", padding: "20px", maxWidth: "380px", width: "100%" }}>
-              <h3 style={{ margin: "0 0 6px 0", fontSize: "16px", color: theme.text }}>
-                ➕ Create Watchlist
-              </h3>
-              <input
-                type="text"
-                autoFocus
-                placeholder="e.g. My Bluechips, Tech Focus..."
-                value={newWatchlistNameInput}
-                onChange={(e) => setNewWatchlistNameInput(e.target.value)}
-                style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.innerBg, color: theme.text, fontSize: "13px", outline: "none", marginBottom: "16px" }}
-              />
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-                <button
-                  type="button"
-                  onClick={() => setShowNewWatchlistModal(false)}
-                  style={{ background: theme.innerBg, color: theme.text, border: `1px solid ${theme.border}`, padding: "7px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={actionLoading || !newWatchlistNameInput.trim()}
-                  style={{ background: theme.growwGreen, color: "#0c1017", border: "none", padding: "7px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: "800", cursor: "pointer" }}
-                >
-                  {actionLoading ? "Creating..." : "Create"}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* 12. Auth Gate Modal */}
+        {/* 10. Auth Modal */}
         {showAuthModal && (
           <AuthModal
             onLoginSuccess={(newUid, isNewSignUp) => {
               setUserId(newUid);
-              setUserIdInput(newUid);
               setShowAuthModal(false);
               setAuthToken(localStorage.getItem("sw_auth_token"));
               if (isNewSignUp) {
@@ -1627,7 +1113,7 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
           />
         )}
 
-      </div>
+      </main>
     </div>
   );
 }
