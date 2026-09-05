@@ -185,11 +185,21 @@ export default function Dashboard() {
     try {
       const uidToUse = targetUid || userId || "default_user";
       const res = await fetchWatchlists(uidToUse);
-      const list = Array.isArray(res) ? res : (res.data || []);
-      if (list && list.length > 0) {
-        setWatchlists(list);
-        if (!activeWatchlist || !list.find(w => w.id === activeWatchlist)) {
-          setActiveWatchlist(list[0].id);
+      const rawList = Array.isArray(res) ? res : (res.data || []);
+      // Deduplicate watchlists with identical/similar names
+      const seenNames = new Set();
+      const uniqueList = [];
+      for (const item of rawList) {
+        const normalized = item.name.replace(/^My\s+/i, "").trim().toLowerCase();
+        if (!seenNames.has(normalized)) {
+          seenNames.add(normalized);
+          uniqueList.push({ ...item, name: item.name.replace(/^My\s+/i, "") });
+        }
+      }
+      if (uniqueList.length > 0) {
+        setWatchlists(uniqueList);
+        if (!activeWatchlist || !uniqueList.find(w => w.id === activeWatchlist)) {
+          setActiveWatchlist(uniqueList[0].id);
         }
       }
     } catch (err) {
@@ -482,7 +492,7 @@ export default function Dashboard() {
               <div className={`px-4 py-2.5 rounded-xl border flex flex-col items-center ${
                 isDark ? "bg-slate-800/90 border-slate-700" : "bg-slate-100 border-slate-300"
               }`}>
-                <span className={`text-[10px] font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>Average Move</span>
+                <span className={`text-[10px] font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>Net Return</span>
                 <span className={`text-sm font-black ${Number(averageChange) >= 0 ? (isDark ? "text-emerald-400" : "text-emerald-600") : (isDark ? "text-rose-400" : "text-rose-600")}`}>
                   {Number(averageChange) >= 0 ? `+${averageChange}%` : `${averageChange}%`}
                 </span>

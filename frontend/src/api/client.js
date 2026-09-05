@@ -3,7 +3,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://groww-since-you-c
 // Comprehensive fallback mock data with high-value customer decision metrics
 const DEFAULT_FALLBACK_WATCHLISTS = [
   { id: "wl-primary-demo", name: "Primary Watchlist", user_id: "default_user", is_default: true },
-  { id: "wl-tech-demo", name: "Tech & EV Focus", user_id: "default_user", is_default: false },
+  { id: "wl-tech-demo", name: "High Growth & EV", user_id: "default_user", is_default: false },
 ];
 
 const DEFAULT_FALLBACK_SIGNALS = {
