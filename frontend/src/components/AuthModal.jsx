@@ -3,8 +3,8 @@ import { loginUser, signupUser } from "../api/client";
 
 export default function AuthModal({ onLoginSuccess, onClose, canClose = false }) {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [identifier, setIdentifier] = useState(""); // Email ID or Mobile No
-  const [pin, setPin] = useState(""); // 4-6 digit Groww PIN / Password
+  const [identifier, setIdentifier] = useState("");
+  const [pin, setPin] = useState("");
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -19,7 +19,7 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
       return;
     }
     if (!pin || pin.length < 4) {
-      setError("Groww Security PIN / Password must be at least 4 digits");
+      setError("Groww Security PIN / Password must be at least 4 characters");
       return;
     }
 
@@ -34,41 +34,10 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
 
       localStorage.setItem("groww_user_id", cleanId);
       localStorage.setItem("sw_user_id", cleanId);
-      localStorage.setItem("sw_auth_token", res.token || "groww_valid_session");
+      localStorage.setItem("sw_auth_token", res.token || `groww_${Date.now()}`);
       onLoginSuccess(cleanId, isSignUp);
     } catch (err) {
       setError(err.message || "Authentication failed. Please check your credentials.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleQuickEvaluatorDemo = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const demoEmail = "vaishnavi.mudhole@groww.in";
-      const demoPin = "123456";
-      
-      let res;
-      try {
-        res = await loginUser(demoEmail, demoPin);
-      } catch (apiErr) {
-        // If account not created yet on cloud, create it
-        res = await signupUser(demoEmail, demoPin);
-      }
-
-      localStorage.setItem("groww_user_id", demoEmail);
-      localStorage.setItem("sw_user_id", demoEmail);
-      localStorage.setItem("sw_auth_token", res.token || "demo_token");
-      onLoginSuccess(demoEmail, false);
-    } catch (err) {
-      // Local fallback for offline/instant testing
-      const fallbackEmail = "vaishnavi.mudhole@groww.in";
-      localStorage.setItem("groww_user_id", fallbackEmail);
-      localStorage.setItem("sw_user_id", fallbackEmail);
-      localStorage.setItem("sw_auth_token", "demo_evaluator_session");
-      onLoginSuccess(fallbackEmail, false);
     } finally {
       setLoading(false);
     }
@@ -124,7 +93,7 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
         )}
 
         {/* Groww Brand Header */}
-        <div style={{ textAlign: "center", marginBottom: "22px" }}>
+        <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(0, 208, 156, 0.1)", padding: "6px 14px", borderRadius: "20px", border: "1px solid rgba(0, 208, 156, 0.3)", marginBottom: "12px" }}>
             <span style={{ fontSize: "16px" }}>⚡</span>
             <span style={{ fontSize: "12px", fontWeight: "800", color: "#00d09c", letterSpacing: "0.5px", textTransform: "uppercase" }}>
@@ -132,10 +101,10 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
             </span>
           </div>
           <h2 style={{ margin: "0 0 6px 0", fontSize: "22px", fontWeight: "800", color: "#ffffff", letterSpacing: "-0.5px" }}>
-            {isSignUp ? "Create Your Groww Account" : "Welcome to Groww"}
+            {isSignUp ? "Create Your Groww Account" : "Sign In to Groww"}
           </h2>
           <p style={{ margin: 0, color: "#94a3b8", fontSize: "13px" }}>
-            {isSignUp ? "Enter your Email or Mobile to build your personalized watchlist" : "Sign in with your Email ID or Mobile to view live anomalies"}
+            {isSignUp ? "Enter your Email or Mobile to build your personalized watchlist" : "Enter your Email ID or Mobile to view your live watchlist"}
           </p>
         </div>
 
@@ -195,7 +164,7 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
               type="text"
               required
               autoFocus
-              placeholder="e.g. vaishnavi.mudhole@gmail.com or 9876543210"
+              placeholder="e.g. 9110679101 or user@example.com"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               style={{
@@ -220,7 +189,7 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
               <input
                 type={showPin ? "text" : "password"}
                 required
-                placeholder="Enter 4 to 6-digit PIN"
+                placeholder="Enter 4+ character PIN or password"
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
                 style={{
@@ -259,7 +228,7 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
             type="submit"
             disabled={loading}
             style={{
-              marginTop: "4px",
+              marginTop: "6px",
               padding: "12px",
               borderRadius: "10px",
               border: "none",
@@ -272,41 +241,9 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
               transition: "transform 0.1s ease",
             }}
           >
-            {loading ? "Verifying with Groww..." : isSignUp ? "Create Account & Pick Stocks" : "Sign In to Watchlist"}
+            {loading ? "Connecting to Groww..." : isSignUp ? "Create Account & Pick Stocks" : "Sign In to Watchlist"}
           </button>
         </form>
-
-        {/* Divider */}
-        <div style={{ display: "flex", alignItems: "center", margin: "18px 0 14px 0", gap: "10px" }}>
-          <div style={{ flex: 1, height: "1px", background: "#1e293b" }} />
-          <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: "700" }}>Or</span>
-          <div style={{ flex: 1, height: "1px", background: "#1e293b" }} />
-        </div>
-
-        {/* 1-Click Evaluator Demo Access */}
-        <button
-          type="button"
-          onClick={handleQuickEvaluatorDemo}
-          disabled={loading}
-          style={{
-            width: "100%",
-            padding: "11px",
-            borderRadius: "10px",
-            border: "1px dashed #00d09c",
-            background: "rgba(0, 208, 156, 0.08)",
-            color: "#00d09c",
-            fontSize: "13px",
-            fontWeight: "800",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "8px",
-          }}
-        >
-          <span>⚡</span>
-          <span>1-Click Evaluator Sign In (vaishnavi.mudhole@groww.in)</span>
-        </button>
       </div>
     </div>
   );
