@@ -11,24 +11,24 @@ import {
 } from "../api/client";
 import AuthModal from "../components/AuthModal";
 
-// Company Metadata & Visual Badges
+// Company Metadata
 const COMPANY_META = {
-  "TATAMOTORS": { name: "Tata Motors Ltd.", sector: "Auto", low52: 640, high52: 1179, tagColor: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300" },
-  "TATASTEEL":  { name: "Tata Steel Ltd.", sector: "Metals", low52: 114, high52: 184, tagColor: "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300" },
-  "RELIANCE":   { name: "Reliance Industries", sector: "Energy", low52: 2220, high52: 3217, tagColor: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300" },
-  "HDFCBANK":   { name: "HDFC Bank Ltd.", sector: "Banking", low52: 1363, high52: 1794, tagColor: "bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-300" },
-  "ICICIBANK":  { name: "ICICI Bank Ltd.", sector: "Banking", low52: 910, high52: 1330, tagColor: "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300" },
-  "INFY":       { name: "Infosys Ltd.", sector: "Tech", low52: 1358, high52: 1990, tagColor: "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900/40 dark:text-sky-300" },
-  "TCS":        { name: "Tata Consultancy Services", sector: "Tech", low52: 3313, high52: 4585, tagColor: "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/40 dark:text-purple-300" },
-  "WIPRO":      { name: "Wipro Ltd.", sector: "Tech", low52: 375, high52: 580, tagColor: "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/40 dark:text-violet-300" },
-  "ZOMATO":     { name: "Eternal (Zomato Ltd.)", sector: "Consumer", low52: 98, high52: 298, tagColor: "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/40 dark:text-rose-300" },
-  "SBIN":       { name: "State Bank of India", sector: "Banking", low52: 555, high52: 912, tagColor: "bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/40 dark:text-cyan-300" },
-  "ITC":        { name: "ITC Ltd.", sector: "FMCG", low52: 399, high52: 528, tagColor: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-300" },
-  "HINDUNILVR": { name: "Hindustan Unilever", sector: "FMCG", low52: 2172, high52: 3034, tagColor: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300" },
-  "HAL":        { name: "Hindustan Aeronautics", sector: "Defense", low52: 2350, high52: 5675, tagColor: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300" },
-  "BEL":        { name: "Bharat Electronics", sector: "Defense", low52: 125, high52: 340, tagColor: "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-900/40 dark:text-teal-300" },
-  "MARUTI":     { name: "Maruti Suzuki India", sector: "Auto", low52: 9600, high52: 13680, tagColor: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300" },
-  "LT":         { name: "Larsen & Toubro", sector: "Infra", low52: 2850, high52: 3948, tagColor: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300" },
+  "TATAMOTORS": { name: "Tata Motors Ltd.", sector: "Auto", low52: 640, high52: 1179 },
+  "TATASTEEL":  { name: "Tata Steel Ltd.", sector: "Metals", low52: 114, high52: 184 },
+  "RELIANCE":   { name: "Reliance Industries", sector: "Energy", low52: 2220, high52: 3217 },
+  "HDFCBANK":   { name: "HDFC Bank Ltd.", sector: "Banking", low52: 1363, high52: 1794 },
+  "ICICIBANK":  { name: "ICICI Bank Ltd.", sector: "Banking", low52: 910, high52: 1330 },
+  "INFY":       { name: "Infosys Ltd.", sector: "Tech", low52: 1358, high52: 1990 },
+  "TCS":        { name: "Tata Consultancy Services", sector: "Tech", low52: 3313, high52: 4585 },
+  "WIPRO":      { name: "Wipro Ltd.", sector: "Tech", low52: 375, high52: 580 },
+  "ZOMATO":     { name: "Eternal (Zomato Ltd.)", sector: "Consumer", low52: 98, high52: 298 },
+  "SBIN":       { name: "State Bank of India", sector: "Banking", low52: 555, high52: 912 },
+  "ITC":        { name: "ITC Ltd.", sector: "FMCG", low52: 399, high52: 528 },
+  "HINDUNILVR": { name: "Hindustan Unilever", sector: "FMCG", low52: 2172, high52: 3034 },
+  "HAL":        { name: "Hindustan Aeronautics", sector: "Defense", low52: 2350, high52: 5675 },
+  "BEL":        { name: "Bharat Electronics", sector: "Defense", low52: 125, high52: 340 },
+  "MARUTI":     { name: "Maruti Suzuki India", sector: "Auto", low52: 9600, high52: 13680 },
+  "LT":         { name: "Larsen & Toubro", sector: "Infra", low52: 2850, high52: 3948 },
 };
 
 function generateZigzagPath(symbol, isPositive) {
@@ -66,10 +66,6 @@ function generateZigzagPath(symbol, isPositive) {
 
 function generateCandleData(stock) {
   const isPos = (stock.pct_change || 0) >= 0;
-  const open = stock.checkpoint_price || stock.prev_close || (stock.price * 0.98);
-  const close = stock.price || (open * 1.02);
-  const spread = Math.abs(close - open) || 5;
-
   if (isPos) {
     return [
       { id: "c1", green: true },
@@ -107,19 +103,31 @@ export default function Dashboard() {
     return localStorage.getItem("sw_theme") || "dark";
   });
 
+  const isDark = theme === "dark";
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDark]);
+
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);
     localStorage.setItem("sw_theme", next);
   };
 
-  // Auth State (smart default so student evaluator immediately sees active watchlist)
+  // Auth State: Show Login First if no user in localStorage
   const [userId, setUserId] = useState(() => {
-    return localStorage.getItem("sw_user_id") || "9110679101";
+    return localStorage.getItem("sw_user_id") || "";
   });
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(() => {
+    return !localStorage.getItem("sw_user_id");
+  });
 
-  // Checkpoint Session History Modal
+  // History Modal
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [sessionHistory, setSessionHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -138,7 +146,7 @@ export default function Dashboard() {
   };
 
   const formatTimestamp = (iso) => {
-    if (!iso) return "Today, 09:30 AM (Checkpoint Baseline)";
+    if (!iso) return "Today, 09:30 AM";
     try {
       const d = new Date(iso);
       return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true }) + " (" + d.toLocaleDateString([], { month: "short", day: "numeric" }) + ")";
@@ -178,9 +186,10 @@ export default function Dashboard() {
     }
   };
 
-  // Initial Load
   useEffect(() => {
-    loadAllWatchlists(userId);
+    if (userId) {
+      loadAllWatchlists(userId);
+    }
     checkSystemHealth().then((res) => setHealth(res.data || res)).catch(() => setHealth({ status: "healthy" }));
   }, [userId]);
 
@@ -189,12 +198,12 @@ export default function Dashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetchWatchlistSignals(activeWatchlist || "wl-primary-demo", sortBy, userId);
+      const res = await fetchWatchlistSignals(activeWatchlist || "wl-primary-demo", sortBy, userId || "default_user");
       const signalData = res.signals ? res : (res.data || res);
       setData(signalData);
     } catch (err) {
       console.error("Signal load error:", err);
-      setError("Unable to refresh market signals. Please retry.");
+      setError("Unable to refresh market signals.");
     } finally {
       setLoading(false);
     }
@@ -252,7 +261,7 @@ export default function Dashboard() {
   const handleRecordCheckpoint = async () => {
     setActionLoading(true);
     try {
-      await recordSessionCheckpoint(userId, activeWatchlist || "wl-primary-demo");
+      await recordSessionCheckpoint(userId || "default_user", activeWatchlist || "wl-primary-demo");
       await loadSignals();
     } catch (err) {
       alert(err.message || "Failed to record checkpoint.");
@@ -261,12 +270,12 @@ export default function Dashboard() {
     }
   };
 
-  // Open History
+  // History
   const handleOpenHistory = async () => {
     setShowHistoryModal(true);
     setHistoryLoading(true);
     try {
-      const res = await fetchSessionHistory(userId);
+      const res = await fetchSessionHistory(userId || "default_user");
       const historyList = Array.isArray(res) ? res : (res.data || []);
       setSessionHistory(historyList);
     } catch (err) {
@@ -282,7 +291,7 @@ export default function Dashboard() {
     if (!newWlName.trim()) return;
     setActionLoading(true);
     try {
-      const newWl = await createWatchlist(newWlName.trim(), userId);
+      const newWl = await createWatchlist(newWlName.trim(), userId || "default_user");
       setShowNewWlModal(false);
       setNewWlName("");
       await loadAllWatchlists(userId);
@@ -314,29 +323,33 @@ export default function Dashboard() {
     : "0.00";
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${theme === "dark" ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"}`}>
+    <div className={`min-h-screen transition-colors duration-200 ${
+      isDark ? "bg-[#0b0f19] text-white" : "bg-slate-50 text-slate-900"
+    }`}>
       
-      {/* 1. Brand Navbar */}
+      {/* 1. Header Navbar */}
       <header className={`border-b sticky top-0 z-30 backdrop-blur-md transition-colors ${
-        theme === "dark" ? "bg-slate-900/90 border-slate-800" : "bg-white/95 border-slate-200"
+        isDark ? "bg-[#111827]/95 border-slate-800" : "bg-white/95 border-slate-200"
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           
-          {/* Brand Logo & Tagline */}
+          {/* Brand Logo & Subtitle */}
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-emerald-400 flex items-center justify-center text-white font-black text-xl shadow-md">
               ⚡
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent">
+                <span className="font-black text-lg tracking-tight bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent">
                   TrackPulse
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold border ${
+                  isDark ? "bg-emerald-950/80 text-emerald-300 border-emerald-700" : "bg-emerald-50 text-emerald-800 border-emerald-300"
+                }`}>
                   Since You Checked
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 font-medium">
+              <p className={`text-[10px] font-medium ${isDark ? "text-slate-300" : "text-slate-500"}`}>
                 Checkpoint Price Delta & Catalyst Intelligence
               </p>
             </div>
@@ -352,34 +365,34 @@ export default function Dashboard() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search stocks, sectors..."
                 className={`w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border focus:outline-none focus:ring-2 focus:ring-indigo-500 transition ${
-                  theme === "dark" 
-                    ? "bg-slate-800 border-slate-700 text-slate-200 placeholder-slate-500" 
-                    : "bg-slate-100 border-slate-200 text-slate-800 placeholder-slate-400"
+                  isDark 
+                    ? "bg-[#1e293b] border-slate-700 text-white placeholder-slate-400" 
+                    : "bg-slate-100 border-slate-300 text-slate-900 placeholder-slate-400"
                 }`}
               />
             </div>
           </div>
 
-          {/* Actions & Profile */}
+          {/* Top Actions */}
           <div className="flex items-center space-x-2.5">
             <button
               onClick={toggleTheme}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
-                theme === "dark"
-                  ? "bg-slate-800 border-slate-700 text-amber-300 hover:bg-slate-700"
-                  : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                isDark
+                  ? "bg-slate-800 border-slate-700 text-amber-300 hover:bg-slate-700 hover:text-amber-200"
+                  : "bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200"
               }`}
             >
-              {theme === "light" ? "🌙 Dark" : "☀️ Light"}
+              {isDark ? "☀️ Light Mode" : "🌙 Dark Mode"}
             </button>
 
             <button
               onClick={handleOpenHistory}
               title="View Checkpoint Session Log"
-              className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition ${
-                theme === "dark"
+              className={`text-xs px-2.5 py-1.5 rounded-xl border font-bold transition ${
+                isDark
                   ? "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
-                  : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                  : "bg-white border-slate-300 text-slate-700 hover:bg-slate-100"
               }`}
             >
               📜 Logs
@@ -387,10 +400,10 @@ export default function Dashboard() {
 
             <button
               onClick={() => setShowAuthModal(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow transition flex items-center space-x-1"
+              className="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-3.5 py-1.5 rounded-xl text-xs shadow-md transition flex items-center space-x-1.5"
             >
               <span>👤</span>
-              <span className="truncate max-w-[90px]">{userId || "Account"}</span>
+              <span className="truncate max-w-[90px]">{userId || "Sign In"}</span>
             </button>
           </div>
         </div>
@@ -399,54 +412,71 @@ export default function Dashboard() {
       {/* 2. Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
-        {/* Checkpoint Hero Banner */}
-        <section className={`rounded-2xl border p-5 sm:p-6 shadow-sm relative overflow-hidden transition ${
-          theme === "dark"
-            ? "bg-gradient-to-br from-slate-900 via-indigo-950/30 to-slate-900 border-indigo-900/40"
-            : "bg-gradient-to-br from-white via-indigo-50/40 to-emerald-50/20 border-indigo-100"
+        {/* Checkpoint Hero Banner with 100% HIGH CONTRAST VISIBILITY */}
+        <section className={`rounded-2xl border p-5 sm:p-6 shadow-md relative overflow-hidden transition ${
+          isDark
+            ? "bg-[#111827] border-indigo-900/60"
+            : "bg-white border-indigo-100"
         }`}>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
             <div className="space-y-2">
-              <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-300">
+              <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-black border ${
+                isDark ? "bg-indigo-950 text-indigo-300 border-indigo-700" : "bg-indigo-100 text-indigo-900 border-indigo-300"
+              }`}>
                 <span>⏱️ Checkpoint Snapshot Active</span>
-                <span className="w-1 h-1 rounded-full bg-indigo-400" />
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
                 <span>Since: {getElapsedSinceCheckpoint(data?.last_checked)}</span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              
+              {/* Main Headline */}
+              <h1 className={`text-xl sm:text-2xl font-black tracking-tight ${
+                isDark ? "text-white" : "text-slate-900"
+              }`}>
                 What Changed Since You Last Checked?
               </h1>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-2xl">
+
+              {/* Explanatory text */}
+              <p className={`text-xs sm:text-sm max-w-2xl font-medium leading-relaxed ${
+                isDark ? "text-slate-200" : "text-slate-600"
+              }`}>
                 Every price delta, percentage move, and catalyst headline below is calculated relative to your snapshot taken at{" "}
-                <strong className="text-indigo-600 dark:text-indigo-400 underline decoration-indigo-300 decoration-dotted">
+                <strong className={`font-bold underline decoration-dotted ${
+                  isDark ? "text-indigo-300 decoration-indigo-400" : "text-indigo-700 decoration-indigo-400"
+                }`}>
                   {formatTimestamp(data?.last_checked)}
                 </strong>
                 .
               </p>
             </div>
 
+            {/* Quick Metrics & Reset Button */}
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center space-x-2 text-xs font-semibold">
-                <div className={`px-3 py-2 rounded-xl border flex flex-col items-center ${
-                  theme === "dark" ? "bg-slate-800/80 border-slate-700" : "bg-white border-slate-200"
+                <div className={`px-3.5 py-2 rounded-xl border flex flex-col items-center ${
+                  isDark ? "bg-slate-800/90 border-slate-700" : "bg-slate-100 border-slate-300"
                 }`}>
-                  <span className="text-[10px] text-slate-400 font-medium">Tracked</span>
-                  <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{totalStocksCount} Stocks</span>
+                  <span className={`text-[10px] font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>Tracked</span>
+                  <span className={`text-sm font-black ${isDark ? "text-white" : "text-slate-900"}`}>{totalStocksCount} Stocks</span>
                 </div>
-                <div className={`px-3 py-2 rounded-xl border flex flex-col items-center ${
-                  theme === "dark" ? "bg-slate-800/80 border-slate-700" : "bg-white border-slate-200"
+
+                <div className={`px-3.5 py-2 rounded-xl border flex flex-col items-center ${
+                  isDark ? "bg-slate-800/90 border-slate-700" : "bg-slate-100 border-slate-300"
                 }`}>
-                  <span className="text-[10px] text-slate-400 font-medium">Avg Move</span>
-                  <span className={`text-sm font-bold ${Number(averageChange) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                  <span className={`text-[10px] font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>Avg Move</span>
+                  <span className={`text-sm font-black ${Number(averageChange) >= 0 ? (isDark ? "text-emerald-400" : "text-emerald-600") : (isDark ? "text-rose-400" : "text-rose-600")}`}>
                     {Number(averageChange) >= 0 ? `+${averageChange}%` : `${averageChange}%`}
                   </span>
                 </div>
-                <div className={`px-3 py-2 rounded-xl border flex flex-col items-center ${
-                  theme === "dark" ? "bg-slate-800/80 border-slate-700" : "bg-white border-slate-200"
+
+                <div className={`px-3.5 py-2 rounded-xl border flex flex-col items-center ${
+                  isDark ? "bg-slate-800/90 border-slate-700" : "bg-slate-100 border-slate-300"
                 }`}>
-                  <span className="text-[10px] text-slate-400 font-medium">Gain / Loss</span>
-                  <span className="text-sm font-bold">
-                    <span className="text-emerald-600 dark:text-emerald-400">{gainersCount}▲</span> / <span className="text-rose-600 dark:text-rose-400">{losersCount}▼</span>
+                  <span className={`text-[10px] font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>Gain / Loss</span>
+                  <span className="text-sm font-black">
+                    <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>{gainersCount}▲</span>
+                    <span className={isDark ? "text-slate-400" : "text-slate-400"}> / </span>
+                    <span className={isDark ? "text-rose-400" : "text-rose-600"}>{losersCount}▼</span>
                   </span>
                 </div>
               </div>
@@ -454,7 +484,7 @@ export default function Dashboard() {
               <button
                 onClick={handleRecordCheckpoint}
                 disabled={actionLoading}
-                className="inline-flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-700 hover:to-emerald-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow-md active:scale-95 transition disabled:opacity-50"
+                className="inline-flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white text-xs sm:text-sm font-black px-4 py-2.5 rounded-xl shadow-lg active:scale-95 transition disabled:opacity-50"
               >
                 <span>{actionLoading ? "Updating..." : "📌 Mark as Checked Now"}</span>
               </button>
@@ -463,7 +493,9 @@ export default function Dashboard() {
         </section>
 
         {/* Watchlist Tabs Bar */}
-        <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <section className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3 ${
+          isDark ? "border-slate-800" : "border-slate-200"
+        }`}>
           <div className="flex items-center space-x-2 overflow-x-auto pb-1">
             {watchlists.map((wl) => {
               const isActive = wl.id === activeWatchlist;
@@ -471,12 +503,12 @@ export default function Dashboard() {
                 <button
                   key={wl.id}
                   onClick={() => setActiveWatchlist(wl.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  className={`px-4 py-2 rounded-xl text-xs font-black transition whitespace-nowrap flex items-center space-x-1.5 ${
                     isActive
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : theme === "dark"
-                      ? "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700"
-                      : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+                      ? "bg-indigo-600 text-white shadow-md"
+                      : isDark
+                      ? "bg-slate-800/80 text-slate-200 hover:bg-slate-700 border border-slate-700"
+                      : "bg-white text-slate-800 hover:bg-slate-100 border border-slate-300"
                   }`}
                 >
                   <span>📁</span>
@@ -487,9 +519,9 @@ export default function Dashboard() {
 
             <button
               onClick={() => setShowNewWlModal(true)}
-              className={`px-3 py-2 rounded-xl text-xs font-bold border border-dashed transition flex items-center space-x-1 ${
-                theme === "dark"
-                  ? "border-slate-700 text-slate-400 hover:text-indigo-400 hover:border-indigo-500"
+              className={`px-3 py-2 rounded-xl text-xs font-black border border-dashed transition flex items-center space-x-1 ${
+                isDark
+                  ? "border-slate-700 text-slate-300 hover:text-indigo-400 hover:border-indigo-500"
                   : "border-slate-300 text-slate-600 hover:text-indigo-600 hover:border-indigo-400"
               }`}
             >
@@ -501,8 +533,8 @@ export default function Dashboard() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border focus:outline-none ${
-                theme === "dark" ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-white border-slate-200 text-slate-800"
+              className={`text-xs font-bold px-2.5 py-1.5 rounded-xl border focus:outline-none ${
+                isDark ? "bg-slate-800 border-slate-700 text-white" : "bg-white border-slate-300 text-slate-900"
               }`}
             >
               <option value="relevance">🔥 High Impact First</option>
@@ -511,21 +543,25 @@ export default function Dashboard() {
               <option value="symbol">🔤 Symbol (A-Z)</option>
             </select>
 
-            <div className={`p-0.5 rounded-lg border flex items-center space-x-0.5 ${
-              theme === "dark" ? "bg-slate-800 border-slate-700" : "bg-slate-100 border-slate-200"
+            <div className={`p-0.5 rounded-xl border flex items-center space-x-0.5 ${
+              isDark ? "bg-slate-800 border-slate-700" : "bg-slate-100 border-slate-300"
             }`}>
               <button
                 onClick={() => setChartViewMode("zigzag")}
-                className={`px-2 py-1 rounded text-[10px] font-bold transition ${
-                  chartViewMode === "zigzag" ? "bg-indigo-600 text-white" : "text-slate-400"
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition ${
+                  chartViewMode === "zigzag"
+                    ? "bg-indigo-600 text-white shadow"
+                    : isDark ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 📈 Trend
               </button>
               <button
                 onClick={() => setChartViewMode("candle")}
-                className={`px-2 py-1 rounded text-[10px] font-bold transition ${
-                  chartViewMode === "candle" ? "bg-indigo-600 text-white" : "text-slate-400"
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition ${
+                  chartViewMode === "candle"
+                    ? "bg-indigo-600 text-white shadow"
+                    : isDark ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 🕯️ Candle
@@ -537,17 +573,17 @@ export default function Dashboard() {
         {/* Sector Filters */}
         {availableSectors.length > 2 && (
           <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 text-xs">
-            <span className="text-[11px] font-semibold text-slate-400 mr-1">Sector:</span>
+            <span className={`text-[11px] font-bold mr-1 ${isDark ? "text-slate-300" : "text-slate-600"}`}>Sector:</span>
             {availableSectors.map((sector) => (
               <button
                 key={sector}
                 onClick={() => setActiveSectorFilter(sector)}
-                className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition ${
+                className={`px-3 py-1 rounded-lg font-black text-[11px] transition ${
                   activeSectorFilter === sector
                     ? "bg-indigo-600 text-white"
-                    : theme === "dark"
-                    ? "bg-slate-800 text-slate-400 hover:bg-slate-700"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    : isDark
+                    ? "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
+                    : "bg-slate-200 text-slate-700 hover:bg-slate-300"
                 }`}
               >
                 {sector}
@@ -556,9 +592,9 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Add Stock Form & Quick Suggestions */}
+        {/* Add Stock Form */}
         <section className={`p-4 rounded-xl border transition ${
-          theme === "dark" ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"
+          isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-200"
         }`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <form onSubmit={handleAddStock} className="flex items-center space-x-2 flex-1 max-w-md">
@@ -567,32 +603,32 @@ export default function Dashboard() {
                 value={newSymbol}
                 onChange={(e) => setNewSymbol(e.target.value)}
                 placeholder="Enter stock symbol (e.g. HAL, WIPRO, TATAMOTORS)"
-                className={`flex-1 px-3 py-2 text-xs rounded-xl border focus:outline-none font-medium uppercase ${
-                  theme === "dark"
-                    ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500"
-                    : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
+                className={`flex-1 px-3 py-2 text-xs rounded-xl border focus:outline-none font-bold uppercase ${
+                  isDark
+                    ? "bg-slate-800 border-slate-700 text-white placeholder-slate-400"
+                    : "bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400"
                 }`}
               />
               <button
                 type="submit"
                 disabled={actionLoading || !newSymbol.trim()}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition disabled:opacity-50"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-black transition disabled:opacity-50"
               >
                 {actionLoading ? "Adding..." : "+ Add"}
               </button>
             </form>
 
             <div className="flex items-center space-x-1.5 overflow-x-auto text-xs">
-              <span className="text-[11px] font-semibold text-slate-400 whitespace-nowrap">⚡ Quick Add:</span>
+              <span className={`text-[11px] font-bold whitespace-nowrap ${isDark ? "text-slate-300" : "text-slate-600"}`}>⚡ Quick Add:</span>
               {["TATAMOTORS", "RELIANCE", "INFY", "HAL", "ZOMATO"].map((sym) => (
                 <button
                   key={sym}
                   onClick={() => handleQuickAdd(sym)}
                   disabled={actionLoading}
-                  className={`px-2 py-1 rounded-md text-[11px] font-bold border transition ${
-                    theme === "dark"
-                      ? "bg-slate-800 border-slate-700 text-slate-300 hover:border-indigo-400"
-                      : "bg-slate-50 border-slate-200 text-slate-700 hover:border-indigo-400"
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-black border transition ${
+                    isDark
+                      ? "bg-slate-800 border-slate-700 text-slate-200 hover:border-indigo-400 hover:text-white"
+                      : "bg-slate-100 border-slate-300 text-slate-800 hover:border-indigo-500"
                   }`}
                 >
                   +{sym}
@@ -602,19 +638,21 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* Stock Insights List */}
+        {/* Stock Insights List with 100% VISIBLE FONTS */}
         {filteredStocks.length === 0 ? (
           <div className="py-16 text-center rounded-2xl border border-dashed p-8">
             <div className="text-3xl mb-2">📋</div>
-            <h3 className="font-bold text-base text-slate-300">No stocks in this filter</h3>
+            <h3 className={`font-bold text-base ${isDark ? "text-slate-200" : "text-slate-800"}`}>No stocks in this filter</h3>
           </div>
         ) : (
           <div className="space-y-3">
             
             {/* Header Columns */}
-            <div className="hidden lg:grid grid-cols-12 gap-4 px-5 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <div className={`hidden lg:grid grid-cols-12 gap-4 px-5 py-2 text-[11px] font-black uppercase tracking-wider ${
+              isDark ? "text-slate-300" : "text-slate-600"
+            }`}>
               <div className="col-span-3">Stock & Sector</div>
-              <div className="col-span-3">📍 Checkpoint ➔ Current Live</div>
+              <div className="col-span-3">📍 Checkpoint ➔ Live Price</div>
               <div className="col-span-2 text-center">Trajectory ({chartViewMode})</div>
               <div className="col-span-3">Primary Catalyst / Signal</div>
               <div className="col-span-1 text-right">Action</div>
@@ -626,7 +664,6 @@ export default function Dashboard() {
                 sector: "Equities",
                 low52: (stock.price || 100) * 0.75,
                 high52: (stock.price || 100) * 1.3,
-                tagColor: "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300",
               };
 
               const isPositive = (stock.pct_change || 0) >= 0;
@@ -639,9 +676,9 @@ export default function Dashboard() {
                 <div
                   key={stock.symbol}
                   className={`rounded-2xl border transition-all duration-150 overflow-hidden ${
-                    theme === "dark"
-                      ? "bg-slate-900/90 border-slate-800 hover:border-indigo-500/60"
-                      : "bg-white border-slate-200 hover:border-indigo-300 shadow-sm"
+                    isDark
+                      ? "bg-[#111827] border-slate-800 hover:border-indigo-500/60"
+                      : "bg-white border-slate-200 hover:border-indigo-400 shadow-sm"
                   } ${isExpanded ? "ring-2 ring-indigo-500" : ""}`}
                 >
                   <div
@@ -649,55 +686,65 @@ export default function Dashboard() {
                     className="p-4 sm:p-5 cursor-pointer grid grid-cols-1 lg:grid-cols-12 gap-4 items-center"
                   >
                     
-                    {/* Stock Identity */}
+                    {/* 1. Stock Identity & Sector */}
                     <div className="lg:col-span-3 flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center font-black text-sm text-slate-800 dark:text-slate-200 shrink-0">
+                      <div className={`w-10 h-10 rounded-xl border flex items-center justify-center font-black text-sm shrink-0 ${
+                        isDark ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-100 border-slate-300 text-slate-900"
+                      }`}>
                         {stock.symbol.slice(0, 3)}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center space-x-2">
-                          <span className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate">
+                          <span className={`font-black text-base truncate ${
+                            isDark ? "text-white" : "text-slate-900"
+                          }`}>
                             {stock.symbol}
                           </span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${meta.tagColor}`}>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${
+                            isDark ? "bg-slate-800 text-slate-200 border-slate-700" : "bg-slate-100 text-slate-800 border-slate-300"
+                          }`}>
                             {meta.sector}
                           </span>
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        <div className={`text-xs truncate font-medium ${
+                          isDark ? "text-slate-300" : "text-slate-600"
+                        }`}>
                           {meta.name}
                         </div>
                       </div>
                     </div>
 
-                    {/* PROMINENT CHECKPOINT BASELINE DISPLAY BEFORE CLICKING */}
+                    {/* 2. CHECKPOINT BASELINE ➔ CURRENT LIVE PRICE (PROMINENT BEFORE CLICKING) */}
                     <div className="lg:col-span-3 flex flex-col justify-center">
                       <div className="flex items-baseline space-x-2 flex-wrap">
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-                          📍 Baseline: <strong className="text-slate-700 dark:text-slate-300">{formatCurrency(stock.checkpoint_price || stock.prev_close || stock.price)}</strong>
+                        <span className={`text-xs font-bold ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                          📍 Baseline: <strong className={`font-black ${isDark ? "text-slate-100" : "text-slate-800"}`}>{formatCurrency(stock.checkpoint_price || stock.prev_close || stock.price)}</strong>
                         </span>
-                        <span className="text-xs text-slate-400">➔</span>
-                        <span className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
+                        <span className={`text-xs font-bold ${isDark ? "text-slate-400" : "text-slate-400"}`}>➔</span>
+                        <span className={`text-base font-black ${isDark ? "text-white" : "text-slate-900"}`}>
                           {formatCurrency(stock.price)}
                         </span>
                       </div>
 
-                      <div className="flex items-center space-x-2 mt-0.5">
-                        <span className={`inline-flex items-center space-x-1 text-xs font-bold px-2 py-0.5 rounded-md ${
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className={`inline-flex items-center space-x-1 text-xs font-black px-2.5 py-0.5 rounded-lg border ${
                           isPositive
-                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-800/40"
-                            : "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-800/40"
+                            ? (isDark ? "bg-emerald-950 text-emerald-300 border-emerald-700" : "bg-emerald-100 text-emerald-900 border-emerald-300")
+                            : (isDark ? "bg-rose-950 text-rose-300 border-rose-700" : "bg-rose-100 text-rose-900 border-rose-300")
                         }`}>
                           <span>{isPositive ? "▲ +" : "▼ "}</span>
                           <span>{formatCurrency(Math.abs(deltaPrice))}</span>
                           <span>({isPositive ? `+${stock.pct_change?.toFixed(2)}%` : `${stock.pct_change?.toFixed(2)}%`})</span>
                         </span>
-                        <span className="text-[10px] text-slate-400 hidden sm:inline">
+                        <span className={`text-[10px] font-semibold hidden sm:inline ${
+                          isDark ? "text-slate-300" : "text-slate-500"
+                        }`}>
                           since last check
                         </span>
                       </div>
                     </div>
 
-                    {/* Trajectory */}
+                    {/* 3. Trajectory */}
                     <div className="lg:col-span-2 flex justify-center items-center py-1">
                       {chartViewMode === "zigzag" ? (
                         <div className="w-[120px] h-[34px] relative">
@@ -707,22 +754,22 @@ export default function Dashboard() {
                               y1={isPositive ? "24" : "10"}
                               x2="120"
                               y2={isPositive ? "24" : "10"}
-                              stroke="#64748b"
+                              stroke={isDark ? "#64748b" : "#94a3b8"}
                               strokeWidth="1"
                               strokeDasharray="2 2"
-                              opacity="0.6"
+                              opacity="0.8"
                             />
                             <polyline
                               fill="none"
                               stroke={isPositive ? "#10b981" : "#f43f5e"}
-                              strokeWidth="2"
+                              strokeWidth="2.5"
                               strokeLinecap="round"
                               points={zigzag.linePoints}
                             />
                             <circle
                               cx={zigzag.lastX}
                               cy={zigzag.lastY}
-                              r="3"
+                              r="3.5"
                               fill={isPositive ? "#10b981" : "#f43f5e"}
                             />
                           </svg>
@@ -731,57 +778,61 @@ export default function Dashboard() {
                         <div className="flex items-center space-x-1.5 h-[34px]">
                           {candles.map((c) => (
                             <div key={c.id} className="flex flex-col items-center justify-center w-2 h-7 relative">
-                              <div className={`w-[1.5px] h-7 ${c.green ? "bg-emerald-500" : "bg-rose-500"} opacity-40`} />
-                              <div className={`w-2 h-4 ${c.green ? "bg-emerald-500" : "bg-rose-500"} rounded-[1px] absolute`} />
+                              <div className={`w-[1.5px] h-7 ${c.green ? "bg-emerald-400" : "bg-rose-400"} opacity-50`} />
+                              <div className={`w-2.5 h-4 ${c.green ? "bg-emerald-500" : "bg-rose-500"} rounded-[2px] absolute`} />
                             </div>
                           ))}
                         </div>
                       )}
                     </div>
 
-                    {/* Catalyst Signal */}
+                    {/* 4. Catalyst Signal & Headline */}
                     <div className="lg:col-span-3 text-xs">
                       <div className="flex items-center space-x-1.5 mb-1">
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded uppercase border ${
                           stock.signal_type === "CRITICAL"
-                            ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                            ? (isDark ? "bg-rose-950 text-rose-300 border-rose-800" : "bg-rose-100 text-rose-900 border-rose-300")
                             : stock.signal_type === "SIGNIFICANT"
-                            ? "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300"
-                            : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                            ? (isDark ? "bg-indigo-950 text-indigo-300 border-indigo-800" : "bg-indigo-100 text-indigo-900 border-indigo-300")
+                            : (isDark ? "bg-slate-800 text-slate-200 border-slate-700" : "bg-slate-100 text-slate-800 border-slate-300")
                         }`}>
                           {stock.signal_type || "INSIGHT"}
                         </span>
                         {stock.catalyst_headline && (
-                          <span className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                          <span className={`font-black truncate ${
+                            isDark ? "text-slate-100" : "text-slate-900"
+                          }`}>
                             {stock.catalyst_headline}
                           </span>
                         )}
                       </div>
-                      <p className="text-slate-600 dark:text-slate-400 line-clamp-1 text-[11px]">
-                        {stock.briefing_text || stock.headline || "Price activity monitored since baseline snapshot."}
+                      <p className={`line-clamp-1 text-[11px] font-medium leading-normal ${
+                        isDark ? "text-slate-300" : "text-slate-600"
+                      }`}>
+                        {stock.briefing_text || stock.headline || "Price movement recorded against session checkpoint baseline."}
                       </p>
                     </div>
 
-                    {/* Expand & Remove */}
+                    {/* 5. Expand & Delete Buttons */}
                     <div className="lg:col-span-1 flex items-center justify-end space-x-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setExpandedStockSymbol(isExpanded ? null : stock.symbol);
                         }}
-                        className={`p-1.5 rounded-lg text-xs font-bold border transition ${
+                        className={`p-1.5 rounded-xl text-xs font-black border transition ${
                           isExpanded
-                            ? "bg-indigo-600 text-white border-indigo-600"
-                            : theme === "dark"
-                            ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
-                            : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+                            ? "bg-indigo-600 text-white border-indigo-600 shadow"
+                            : isDark
+                            ? "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                            : "bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200"
                         }`}
                       >
                         {isExpanded ? "▲" : "▼"}
                       </button>
                       <button
                         onClick={(e) => handleRemoveStock(stock.symbol, e)}
-                        className="p-1.5 rounded-lg text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                        className="p-1.5 rounded-xl text-xs text-rose-500 hover:bg-rose-500/10 transition"
                       >
                         🗑️
                       </button>
@@ -792,55 +843,66 @@ export default function Dashboard() {
                   {/* Expanded Briefing Drawer */}
                   {isExpanded && (
                     <div className={`p-5 border-t space-y-4 transition ${
-                      theme === "dark" ? "bg-slate-950/60 border-slate-800" : "bg-slate-50/80 border-slate-200"
+                      isDark ? "bg-[#0c1017] border-slate-800" : "bg-slate-50 border-slate-200"
                     }`}>
                       
-                      <div className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
-                        theme === "dark" ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+                      {/* Comparison Bar */}
+                      <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+                        isDark ? "bg-[#161f30] border-slate-700/80 text-white" : "bg-white border-slate-300 text-slate-900"
                       }`}>
                         <div className="flex items-center space-x-3">
                           <span className="text-xl">📍</span>
                           <div>
-                            <span className="font-bold text-slate-800 dark:text-slate-200">
+                            <span className={`font-black ${isDark ? "text-white" : "text-slate-900"}`}>
                               Snapshot Comparison:
                             </span>{" "}
-                            <span className="text-slate-600 dark:text-slate-400">
+                            <span className={`font-medium ${isDark ? "text-slate-200" : "text-slate-700"}`}>
                               When you last visited ({formatTimestamp(data?.last_checked)}), {stock.symbol} was trading at{" "}
-                              <strong>{formatCurrency(stock.checkpoint_price || stock.prev_close || stock.price)}</strong>. It is currently at{" "}
-                              <strong>{formatCurrency(stock.price)}</strong>.
+                              <strong className={isDark ? "text-white" : "text-slate-900"}>{formatCurrency(stock.checkpoint_price || stock.prev_close || stock.price)}</strong>. It is currently at{" "}
+                              <strong className={isDark ? "text-white" : "text-slate-900"}>{formatCurrency(stock.price)}</strong>.
                             </span>
                           </div>
                         </div>
-                        <div className="font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                        <div className={`font-black whitespace-nowrap ${isDark ? "text-indigo-300" : "text-indigo-600"}`}>
                           Delta: {formatCurrency(deltaPrice)} ({stock.pct_change?.toFixed(2)}%)
                         </div>
                       </div>
 
+                      {/* Why it moved */}
                       <div className="space-y-1.5">
-                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                        <h4 className={`text-xs font-black uppercase tracking-wider ${isDark ? "text-slate-300" : "text-slate-500"}`}>
                           🎯 Why It Moved (Catalyst Breakdown)
                         </h4>
-                        <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-normal bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <p className={`text-sm leading-relaxed font-normal p-4 rounded-xl border ${
+                          isDark ? "bg-[#111827] text-slate-100 border-slate-800" : "bg-white text-slate-800 border-slate-300"
+                        }`}>
                           {stock.briefing_text || stock.headline || "Normal trading within regular volume parameters."}
                         </p>
                       </div>
 
+                      {/* Technical Stats */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="p-3 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs">
-                          <div className="text-[10px] text-slate-400 font-medium">52-Week Range</div>
-                          <div className="font-bold mt-1 text-slate-800 dark:text-slate-200">
+                        <div className={`p-3.5 rounded-xl border text-xs ${
+                          isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
+                        }`}>
+                          <div className={`text-[10px] font-bold ${isDark ? "text-slate-400" : "text-slate-500"}`}>52-Week Range</div>
+                          <div className={`font-black mt-1 text-sm ${isDark ? "text-white" : "text-slate-900"}`}>
                             ₹{meta.low52} — ₹{meta.high52}
                           </div>
                         </div>
-                        <div className="p-3 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs">
-                          <div className="text-[10px] text-slate-400 font-medium">Signal Confidence</div>
-                          <div className="font-bold mt-1 text-emerald-600 dark:text-emerald-400">
+                        <div className={`p-3.5 rounded-xl border text-xs ${
+                          isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
+                        }`}>
+                          <div className={`text-[10px] font-bold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Signal Confidence</div>
+                          <div className={`font-black mt-1 text-sm ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>
                             High (Real-time Feed)
                           </div>
                         </div>
-                        <div className="p-3 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs">
-                          <div className="text-[10px] text-slate-400 font-medium">Session Status</div>
-                          <div className="font-bold mt-1 text-slate-800 dark:text-slate-200">
+                        <div className={`p-3.5 rounded-xl border text-xs ${
+                          isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
+                        }`}>
+                          <div className={`text-[10px] font-bold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Session Status</div>
+                          <div className={`font-black mt-1 text-sm ${isDark ? "text-white" : "text-slate-900"}`}>
                             Monitored 24/7
                           </div>
                         </div>
@@ -855,41 +917,47 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* History Modal */}
+        {/* Checkpoint History Modal */}
         {showHistoryModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
             <div className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl space-y-4 ${
-              theme === "dark" ? "bg-slate-900 border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"
+              isDark ? "bg-[#111827] border-slate-700 text-white" : "bg-white border-slate-300 text-slate-900"
             }`}>
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-base">📜 Checkpoint History</h3>
-                <button onClick={() => setShowHistoryModal(false)} className="text-slate-400 text-sm font-bold">✕</button>
+                <h3 className="font-black text-base">📜 Checkpoint History</h3>
+                <button onClick={() => setShowHistoryModal(false)} className="text-slate-400 hover:text-white text-sm font-bold">✕</button>
               </div>
               <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
                 {sessionHistory.map((s, idx) => (
-                  <div key={s.id || idx} className="p-3 rounded-xl border border-slate-700 bg-slate-800/60 text-xs flex items-center justify-between">
+                  <div key={s.id || idx} className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+                    isDark ? "border-slate-700 bg-slate-800/80 text-white" : "border-slate-300 bg-slate-50 text-slate-900"
+                  }`}>
                     <div>
-                      <div className="font-bold">{formatTimestamp(s.created_at || s.timestamp)}</div>
-                      <div className="text-[10px] text-slate-400">{s.watchlist_name || s.watchlist_id || "Primary"}</div>
+                      <div className="font-black">{formatTimestamp(s.created_at || s.timestamp)}</div>
+                      <div className={`text-[10px] ${isDark ? "text-slate-300" : "text-slate-500"}`}>{s.watchlist_name || s.watchlist_id || "Primary"}</div>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-900 text-indigo-300">Saved</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                      isDark ? "bg-indigo-900 text-indigo-300" : "bg-indigo-100 text-indigo-800"
+                    }`}>Saved</span>
                   </div>
                 ))}
               </div>
-              <button onClick={() => setShowHistoryModal(false)} className="w-full bg-slate-800 text-white font-bold py-2 rounded-xl text-xs">Close</button>
+              <button onClick={() => setShowHistoryModal(false)} className={`w-full font-black py-2.5 rounded-xl text-xs ${
+                isDark ? "bg-slate-800 text-white hover:bg-slate-700" : "bg-slate-200 text-slate-900 hover:bg-slate-300"
+              }`}>Close</button>
             </div>
           </div>
         )}
 
         {/* Create Watchlist Modal */}
         {showNewWlModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
             <div className={`w-full max-w-sm rounded-2xl border p-6 shadow-2xl space-y-4 ${
-              theme === "dark" ? "bg-slate-900 border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"
+              isDark ? "bg-[#111827] border-slate-700 text-white" : "bg-white border-slate-300 text-slate-900"
             }`}>
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-base">Create New Watchlist</h3>
-                <button onClick={() => setShowNewWlModal(false)} className="text-slate-400 text-sm font-bold">✕</button>
+                <h3 className="font-black text-base">Create New Watchlist</h3>
+                <button onClick={() => setShowNewWlModal(false)} className="text-slate-400 hover:text-white text-sm font-bold">✕</button>
               </div>
               <form onSubmit={handleCreateWatchlist} className="space-y-3">
                 <input
@@ -898,27 +966,32 @@ export default function Dashboard() {
                   onChange={(e) => setNewWlName(e.target.value)}
                   placeholder="e.g. EV & Defense, High Growth"
                   required
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-700 bg-slate-800 text-white"
+                  className={`w-full px-3 py-2 text-xs rounded-xl border focus:outline-none font-bold ${
+                    isDark ? "border-slate-700 bg-slate-800 text-white" : "border-slate-300 bg-slate-50 text-slate-900"
+                  }`}
                 />
                 <div className="flex justify-end space-x-2 pt-2">
-                  <button type="button" onClick={() => setShowNewWlModal(false)} className="px-3 py-1.5 text-xs text-slate-400">Cancel</button>
-                  <button type="submit" className="bg-indigo-600 text-white font-bold px-4 py-1.5 rounded-xl text-xs">Create</button>
+                  <button type="button" onClick={() => setShowNewWlModal(false)} className="px-3 py-1.5 text-xs text-slate-400 font-bold">Cancel</button>
+                  <button type="submit" className="bg-indigo-600 text-white font-black px-4 py-1.5 rounded-xl text-xs shadow">Create</button>
                 </div>
               </form>
             </div>
           </div>
         )}
 
-        {/* Auth Modal */}
+        {/* 10. Auth Modal: Shown first on load or when clicking user profile */}
         {showAuthModal && (
           <AuthModal
+            currentTheme={theme}
             onLoginSuccess={(newUid) => {
               setUserId(newUid);
               setShowAuthModal(false);
               loadAllWatchlists(newUid);
             }}
-            onClose={() => setShowAuthModal(false)}
-            canClose={true}
+            onClose={() => {
+              if (userId) setShowAuthModal(false);
+            }}
+            canClose={Boolean(userId)}
           />
         )}
 

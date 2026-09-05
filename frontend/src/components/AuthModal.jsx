@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { loginUser, signupUser } from "../api/client";
 
-export default function AuthModal({ onLoginSuccess, onClose, canClose = false }) {
+export default function AuthModal({ onLoginSuccess, onClose, canClose = false, currentTheme = "dark" }) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [identifier, setIdentifier] = useState("");
   const [pin, setPin] = useState("");
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const isDark = currentTheme === "dark";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,7 +21,7 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
       return;
     }
     if (!pin || pin.length < 4) {
-      setError("Groww Security PIN / Password must be at least 4 characters");
+      setError("Security PIN / Password must be at least 4 characters");
       return;
     }
 
@@ -32,9 +34,8 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
         res = await loginUser(cleanId, pin);
       }
 
-      localStorage.setItem("groww_user_id", cleanId);
       localStorage.setItem("sw_user_id", cleanId);
-      localStorage.setItem("sw_auth_token", res.token || `groww_${Date.now()}`);
+      localStorage.setItem("sw_auth_token", res.token || `tok_${Date.now()}`);
       onLoginSuccess(cleanId, isSignUp);
     } catch (err) {
       setError(err.message || "Authentication failed. Please check your credentials.");
@@ -43,183 +44,95 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
     }
   };
 
+  const handleGuestLogin = () => {
+    const guestId = "9110679101";
+    localStorage.setItem("sw_user_id", guestId);
+    localStorage.setItem("sw_auth_token", `guest_${Date.now()}`);
+    onLoginSuccess(guestId, false);
+  };
+
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(3, 7, 18, 0.90)",
-        backdropFilter: "blur(10px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 100000,
-        padding: "16px",
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "#111827",
-          border: "1px solid #1f293d",
-          borderRadius: "20px",
-          padding: "32px 28px",
-          maxWidth: "420px",
-          width: "100%",
-          boxShadow: "0 25px 50px -12px rgba(0, 208, 156, 0.2)",
-          color: "#f8fafc",
-          position: "relative",
-          animation: "fadeIn 0.25s ease-out",
-        }}
-      >
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+      <div className={`w-full max-w-md rounded-2xl border shadow-2xl p-6 sm:p-8 relative transition-colors ${
+        isDark ? "bg-slate-900 border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"
+      }`}>
+        
         {canClose && (
           <button
             onClick={onClose}
-            style={{
-              position: "absolute",
-              top: "16px",
-              right: "16px",
-              background: "none",
-              border: "none",
-              color: "#94a3b8",
-              cursor: "pointer",
-              fontSize: "18px",
-            }}
+            className={`absolute top-4 right-4 text-sm font-bold p-1.5 rounded-lg transition ${
+              isDark ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+            }`}
           >
             ✕
           </button>
         )}
 
-        {/* Groww Brand Header */}
-        <div style={{ textAlign: "center", marginBottom: "24px" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(0, 208, 156, 0.1)", padding: "6px 14px", borderRadius: "20px", border: "1px solid rgba(0, 208, 156, 0.3)", marginBottom: "12px" }}>
-            <span style={{ fontSize: "16px" }}>⚡</span>
-            <span style={{ fontSize: "12px", fontWeight: "800", color: "#00d09c", letterSpacing: "0.5px", textTransform: "uppercase" }}>
-              Groww Watchlist Identity
-            </span>
+        {/* Brand Logo & Heading */}
+        <div className="text-center space-y-2 mb-6">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-extrabold tracking-wider uppercase">
+            <span>⚡ TrackPulse</span>
+            <span className="text-slate-500">•</span>
+            <span>Since You Checked</span>
           </div>
-          <h2 style={{ margin: "0 0 6px 0", fontSize: "22px", fontWeight: "800", color: "#ffffff", letterSpacing: "-0.5px" }}>
-            {isSignUp ? "Create Your Groww Account" : "Sign In to Groww"}
+          <h2 className={`text-2xl font-black tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
+            {isSignUp ? "Create Your Account" : "Welcome Back"}
           </h2>
-          <p style={{ margin: 0, color: "#94a3b8", fontSize: "13px" }}>
-            {isSignUp ? "Enter your Email or Mobile to build your personalized watchlist" : "Enter your Email ID or Mobile to view your live watchlist"}
+          <p className={`text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+            Track your stock checkpoint prices and catalyst briefings in real-time
           </p>
         </div>
 
-        {/* Tab Switcher */}
-        <div style={{ display: "flex", background: "#090d16", padding: "4px", borderRadius: "10px", marginBottom: "20px", border: "1px solid #1e293b" }}>
-          <button
-            type="button"
-            onClick={() => { setIsSignUp(false); setError(null); }}
-            style={{
-              flex: 1,
-              padding: "9px",
-              borderRadius: "8px",
-              border: "none",
-              background: !isSignUp ? "#1e293b" : "transparent",
-              color: !isSignUp ? "#00d09c" : "#94a3b8",
-              fontWeight: "800",
-              fontSize: "13px",
-              cursor: "pointer",
-              transition: "all 0.15s ease",
-            }}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => { setIsSignUp(true); setError(null); }}
-            style={{
-              flex: 1,
-              padding: "9px",
-              borderRadius: "8px",
-              border: "none",
-              background: isSignUp ? "#1e293b" : "transparent",
-              color: isSignUp ? "#00d09c" : "#94a3b8",
-              fontWeight: "800",
-              fontSize: "13px",
-              cursor: "pointer",
-              transition: "all 0.15s ease",
-            }}
-          >
-            Create Account
-          </button>
-        </div>
-
         {error && (
-          <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid #ef4444", color: "#fca5a5", padding: "10px 14px", borderRadius: "8px", fontSize: "12px", marginBottom: "16px" }}>
-            ⚠️ {error}
+          <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center space-x-2">
+            <span>⚠️</span>
+            <span>{error}</span>
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#cbd5e1", marginBottom: "6px" }}>
-              Email ID or 10-Digit Mobile Number
+            <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-slate-200" : "text-slate-700"}`}>
+              Email ID or Mobile Number
             </label>
             <input
               type="text"
-              required
-              autoFocus
-              placeholder="e.g. 9110679101 or user@example.com"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              style={{
-                width: "100%",
-                boxSizing: "border-box",
-                padding: "11px 14px",
-                borderRadius: "10px",
-                border: "1px solid #334155",
-                backgroundColor: "#090d16",
-                color: "#ffffff",
-                fontSize: "14px",
-                outline: "none",
-              }}
+              placeholder="e.g. 9110679101 or user@example.com"
+              required
+              className={`w-full px-3.5 py-2.5 rounded-xl text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 transition ${
+                isDark
+                  ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500"
+                  : "bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400"
+              }`}
             />
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#cbd5e1", marginBottom: "6px" }}>
-              Groww Security PIN / Password
+            <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-slate-200" : "text-slate-700"}`}>
+              Security PIN / Password
             </label>
-            <div style={{ position: "relative" }}>
+            <div className="relative">
               <input
                 type={showPin ? "text" : "password"}
-                required
-                placeholder="Enter 4+ character PIN or password"
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  padding: "11px 40px 11px 14px",
-                  borderRadius: "10px",
-                  border: "1px solid #334155",
-                  backgroundColor: "#090d16",
-                  color: "#ffffff",
-                  fontSize: "14px",
-                  outline: "none",
-                }}
+                placeholder="4-digit PIN or password"
+                required
+                className={`w-full px-3.5 py-2.5 rounded-xl text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 transition ${
+                  isDark
+                    ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500"
+                    : "bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400"
+                }`}
               />
               <button
                 type="button"
                 onClick={() => setShowPin(!showPin)}
-                style={{
-                  position: "absolute",
-                  right: "12px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
-                  color: "#94a3b8",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                }}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-xs text-slate-400 hover:text-slate-200 font-bold"
               >
-                {showPin ? "👁️" : "🔒"}
+                {showPin ? "Hide" : "Show"}
               </button>
             </div>
           </div>
@@ -227,23 +140,41 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
           <button
             type="submit"
             disabled={loading}
-            style={{
-              marginTop: "6px",
-              padding: "12px",
-              borderRadius: "10px",
-              border: "none",
-              background: "linear-gradient(135deg, #00d09c 0%, #059669 100%)",
-              color: "#0c1017",
-              fontSize: "14px",
-              fontWeight: "800",
-              cursor: loading ? "wait" : "pointer",
-              boxShadow: "0 4px 14px rgba(0, 208, 156, 0.3)",
-              transition: "transform 0.1s ease",
-            }}
+            className="w-full bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white font-black py-3 rounded-xl text-sm shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition disabled:opacity-50"
           >
-            {loading ? "Connecting to Groww..." : isSignUp ? "Create Account & Pick Stocks" : "Sign In to Watchlist"}
+            {loading ? "Authenticating..." : isSignUp ? "Sign Up & Start Tracking" : "Sign In to Watchlist"}
           </button>
         </form>
+
+        {/* Toggle Login / SignUp */}
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setError(null);
+            }}
+            className={`text-xs font-bold transition ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+          >
+            {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
+          </button>
+        </div>
+
+        {/* Demo Fast Track */}
+        <div className="mt-6 pt-4 border-t border-slate-700/60 text-center">
+          <button
+            type="button"
+            onClick={handleGuestLogin}
+            className={`text-xs font-bold py-2 px-4 rounded-xl border transition ${
+              isDark
+                ? "bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+                : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            🚀 Continue with Demo Account (9110679101)
+          </button>
+        </div>
+
       </div>
     </div>
   );
