@@ -77,31 +77,48 @@ export default function Dashboard() {
     }
   });
 
-  // 1. Initial load
+  // 1. Initial load with automatic retry for cloud wakeups
   useEffect(() => {
+    setLoading(true);
     checkSystemHealth().then(setHealth);
     loadAllWatchlists(userId);
+    // Also trigger default signals immediately so user sees data without waiting
+    loadSignals(null);
   }, [userId]);
 
-  const loadAllWatchlists = (uid = userId) => {
+  const loadAllWatchlists = (uid = userId, attempt = 0) => {
     fetchWatchlists(uid)
       .then((lists) => {
-        setWatchlists(lists);
+        setWatchlists(lists || []);
         if (lists && lists.length > 0) {
-          setActiveWatchlist((prev) => prev ? lists.find(l => l.id === prev.id) || lists[0] : lists[0]);
+          const defaultList = lists[0];
+          setActiveWatchlist((prev) => (prev ? lists.find((l) => l.id === prev.id) || defaultList : defaultList));
+          loadSignals(defaultList.id);
+        } else {
+          loadSignals(null);
         }
       })
-      .catch((err) => console.error("Watchlist fetch error:", err));
+      .catch((err) => {
+        console.warn("Watchlist fetch error (Render waking up):", err);
+        // Automatic retry with exponential backoff for Render cold starts
+        if (attempt < 4) {
+          setTimeout(() => loadAllWatchlists(uid, attempt + 1), (attempt + 1) * 2500);
+        }
+      });
   };
 
   // 2. Load ranked signals for active watchlist
   const loadSignals = (wId) => {
+    setLoading(true);
     fetchWatchlistSignals(wId)
       .then((res) => {
         setData(res);
         setError(null);
       })
-      .catch((err) => setError(err.message))
+      .catch((err) => {
+        console.error("Signal fetch error:", err);
+        setError(err.message);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -1548,11 +1565,35 @@ export default function Dashboard() {
 
         {/* Stock List Cards */}
         {loading && !data ? (
-          <p style={{ textAlign: "center", color: "#94a3b8", padding: "40px 0" }}>Loading your watchlist...</p>
+          <div style={{ textAlign: "center", padding: "50px 20px", background: "#111827", borderRadius: "14px", border: "1px solid #1e293b", margin: "20px 0" }}>
+            <div style={{ fontSize: "28px", marginBottom: "10px" }}>⚡</div>
+            <h3 style={{ color: "#ffffff", fontSize: "16px", margin: "0 0 6px 0" }}>Connecting to Cloud Anomaly Engine</h3>
+            <p style={{ color: "#94a3b8", fontSize: "13px", margin: "0 auto", maxWidth: "420px" }}>
+              Syncing with Supabase PostgreSQL & calculating live anomaly rankings...
+            </p>
+          </div>
         ) : sortedStocks.length === 0 ? (
           <div style={{ textAlign: "center", padding: "48px 16px", background: "#1e293b", borderRadius: "12px", border: "1px dashed #334155" }}>
-            <p style={{ color: "#94a3b8", fontSize: "16px", marginBottom: "8px" }}>No stocks found.</p>
-            <p style={{ color: "#64748b", fontSize: "13px" }}>Click any of the quick-add buttons above to add stocks to your watchlist.</p>
+            <p style={{ color: "#94a3b8", fontSize: "16px", marginBottom: "8px" }}>No stocks loaded in active view.</p>
+            <p style={{ color: "#64748b", fontSize: "13px", marginBottom: "16px" }}>Click any of the quick-add buttons above or reload default universe.</p>
+            <button
+              onClick={() => {
+                loadAllWatchlists(userId);
+                loadSignals(null);
+              }}
+              style={{
+                background: "#0284c7",
+                color: "#ffffff",
+                border: "none",
+                padding: "8px 18px",
+                borderRadius: "8px",
+                fontWeight: "700",
+                fontSize: "13px",
+                cursor: "pointer",
+              }}
+            >
+              🔄 Reconnect & Load Default Watchlist
+            </button>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
