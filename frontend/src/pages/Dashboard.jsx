@@ -98,6 +98,14 @@ export default function Dashboard() {
   const [expandedStockSymbol, setExpandedStockSymbol] = useState("TATAMOTORS");
   const [chartViewMode, setChartViewMode] = useState("zigzag");
   
+  // Trade Order Modal State (BUY / SELL)
+  const [tradeModal, setTradeModal] = useState(null); // { symbol, type: "BUY" | "SELL", price: number }
+  const [orderQty, setOrderQty] = useState(10);
+  const [orderType, setOrderType] = useState("DELIVERY"); // "DELIVERY" | "INTRADAY"
+  const [portfolioBalance, setPortfolioBalance] = useState(() => {
+    return Number(localStorage.getItem("sw_balance") || 150000);
+  });
+
   // Alert Toast Feedback
   const [alertToast, setAlertToast] = useState(null);
 
@@ -306,9 +314,35 @@ export default function Dashboard() {
     }
   };
 
-  // Trigger Set Price Alert
+  // Set Price Alert
   const handleSetAlert = (symbol, targetPrice) => {
     setAlertToast(`🔔 Price alert set for ${symbol} when crossing ${targetPrice}!`);
+    setTimeout(() => setAlertToast(null), 4000);
+  };
+
+  // Execute Buy / Sell Order
+  const handleExecuteOrder = (e) => {
+    e.preventDefault();
+    if (!tradeModal || orderQty <= 0) return;
+    const totalCost = tradeModal.price * orderQty;
+    
+    if (tradeModal.type === "BUY") {
+      if (totalCost > portfolioBalance) {
+        alert("Insufficient balance for this order. Please reduce quantity.");
+        return;
+      }
+      const newBal = portfolioBalance - totalCost;
+      setPortfolioBalance(newBal);
+      localStorage.setItem("sw_balance", newBal);
+      setAlertToast(`✅ BUY Order Executed: ${orderQty} shares of ${tradeModal.symbol} at ${formatCurrency(tradeModal.price)}!`);
+    } else {
+      const newBal = portfolioBalance + totalCost;
+      setPortfolioBalance(newBal);
+      localStorage.setItem("sw_balance", newBal);
+      setAlertToast(`✅ SELL Order Executed: ${orderQty} shares of ${tradeModal.symbol} at ${formatCurrency(tradeModal.price)}!`);
+    }
+    
+    setTradeModal(null);
     setTimeout(() => setAlertToast(null), 4000);
   };
 
@@ -338,7 +372,7 @@ export default function Dashboard() {
       
       {/* Toast Alert Feedback */}
       {alertToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-indigo-600 text-white font-black px-4 py-3 rounded-2xl shadow-2xl flex items-center space-x-2 animate-bounce">
+        <div className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-emerald-600 to-indigo-600 text-white font-black px-5 py-3.5 rounded-2xl shadow-2xl flex items-center space-x-2 animate-bounce border border-white/20">
           <span>{alertToast}</span>
         </div>
       )}
@@ -361,11 +395,11 @@ export default function Dashboard() {
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold border ${
                   isDark ? "bg-emerald-950/80 text-emerald-300 border-emerald-700" : "bg-emerald-50 text-emerald-800 border-emerald-300"
                 }`}>
-                  Since You Checked
+                  Live Trading & Watchlist
                 </span>
               </div>
               <p className={`text-[10px] font-medium ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                Customer Decision Support & Catalyst Intelligence
+                Available Funds: <strong className="text-emerald-400">{formatCurrency(portfolioBalance)}</strong>
               </p>
             </div>
           </div>
@@ -634,7 +668,7 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* Stock Insights List */}
+        {/* Stock Insights & Live Trading List */}
         {filteredStocks.length === 0 ? (
           <div className="py-16 text-center rounded-2xl border border-dashed p-8">
             <div className="text-3xl mb-2">📋</div>
@@ -650,8 +684,8 @@ export default function Dashboard() {
               <div className="col-span-3">Stock & Sector</div>
               <div className="col-span-3">📍 Checkpoint ➔ Live Price</div>
               <div className="col-span-2 text-center">Trajectory ({chartViewMode})</div>
-              <div className="col-span-3">Primary Catalyst / Signal</div>
-              <div className="col-span-1 text-right">Action</div>
+              <div className="col-span-2">Quick Trading</div>
+              <div className="col-span-2 text-right">Action</div>
             </div>
 
             {filteredStocks.map((stock) => {
@@ -776,37 +810,36 @@ export default function Dashboard() {
                       )}
                     </div>
 
-                    {/* Catalyst Signal */}
-                    <div className="lg:col-span-3 text-xs">
-                      <div className="flex items-center space-x-1.5 mb-1">
-                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded uppercase border ${
-                          stock.signal_type === "CRITICAL"
-                            ? (isDark ? "bg-rose-950 text-rose-300 border-rose-800" : "bg-rose-100 text-rose-900 border-rose-300")
-                            : stock.signal_type === "SIGNIFICANT"
-                            ? (isDark ? "bg-indigo-950 text-indigo-300 border-indigo-800" : "bg-indigo-100 text-indigo-900 border-indigo-300")
-                            : (isDark ? "bg-slate-800 text-slate-200 border-slate-700" : "bg-slate-100 text-slate-800 border-slate-300")
-                        }`}>
-                          {stock.signal_type || "INSIGHT"}
-                        </span>
-                        {stock.catalyst_headline && (
-                          <span className={`font-black truncate ${isDark ? "text-slate-100" : "text-slate-900"}`}>
-                            {stock.catalyst_headline}
-                          </span>
-                        )}
-                      </div>
-                      <p className={`line-clamp-1 text-[11px] font-medium leading-normal ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-                        {stock.briefing_text || stock.headline || "Price movement recorded against session checkpoint baseline."}
-                      </p>
+                    {/* Quick BUY / SELL Action Pills in Main Row */}
+                    <div className="lg:col-span-2 flex items-center space-x-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTradeModal({ symbol: stock.symbol, type: "BUY", price: stock.price });
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs px-3.5 py-1.5 rounded-xl shadow transition active:scale-95 flex-1"
+                      >
+                        BUY
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTradeModal({ symbol: stock.symbol, type: "SELL", price: stock.price });
+                        }}
+                        className="bg-rose-600 hover:bg-rose-500 text-white font-black text-xs px-3.5 py-1.5 rounded-xl shadow transition active:scale-95 flex-1"
+                      >
+                        SELL
+                      </button>
                     </div>
 
                     {/* Expand & Delete */}
-                    <div className="lg:col-span-1 flex items-center justify-end space-x-2">
+                    <div className="lg:col-span-2 flex items-center justify-end space-x-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setExpandedStockSymbol(isExpanded ? null : stock.symbol);
                         }}
-                        className={`p-1.5 rounded-xl text-xs font-black border transition ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black border transition ${
                           isExpanded
                             ? "bg-indigo-600 text-white border-indigo-600 shadow"
                             : isDark
@@ -814,7 +847,7 @@ export default function Dashboard() {
                             : "bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200"
                         }`}
                       >
-                        {isExpanded ? "▲" : "▼"}
+                        {isExpanded ? "▲ Hide Stats" : "▼ Details & Trade"}
                       </button>
                       <button
                         onClick={(e) => handleRemoveStock(stock.symbol, e)}
@@ -826,46 +859,13 @@ export default function Dashboard() {
 
                   </div>
 
-                  {/* 🎯 VALUABLE CUSTOMER DECISION & INTELLIGENCE CARD */}
+                  {/* 🎯 VALUABLE CUSTOMER TRADING & DECISION SUPPORT DRAWER */}
                   {isExpanded && (
                     <div className={`p-5 sm:p-6 border-t space-y-5 transition ${
                       isDark ? "bg-[#0c1017] border-slate-800" : "bg-slate-50 border-slate-200"
                     }`}>
                       
-                      {/* 1. WHY IT MOVED (CONCRETE BUSINESS DRIVERS) */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h4 className={`text-xs font-black uppercase tracking-wider flex items-center space-x-1.5 ${
-                            isDark ? "text-indigo-400" : "text-indigo-600"
-                          }`}>
-                            <span>💡 Key Catalysts & Drivers (Why it moved)</span>
-                          </h4>
-                          {stock.sector_relative && (
-                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                              isDark ? "bg-slate-800 text-emerald-400" : "bg-slate-200 text-emerald-700"
-                            }`}>
-                              {stock.sector_relative}
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className={`p-4 rounded-2xl border space-y-2 ${
-                          isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
-                        }`}>
-                          {(stock.drivers && stock.drivers.length > 0 ? stock.drivers : [
-                            stock.briefing_text || "Volume surge detected relative to the 30-day baseline."
-                          ]).map((driver, dIdx) => (
-                            <div key={dIdx} className="flex items-start space-x-2 text-xs sm:text-sm">
-                              <span className="text-emerald-500 font-bold mt-0.5">•</span>
-                              <span className={isDark ? "text-slate-100 font-normal" : "text-slate-800 font-normal"}>
-                                {driver}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* 2. SENTIMENT & TECHNICAL MOMENTUM METRICS */}
+                      {/* 1. SENTIMENT & VOLUME ANALYTICS */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         
                         {/* Bullish Sentiment Meter */}
@@ -873,20 +873,20 @@ export default function Dashboard() {
                           isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
                         }`}>
                           <div className={`text-[11px] font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                            Market Sentiment
+                            Market Buying Polarity
                           </div>
                           <div className="my-2">
                             <div className="flex items-center justify-between text-xs font-black mb-1">
-                              <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>{stock.sentiment_pct || 80}% Bullish</span>
-                              <span className="text-slate-400">{100 - (stock.sentiment_pct || 80)}% Bearish</span>
+                              <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>{stock.sentiment_pct || 80}% Buyers</span>
+                              <span className="text-slate-400">{100 - (stock.sentiment_pct || 80)}% Sellers</span>
                             </div>
-                            <div className="w-full h-2 rounded-full bg-slate-700 overflow-hidden flex">
+                            <div className="w-full h-2.5 rounded-full bg-slate-700 overflow-hidden flex">
                               <div style={{ width: `${stock.sentiment_pct || 80}%` }} className="h-full bg-emerald-500" />
                               <div style={{ width: `${100 - (stock.sentiment_pct || 80)}%` }} className="h-full bg-rose-500" />
                             </div>
                           </div>
-                          <div className={`text-[10px] ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                            Based on live order book & news polarity
+                          <div className={`text-[10px] font-semibold ${isDark ? "text-slate-300" : "text-slate-500"}`}>
+                            Live institutional order depth
                           </div>
                         </div>
 
@@ -895,15 +895,15 @@ export default function Dashboard() {
                           isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
                         }`}>
                           <div className={`text-[11px] font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                            Volume Surge Multiplier
+                            Trading Volume Surge
                           </div>
                           <div className={`text-2xl font-black my-1 ${
                             isDark ? "text-white" : "text-slate-900"
                           }`}>
                             {stock.volume_multiplier || "2.1x"}
                           </div>
-                          <div className={`text-[10px] ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                            vs 20-day standard volume baseline
+                          <div className={`text-[10px] font-semibold ${isDark ? "text-slate-300" : "text-slate-500"}`}>
+                            Above 20-day standard volume baseline
                           </div>
                         </div>
 
@@ -912,7 +912,7 @@ export default function Dashboard() {
                           isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
                         }`}>
                           <div className={`text-[11px] font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                            RSI Momentum Indicator
+                            Momentum Strength (RSI)
                           </div>
                           <div className={`text-lg font-black my-1 ${
                             (stock.pct_change || 0) >= 0
@@ -921,14 +921,14 @@ export default function Dashboard() {
                           }`}>
                             {stock.rsi || "64 (Bullish)"}
                           </div>
-                          <div className={`text-[10px] ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                            Price strength momentum test
+                          <div className={`text-[10px] font-semibold ${isDark ? "text-slate-300" : "text-slate-500"}`}>
+                            Real-time oscillator rating
                           </div>
                         </div>
 
                       </div>
 
-                      {/* 3. STRATEGIC DECISION LEVELS (TARGET / SUPPORT / STOP-LOSS) */}
+                      {/* 2. STRATEGIC DECISION LEVELS */}
                       <div className={`p-4 rounded-2xl border space-y-3 ${
                         isDark ? "bg-[#161f30] border-indigo-900/40" : "bg-indigo-50/50 border-indigo-200"
                       }`}>
@@ -936,7 +936,7 @@ export default function Dashboard() {
                           <span className={`text-xs font-black uppercase tracking-wider ${
                             isDark ? "text-indigo-300" : "text-indigo-900"
                           }`}>
-                            🎯 Key Price Levels & Strategy
+                            🎯 Key Price Levels & Breakout Boundaries
                           </span>
                           <span className={`text-xs font-bold ${
                             isDark ? "text-slate-200" : "text-slate-700"
@@ -975,28 +975,35 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      {/* 4. CUSTOMER ACTION BUTTONS */}
+                      {/* 3. DIRECT BUY / SELL TRADE & ALERT BUTTONS */}
                       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-3">
+                          <button
+                            onClick={() => setTradeModal({ symbol: stock.symbol, type: "BUY", price: stock.price })}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 active:scale-95 transition flex items-center space-x-2"
+                          >
+                            <span>🟢 BUY {stock.symbol}</span>
+                          </button>
+
+                          <button
+                            onClick={() => setTradeModal({ symbol: stock.symbol, type: "SELL", price: stock.price })}
+                            className="bg-rose-600 hover:bg-rose-500 text-white font-black text-sm px-6 py-2.5 rounded-xl shadow-lg shadow-rose-600/20 active:scale-95 transition flex items-center space-x-2"
+                          >
+                            <span>🔴 SELL {stock.symbol}</span>
+                          </button>
+
                           <button
                             onClick={() => handleSetAlert(stock.symbol, stock.key_levels?.target || formatCurrency(stock.price * 1.05))}
-                            className="bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs px-4 py-2.5 rounded-xl shadow transition flex items-center space-x-1.5"
-                          >
-                            <span>🔔 Set Target Price Alert</span>
-                          </button>
-                          
-                          <button
-                            onClick={() => handleSetAlert(stock.symbol, stock.key_levels?.support || formatCurrency(stock.price * 0.96))}
-                            className={`text-xs font-bold px-3.5 py-2.5 rounded-xl border transition ${
+                            className={`text-xs font-bold px-4 py-2.5 rounded-xl border transition ${
                               isDark ? "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700" : "bg-white border-slate-300 text-slate-700 hover:bg-slate-100"
                             }`}
                           >
-                            <span>🛡️ Set Stop-Loss Alert</span>
+                            <span>🔔 Set Alert</span>
                           </button>
                         </div>
 
                         <div className={`text-xs font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                          52W Low/High: <strong className={isDark ? "text-white" : "text-slate-800"}>₹{meta.low52} — ₹{meta.high52}</strong>
+                          52W Range: <strong className={isDark ? "text-white" : "text-slate-800"}>₹{meta.low52} — ₹{meta.high52}</strong>
                         </div>
                       </div>
 
@@ -1006,6 +1013,123 @@ export default function Dashboard() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Trade Execution Order Modal (BUY / SELL) */}
+        {tradeModal && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl space-y-4 ${
+              isDark ? "bg-[#111827] border-slate-700 text-white" : "bg-white border-slate-300 text-slate-900"
+            }`}>
+              
+              <div className="flex items-center justify-between border-b pb-3 border-slate-700">
+                <div className="flex items-center space-x-2">
+                  <span className={`px-2.5 py-1 rounded-lg text-xs font-black text-white ${
+                    tradeModal.type === "BUY" ? "bg-emerald-600" : "bg-rose-600"
+                  }`}>
+                    {tradeModal.type} ORDER
+                  </span>
+                  <span className="font-black text-lg">{tradeModal.symbol}</span>
+                </div>
+                <button
+                  onClick={() => setTradeModal(null)}
+                  className="text-slate-400 hover:text-white text-sm font-bold p-1"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Order Form */}
+              <form onSubmit={handleExecuteOrder} className="space-y-4">
+                
+                {/* Order Type Selector */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setOrderType("DELIVERY")}
+                    className={`py-2 rounded-xl text-xs font-black border transition ${
+                      orderType === "DELIVERY"
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : isDark ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-100 border-slate-300 text-slate-700"
+                    }`}
+                  >
+                    Delivery (CNC)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOrderType("INTRADAY")}
+                    className={`py-2 rounded-xl text-xs font-black border transition ${
+                      orderType === "INTRADAY"
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : isDark ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-100 border-slate-300 text-slate-700"
+                    }`}
+                  >
+                    Intraday (MIS 5x)
+                  </button>
+                </div>
+
+                {/* Price Display */}
+                <div className="flex items-center justify-between text-xs p-3 rounded-xl border border-slate-700 bg-slate-800/60">
+                  <span className="text-slate-300 font-bold">Execution Price</span>
+                  <span className="text-base font-black text-white">{formatCurrency(tradeModal.price)}</span>
+                </div>
+
+                {/* Quantity Input */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Quantity (Shares)
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setOrderQty(Math.max(1, orderQty - 5))}
+                      className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold text-sm"
+                    >
+                      -5
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      value={orderQty}
+                      onChange={(e) => setOrderQty(Math.max(1, parseInt(e.target.value) || 1))}
+                      required
+                      className="flex-1 px-3 py-2 text-center rounded-xl border border-slate-700 bg-slate-800 text-white font-black text-base focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setOrderQty(orderQty + 5)}
+                      className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold text-sm"
+                    >
+                      +5
+                    </button>
+                  </div>
+                </div>
+
+                {/* Total Value & Available Balance */}
+                <div className="p-3.5 rounded-xl border border-indigo-900/60 bg-indigo-950/40 space-y-1 text-xs">
+                  <div className="flex justify-between font-bold text-slate-300">
+                    <span>Order Value:</span>
+                    <span className="text-white font-black text-sm">{formatCurrency(tradeModal.price * orderQty)}</span>
+                  </div>
+                  <div className="flex justify-between font-medium text-slate-400 text-[11px]">
+                    <span>Available Balance:</span>
+                    <span className="text-emerald-400 font-bold">{formatCurrency(portfolioBalance)}</span>
+                  </div>
+                </div>
+
+                {/* Submit Execution Button */}
+                <button
+                  type="submit"
+                  className={`w-full text-white font-black py-3 rounded-xl text-sm shadow-xl active:scale-[0.98] transition ${
+                    tradeModal.type === "BUY" ? "bg-emerald-600 hover:bg-emerald-500" : "bg-rose-600 hover:bg-rose-500"
+                  }`}
+                >
+                  Confirm {tradeModal.type} Order ({orderQty} Shares)
+                </button>
+              </form>
+
+            </div>
           </div>
         )}
 
