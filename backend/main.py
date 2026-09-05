@@ -1,3 +1,4 @@
+import uuid
 import traceback
 import hashlib
 import secrets
@@ -17,7 +18,17 @@ from market_service import (
     is_market_open_now,
 )
 
-# Auto-create tables in Supabase PostgreSQL
+def to_uuid(val):
+    if val is None:
+        return None
+    if isinstance(val, uuid.UUID):
+        return val
+    try:
+        return uuid.UUID(str(val).strip())
+    except Exception:
+        return val
+
+# Auto-create tables in Supabase PostgreSQL / SQLite
 try:
     models.Base.metadata.create_all(bind=engine)
 except Exception as e:
@@ -56,13 +67,13 @@ class AuthPayload(BaseModel):
 def signup(payload: AuthPayload, db: DBSession = Depends(get_db)):
     clean_user = payload.username.strip().lower()
     if not clean_user or len(clean_user) < 3:
-        raise HTTPException(status_code=400, detail="Username must be at least 3 characters")
+        raise HTTPException(status_code=400, detail="Please enter a valid Email ID, Mobile No, or Username")
     if not payload.password or len(payload.password) < 4:
-        raise HTTPException(status_code=400, detail="Password must be at least 4 characters")
+        raise HTTPException(status_code=400, detail="Security PIN / Password must be at least 4 characters")
 
     existing = db.query(models.User).filter(models.User.username == clean_user).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Username already registered. Please sign in.")
+        raise HTTPException(status_code=400, detail="This account is already registered. Please sign in.")
 
     pwd_hash = hash_password(payload.password)
     user = models.User(username=clean_user, password_hash=pwd_hash)
@@ -70,12 +81,19 @@ def signup(payload: AuthPayload, db: DBSession = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
+    # Automatically provision initial Primary Watchlist for this new user
+    default_wl = models.Watchlist(name="Primary Watchlist", user_id=clean_user)
+    db.add(default_wl)
+    db.commit()
+    db.refresh(default_wl)
+
     token = f"groww_tok_{user.id}_{secrets.token_hex(16)}"
     return {
         "status": "success",
         "user_id": clean_user,
         "token": token,
-        "message": "Account created successfully"
+        "default_watchlist_id": str(default_wl.id),
+        "message": "Groww account created successfully"
     }
 
 
@@ -84,16 +102,31 @@ def login(payload: AuthPayload, db: DBSession = Depends(get_db)):
     clean_user = payload.username.strip().lower()
     user = db.query(models.User).filter(models.User.username == clean_user).first()
 
-    # Legacy demo users auto-provisioning
-    if not user and clean_user in ["vaishnavi_groww", "user_vaishnavi_demo", "demo_judge"]:
+    # Evaluator & Demo Accounts auto-provisioning
+    demo_accounts = [
+        "vaishnavi.mudhole@groww.in",
+        "vaishnavi.mudhole@gmail.com",
+        "vaishnavi_groww",
+        "user_vaishnavi_demo",
+        "demo_judge",
+        "demo_evaluator",
+        "evaluator@groww.in",
+        "9876543210"
+    ]
+    if not user and clean_user in demo_accounts:
         pwd_hash = hash_password(payload.password)
         user = models.User(username=clean_user, password_hash=pwd_hash)
         db.add(user)
         db.commit()
         db.refresh(user)
 
+        default_wl = models.Watchlist(name="Primary Watchlist", user_id=clean_user)
+        db.add(default_wl)
+        db.commit()
+        db.refresh(default_wl)
+
     if not user or not verify_password(payload.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+        raise HTTPException(status_code=401, detail="Invalid Email/Mobile or PIN")
 
     token = f"groww_tok_{user.id}_{secrets.token_hex(16)}"
     return {
@@ -109,7 +142,7 @@ def get_current_user(user_id: str = Query("vaishnavi_groww"), db: DBSession = De
     clean_user = user_id.strip().lower()
     user = db.query(models.User).filter(models.User.username == clean_user).first()
     return {
-        "authenticated": True,
+        "authenticated": bool(user),
         "user_id": clean_user,
         "created_at": user.created_at if user else datetime.now(timezone.utc).isoformat()
     }
@@ -151,7 +184,7 @@ class CreateWatchlistPayload(BaseModel):
     user_id: str = "user_vaishnavi_demo"
 
 @app.get("/db/watchlists")
-def list_watchlists(user_id: str = Query("user_vaishnavi_demo"), auto_seed: bool = Query(False), db: DBSession = Depends(get_db)):
+def list_watchlists(user_id: str = Query("user_vaishnavi_demo"), auto_seed: bool = Query(True), db: DBSession = Depends(get_db)):
     """Returns all watchlists stored in Supabase for the specified user_id."""
     clean_user = user_id.strip() or "user_vaishnavi_demo"
     watchlists = (
@@ -193,14 +226,15 @@ def create_watchlist(payload: CreateWatchlistPayload, db: DBSession = Depends(ge
 def add_stock(watchlist_id: str, symbol: str, db: DBSession = Depends(get_db)):
     """Add a stock symbol to a watchlist in Supabase."""
     clean_symbol = symbol.strip().upper()
+    w_uuid = to_uuid(watchlist_id)
     existing = db.query(models.WatchlistItem).filter(
-        models.WatchlistItem.watchlist_id == watchlist_id,
+        models.WatchlistItem.watchlist_id == w_uuid,
         models.WatchlistItem.symbol == clean_symbol
     ).first()
     if existing:
         return {"id": str(existing.id), "symbol": existing.symbol, "message": "Already exists"}
 
-    item = models.WatchlistItem(watchlist_id=watchlist_id, symbol=clean_symbol)
+    item = models.WatchlistItem(watchlist_id=w_uuid, symbol=clean_symbol)
     db.add(item)
     db.commit()
     db.refresh(item)
@@ -209,9 +243,11 @@ def add_stock(watchlist_id: str, symbol: str, db: DBSession = Depends(get_db)):
 @app.delete("/db/watchlists/{watchlist_id}/items/{item_id}")
 def remove_stock(watchlist_id: str, item_id: str, db: DBSession = Depends(get_db)):
     """Remove a stock from a watchlist."""
+    i_uuid = to_uuid(item_id)
+    w_uuid = to_uuid(watchlist_id)
     item = db.query(models.WatchlistItem).filter(
-        models.WatchlistItem.id == item_id,
-        models.WatchlistItem.watchlist_id == watchlist_id
+        models.WatchlistItem.id == i_uuid,
+        models.WatchlistItem.watchlist_id == w_uuid
     ).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -222,9 +258,10 @@ def remove_stock(watchlist_id: str, item_id: str, db: DBSession = Depends(get_db
 @app.get("/db/watchlists/{watchlist_id}/sessions")
 def get_session_history(watchlist_id: str, db: DBSession = Depends(get_db)):
     """View session checkpoint history from Supabase."""
+    w_uuid = to_uuid(watchlist_id)
     sessions = (
         db.query(models.Session)
-        .filter(models.Session.watchlist_id == watchlist_id)
+        .filter(models.Session.watchlist_id == w_uuid)
         .order_by(models.Session.opened_at.desc())
         .limit(10)
         .all()
@@ -235,7 +272,8 @@ def get_session_history(watchlist_id: str, db: DBSession = Depends(get_db)):
 def create_checkpoint(watchlist_id: str, db: DBSession = Depends(get_db)):
     """Creates a new session checkpoint representing the moment user marked watchlist as 'checked'."""
     now = datetime.now(timezone.utc)
-    new_session = models.Session(watchlist_id=watchlist_id, opened_at=now)
+    w_uuid = to_uuid(watchlist_id)
+    new_session = models.Session(watchlist_id=w_uuid, opened_at=now)
     db.add(new_session)
     db.commit()
     db.refresh(new_session)

@@ -3,22 +3,23 @@ import { loginUser, signupUser } from "../api/client";
 
 export default function AuthModal({ onLoginSuccess, onClose, canClose = false }) {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [identifier, setIdentifier] = useState(""); // Email ID or Mobile No
+  const [pin, setPin] = useState(""); // 4-6 digit Groww PIN / Password
+  const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    const cleanUser = username.trim().toLowerCase();
-    if (!cleanUser) {
-      setError("Please enter a username or email");
+    const cleanId = identifier.trim().toLowerCase();
+    
+    if (!cleanId || cleanId.length < 3) {
+      setError("Please enter a valid Email ID or 10-digit Mobile Number");
       return;
     }
-    if (password.length < 4) {
-      setError("Password must be at least 4 characters");
+    if (!pin || pin.length < 4) {
+      setError("Groww Security PIN / Password must be at least 4 digits");
       return;
     }
 
@@ -26,34 +27,48 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
       setLoading(true);
       let res;
       if (isSignUp) {
-        res = await signupUser(cleanUser, password);
+        res = await signupUser(cleanId, pin);
       } else {
-        res = await loginUser(cleanUser, password);
+        res = await loginUser(cleanId, pin);
       }
 
-      localStorage.setItem("sw_user_id", cleanUser);
-      localStorage.setItem("sw_auth_token", res.token || "demo_token");
-      onLoginSuccess(cleanUser, isSignUp);
+      localStorage.setItem("groww_user_id", cleanId);
+      localStorage.setItem("sw_user_id", cleanId);
+      localStorage.setItem("sw_auth_token", res.token || "groww_valid_session");
+      onLoginSuccess(cleanId, isSignUp);
     } catch (err) {
-      setError(err.message || "Authentication failed");
+      setError(err.message || "Authentication failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleQuickDemo = async () => {
+  const handleQuickEvaluatorDemo = async () => {
     try {
       setLoading(true);
       setError(null);
-      const demoUser = "vaishnavi_groww";
-      const res = await loginUser(demoUser, "groww123");
-      localStorage.setItem("sw_user_id", demoUser);
+      const demoEmail = "vaishnavi.mudhole@groww.in";
+      const demoPin = "123456";
+      
+      let res;
+      try {
+        res = await loginUser(demoEmail, demoPin);
+      } catch (apiErr) {
+        // If account not created yet on cloud, create it
+        res = await signupUser(demoEmail, demoPin);
+      }
+
+      localStorage.setItem("groww_user_id", demoEmail);
+      localStorage.setItem("sw_user_id", demoEmail);
       localStorage.setItem("sw_auth_token", res.token || "demo_token");
-      onLoginSuccess(demoUser, false);
+      onLoginSuccess(demoEmail, false);
     } catch (err) {
-      // Fallback
-      localStorage.setItem("sw_user_id", "vaishnavi_groww");
-      onLoginSuccess("vaishnavi_groww", false);
+      // Local fallback for offline/instant testing
+      const fallbackEmail = "vaishnavi.mudhole@groww.in";
+      localStorage.setItem("groww_user_id", fallbackEmail);
+      localStorage.setItem("sw_user_id", fallbackEmail);
+      localStorage.setItem("sw_auth_token", "demo_evaluator_session");
+      onLoginSuccess(fallbackEmail, false);
     } finally {
       setLoading(false);
     }
@@ -67,8 +82,8 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: "rgba(3, 7, 18, 0.85)",
-        backdropFilter: "blur(8px)",
+        backgroundColor: "rgba(3, 7, 18, 0.90)",
+        backdropFilter: "blur(10px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -79,12 +94,12 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
       <div
         style={{
           backgroundColor: "#111827",
-          border: "1px solid #1f2937",
+          border: "1px solid #1f293d",
           borderRadius: "20px",
           padding: "32px 28px",
           maxWidth: "420px",
           width: "100%",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.75)",
+          boxShadow: "0 25px 50px -12px rgba(0, 208, 156, 0.2)",
           color: "#f8fafc",
           position: "relative",
           animation: "fadeIn 0.25s ease-out",
@@ -108,19 +123,19 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
           </button>
         )}
 
-        {/* Brand Header */}
-        <div style={{ textAlign: "center", marginBottom: "24px" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(0, 208, 156, 0.1)", padding: "6px 14px", borderRadius: "20px", border: "1px solid rgba(0, 208, 156, 0.3)", marginBottom: "12px" }}>
+        {/* Groww Brand Header */}
+        <div style={{ textAlign: "center", marginBottom: "22px" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(0, 208, 156, 0.1)", padding: "6px 14px", borderRadius: "20px", border: "1px solid rgba(0, 208, 156, 0.3)", marginBottom: "12px" }}>
             <span style={{ fontSize: "16px" }}>⚡</span>
             <span style={{ fontSize: "12px", fontWeight: "800", color: "#00d09c", letterSpacing: "0.5px", textTransform: "uppercase" }}>
-              Groww Security Layer
+              Groww Watchlist Identity
             </span>
           </div>
           <h2 style={{ margin: "0 0 6px 0", fontSize: "22px", fontWeight: "800", color: "#ffffff", letterSpacing: "-0.5px" }}>
-            {isSignUp ? "Create Your Account" : "Sign In to Watchlist"}
+            {isSignUp ? "Create Your Groww Account" : "Welcome to Groww"}
           </h2>
           <p style={{ margin: 0, color: "#94a3b8", fontSize: "13px" }}>
-            {isSignUp ? "Set up your private, multi-device intelligence feed" : "Access your cloud checkpoints & real-time anomaly scores"}
+            {isSignUp ? "Enter your Email or Mobile to build your personalized watchlist" : "Sign in with your Email ID or Mobile to view live anomalies"}
           </p>
         </div>
 
@@ -131,12 +146,12 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
             onClick={() => { setIsSignUp(false); setError(null); }}
             style={{
               flex: 1,
-              padding: "8px",
+              padding: "9px",
               borderRadius: "8px",
               border: "none",
               background: !isSignUp ? "#1e293b" : "transparent",
-              color: !isSignUp ? "#38bdf8" : "#94a3b8",
-              fontWeight: "700",
+              color: !isSignUp ? "#00d09c" : "#94a3b8",
+              fontWeight: "800",
               fontSize: "13px",
               cursor: "pointer",
               transition: "all 0.15s ease",
@@ -149,18 +164,18 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
             onClick={() => { setIsSignUp(true); setError(null); }}
             style={{
               flex: 1,
-              padding: "8px",
+              padding: "9px",
               borderRadius: "8px",
               border: "none",
               background: isSignUp ? "#1e293b" : "transparent",
               color: isSignUp ? "#00d09c" : "#94a3b8",
-              fontWeight: "700",
+              fontWeight: "800",
               fontSize: "13px",
               cursor: "pointer",
               transition: "all 0.15s ease",
             }}
           >
-            New User (Sign Up)
+            Create Account
           </button>
         </div>
 
@@ -174,14 +189,15 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <div>
             <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#cbd5e1", marginBottom: "6px" }}>
-              Username or Email
+              Email ID or 10-Digit Mobile Number
             </label>
             <input
               type="text"
               required
-              placeholder="e.g. rahul_investor"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              autoFocus
+              placeholder="e.g. vaishnavi.mudhole@gmail.com or 9876543210"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               style={{
                 width: "100%",
                 boxSizing: "border-box",
@@ -198,15 +214,15 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
 
           <div>
             <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#cbd5e1", marginBottom: "6px" }}>
-              Security Password / PIN
+              Groww Security PIN / Password
             </label>
             <div style={{ position: "relative" }}>
               <input
-                type={showPassword ? "text" : "password"}
+                type={showPin ? "text" : "password"}
                 required
-                placeholder="Enter 4+ character password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter 4 to 6-digit PIN"
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
                 style={{
                   width: "100%",
                   boxSizing: "border-box",
@@ -221,7 +237,7 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPin(!showPin)}
                 style={{
                   position: "absolute",
                   right: "12px",
@@ -234,7 +250,7 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
                   fontSize: "14px",
                 }}
               >
-                {showPassword ? "👁️" : "🔒"}
+                {showPin ? "👁️" : "🔒"}
               </button>
             </div>
           </div>
@@ -243,25 +259,25 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
             type="submit"
             disabled={loading}
             style={{
-              marginTop: "6px",
+              marginTop: "4px",
               padding: "12px",
               borderRadius: "10px",
               border: "none",
-              background: isSignUp ? "linear-gradient(135deg, #00d09c 0%, #059669 100%)" : "linear-gradient(135deg, #0284c7 0%, #2563eb 100%)",
-              color: isSignUp ? "#000000" : "#ffffff",
+              background: "linear-gradient(135deg, #00d09c 0%, #059669 100%)",
+              color: "#0c1017",
               fontSize: "14px",
               fontWeight: "800",
               cursor: loading ? "wait" : "pointer",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+              boxShadow: "0 4px 14px rgba(0, 208, 156, 0.3)",
               transition: "transform 0.1s ease",
             }}
           >
-            {loading ? "Authenticating..." : isSignUp ? "Create Account & Start Onboarding" : "Sign In to Dashboard"}
+            {loading ? "Verifying with Groww..." : isSignUp ? "Create Account & Pick Stocks" : "Sign In to Watchlist"}
           </button>
         </form>
 
         {/* Divider */}
-        <div style={{ display: "flex", alignItems: "center", margin: "20px 0 16px 0", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", margin: "18px 0 14px 0", gap: "10px" }}>
           <div style={{ flex: 1, height: "1px", background: "#1e293b" }} />
           <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: "700" }}>Or</span>
           <div style={{ flex: 1, height: "1px", background: "#1e293b" }} />
@@ -270,17 +286,17 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
         {/* 1-Click Evaluator Demo Access */}
         <button
           type="button"
-          onClick={handleQuickDemo}
+          onClick={handleQuickEvaluatorDemo}
           disabled={loading}
           style={{
             width: "100%",
-            padding: "10px",
+            padding: "11px",
             borderRadius: "10px",
             border: "1px dashed #00d09c",
             background: "rgba(0, 208, 156, 0.08)",
             color: "#00d09c",
             fontSize: "13px",
-            fontWeight: "700",
+            fontWeight: "800",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
@@ -289,7 +305,7 @@ export default function AuthModal({ onLoginSuccess, onClose, canClose = false })
           }}
         >
           <span>⚡</span>
-          <span>1-Click Evaluator Demo Access (vaishnavi_groww)</span>
+          <span>1-Click Evaluator Sign In (vaishnavi.mudhole@groww.in)</span>
         </button>
       </div>
     </div>

@@ -20,9 +20,7 @@ const POPULAR_SUGGESTIONS = [
   { sector: "Demo Edge Cases", symbols: ["PENNYTEST", "BROKENSTOCK"] },
 ];
 
-// Helper: Generates realistic multi-node zigzag price trajectory between checkpoint and current price
 function generateZigzagPath(symbol, isPositive, pctChange) {
-  // Deterministic seed based on symbol characters
   const charCodeSum = symbol.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
   const seed = (charCodeSum % 10) / 10;
   
@@ -30,12 +28,10 @@ function generateZigzagPath(symbol, isPositive, pctChange) {
   const height = 32;
   const padding = 4;
   
-  // 6 zigzag points across the width
   const xCoords = [padding, 24, 46, 68, 88, width - padding];
   let yCoords = [];
 
   if (isPositive) {
-    // Uptrend zigzag with realistic retracements
     const startY = height - padding - 6;
     const endY = padding + 4;
     const dip = Math.min(height - padding, startY + 4 * (0.5 + seed * 0.5));
@@ -44,7 +40,6 @@ function generateZigzagPath(symbol, isPositive, pctChange) {
     const peak2 = Math.max(padding, endY - 2);
     yCoords = [startY, dip, peak1, pullback, peak2, endY];
   } else {
-    // Downtrend zigzag with bounce attempts
     const startY = padding + 6;
     const endY = height - padding - 4;
     const bounce1 = Math.max(padding, startY - 4 * (0.5 + seed * 0.5));
@@ -62,7 +57,6 @@ function generateZigzagPath(symbol, isPositive, pctChange) {
   return { linePoints, areaPoints, lastX, lastY };
 }
 
-// Mini Candlestick Data Generator for Expanded Card
 function generateCandleData(stock) {
   const isPos = stock.pct_change >= 0;
   const open = stock.prev_close || stock.price * 0.98;
@@ -71,7 +65,6 @@ function generateCandleData(stock) {
   const high = Math.max(open, close) + spread * 0.4;
   const low = Math.min(open, close) - spread * 0.3;
 
-  // 4 sequential micro-candles
   if (isPos) {
     return [
       { id: "c1", o: open, c: open + spread * 0.3, h: open + spread * 0.4, l: open - spread * 0.1, green: true },
@@ -102,33 +95,41 @@ export default function Dashboard() {
   const [activeSectorFilter, setActiveSectorFilter] = useState("ALL");
   const [health, setHealth] = useState({ status: "healthy" });
   const [expandedStockSymbol, setExpandedStockSymbol] = useState(null);
-  const [chartViewMode, setChartViewMode] = useState("zigzag"); // zigzag | candles
+  const [chartViewMode, setChartViewMode] = useState("zigzag");
   const [copiedSummary, setCopiedSummary] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [checkpointSaved, setCheckpointSaved] = useState(false);
 
-  // Security & Auth
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [authToken, setAuthToken] = useState(() => localStorage.getItem("sw_auth_token"));
-
-  // Cross-Device Identity
+  // Authentication State
   const getInitialUserId = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const fromUrl = urlParams.get("user");
     if (fromUrl) {
+      localStorage.setItem("groww_user_id", fromUrl.trim());
       localStorage.setItem("sw_user_id", fromUrl.trim());
       return fromUrl.trim();
     }
-    return localStorage.getItem("sw_user_id") || "vaishnavi_groww";
+    return localStorage.getItem("groww_user_id") || localStorage.getItem("sw_user_id") || "";
   };
 
   const [userId, setUserId] = useState(getInitialUserId);
+  const [authToken, setAuthToken] = useState(() => localStorage.getItem("sw_auth_token"));
+  
+  // Enforce Sign In on Page Load if not logged in
+  const [showAuthModal, setShowAuthModal] = useState(() => {
+    const savedUser = localStorage.getItem("groww_user_id") || localStorage.getItem("sw_user_id");
+    const savedToken = localStorage.getItem("sw_auth_token");
+    return !savedUser || !savedToken;
+  });
+
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Profile & Sync Modal
   const [showUserModal, setShowUserModal] = useState(false);
-  const [userIdInput, setUserIdInput] = useState(userId);
+  const [userIdInput, setUserIdInput] = useState(userId || "vaishnavi.mudhole@groww.in");
   const [copiedSyncLink, setCopiedSyncLink] = useState(false);
 
-  // Modals & Navigation
+  // Other Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [infoTab, setInfoTab] = useState("principles");
@@ -154,16 +155,20 @@ export default function Dashboard() {
     }
   });
 
-  // 1. Initial load
+  // Load user data on startup
   useEffect(() => {
     setLoading(true);
     checkSystemHealth().then(setHealth);
-    loadAllWatchlists(userId);
-    loadSignals(null);
+    if (userId) {
+      loadAllWatchlists(userId);
+    } else {
+      loadSignals(null);
+    }
   }, [userId]);
 
   const loadAllWatchlists = (uid = userId, attempt = 0) => {
-    fetchWatchlists(uid)
+    const targetUid = uid || "vaishnavi.mudhole@groww.in";
+    fetchWatchlists(targetUid)
       .then((lists) => {
         setWatchlists(lists || []);
         if (lists && lists.length > 0) {
@@ -177,7 +182,7 @@ export default function Dashboard() {
       .catch((err) => {
         console.warn("Watchlist fetch error (Render waking up):", err);
         if (attempt < 4) {
-          setTimeout(() => loadAllWatchlists(uid, attempt + 1), (attempt + 1) * 2500);
+          setTimeout(() => loadAllWatchlists(targetUid, attempt + 1), (attempt + 1) * 2500);
         }
       });
   };
@@ -226,17 +231,26 @@ export default function Dashboard() {
     }
   }, [data]);
 
-  // Stock CRUD
+  // Robust Stock Addition: Creates watchlist if not present yet
   const handleAdd = async (symbolToAdd) => {
     const symbol = (symbolToAdd || newSymbol).trim().toUpperCase();
-    if (!symbol || !activeWatchlist) return;
+    if (!symbol) return;
 
     try {
       setActionLoading(true);
-      await addStockToWatchlist(activeWatchlist.id, symbol);
+      let targetWatchlist = activeWatchlist;
+
+      if (!targetWatchlist) {
+        const currentUid = userId || "vaishnavi.mudhole@groww.in";
+        targetWatchlist = await createWatchlist("Primary Watchlist", currentUid);
+        setActiveWatchlist(targetWatchlist);
+        await loadAllWatchlists(currentUid);
+      }
+
+      await addStockToWatchlist(targetWatchlist.id, symbol);
       setNewSymbol("");
       setShowAddModal(false);
-      loadSignals(activeWatchlist.id);
+      loadSignals(targetWatchlist.id);
     } catch (err) {
       alert(`Could not add stock: ${err.message}`);
     } finally {
@@ -279,10 +293,11 @@ export default function Dashboard() {
     if (!name) return;
     try {
       setActionLoading(true);
-      const created = await createWatchlist(name, userId);
+      const currentUid = userId || "vaishnavi.mudhole@groww.in";
+      const created = await createWatchlist(name, currentUid);
       setNewWatchlistNameInput("");
       setShowNewWatchlistModal(false);
-      await loadAllWatchlists(userId);
+      await loadAllWatchlists(currentUid);
       setActiveWatchlist(created);
     } catch (err) {
       alert(`Could not create watchlist: ${err.message}`);
@@ -292,7 +307,7 @@ export default function Dashboard() {
   };
 
   const handleCopySyncLink = () => {
-    const syncUrl = `${window.location.origin}${window.location.pathname}?user=${encodeURIComponent(userId)}`;
+    const syncUrl = `${window.location.origin}${window.location.pathname}?user=${encodeURIComponent(userId || "vaishnavi.mudhole@groww.in")}`;
     navigator.clipboard.writeText(syncUrl);
     setCopiedSyncLink(true);
     setTimeout(() => setCopiedSyncLink(false), 2500);
@@ -303,9 +318,20 @@ export default function Dashboard() {
     const clean = userIdInput.trim();
     if (!clean) return;
     setUserId(clean);
+    localStorage.setItem("groww_user_id", clean);
     localStorage.setItem("sw_user_id", clean);
     setShowUserModal(false);
     window.history.replaceState(null, "", `?user=${encodeURIComponent(clean)}`);
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem("groww_user_id");
+    localStorage.removeItem("sw_user_id");
+    localStorage.removeItem("sw_auth_token");
+    setUserId("");
+    setAuthToken(null);
+    setShowUserModal(false);
+    setShowAuthModal(true);
   };
 
   const handleOpenInfoModal = async (tab = "principles") => {
@@ -386,7 +412,7 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
   if (showOnboarding) {
     return (
       <OnboardingWizard
-        userId={userId}
+        userId={userId || "vaishnavi.mudhole@groww.in"}
         onComplete={(newWl) => {
           setShowOnboarding(false);
           setActiveWatchlist(newWl);
@@ -402,8 +428,6 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes pulseDot { 0% { r: 3; opacity: 1; } 50% { r: 5; opacity: 0.6; } 100% { r: 3; opacity: 1; } }
-        
         .stock-row:hover { background-color: #161e2e !important; border-color: #2b3952 !important; }
         
         @media (max-width: 768px) {
@@ -542,10 +566,10 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
               <span>Add Stock</span>
             </button>
 
-            {/* User & PIN Auth */}
+            {/* User Account / Profile */}
             <button
               onClick={() => setShowUserModal(true)}
-              title="Switch User / Sync across devices"
+              title="Groww Account Profile & Multi-Device Sync"
               style={{
                 background: "#131823",
                 border: "1px solid #202b3d",
@@ -558,27 +582,14 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                 display: "flex",
                 alignItems: "center",
                 gap: "5px",
+                maxWidth: "200px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
               <span>👤</span>
-              <span>{userId}</span>
-            </button>
-
-            <button
-              onClick={() => setShowAuthModal(true)}
-              title="Sign In or Change PIN Security"
-              style={{
-                background: "#131823",
-                border: "1px solid #202b3d",
-                color: "#94a3b8",
-                padding: "7px 10px",
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontWeight: "700",
-                cursor: "pointer",
-              }}
-            >
-              🔐 Auth
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{userId || "Sign In"}</span>
             </button>
 
             {/* System Info / Details Modal */}
@@ -795,7 +806,7 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
           </div>
         )}
 
-        {/* 4. Stock List Cards (Clean, Minimalist Groww Style + ZigZag & Candle Graphs) */}
+        {/* 4. Stock List Cards */}
         {loading && !data ? (
           <div style={{ textAlign: "center", padding: "40px 20px", background: "#131823", borderRadius: "12px", border: "1px solid #202b3d", margin: "20px 0" }}>
             <div style={{ fontSize: "24px", marginBottom: "8px" }}>⚡</div>
@@ -824,7 +835,6 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {sortedStocks.map((s, index) => {
-              // Unhappy path / Data unavailable
               if (s.status === "error" || s.price === null) {
                 return (
                   <div
@@ -879,7 +889,7 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                 >
                   <div className="stock-row-main" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     
-                    {/* Left: Rank, Symbol, Sector & Plain-English Reason */}
+                    {/* Left: Rank, Symbol, Sector & Reason */}
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                       <span style={{ fontSize: "12px", fontWeight: "800", color: "#64748b", width: "20px" }}>
                         #{index + 1}
@@ -902,10 +912,10 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                       </div>
                     </div>
 
-                    {/* Right: Attractive Glowing ZigZag Mini Graph, Price, Change Badge, Trade Button */}
+                    {/* Right: Sparkline, Price, Change Badge, Trade Button */}
                     <div className="stock-price-block" style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                       
-                      {/* Modern ZigZag Sparkline with Gradient Glow & Pulse Dot */}
+                      {/* Modern ZigZag Sparkline */}
                       <div style={{ width: "110px", height: "34px", position: "relative" }}>
                         <svg viewBox="0 0 110 32" style={{ width: "100%", height: "100%", overflow: "visible" }}>
                           <defs>
@@ -915,13 +925,11 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                             </linearGradient>
                           </defs>
                           
-                          {/* Shaded Area under Zigzag */}
                           <polygon
                             points={zigzag.areaPoints}
                             fill={`url(#grad-${s.symbol})`}
                           />
 
-                          {/* Crisp Zigzag Line */}
                           <polyline
                             points={zigzag.linePoints}
                             fill="none"
@@ -931,10 +939,7 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                             strokeLinejoin="round"
                           />
 
-                          {/* Start Checkpoint Dot */}
                           <circle cx="4" cy={isPositive ? 22 : 10} r="2.5" fill="#64748b" />
-
-                          {/* Pulsing Live Endpoint Dot */}
                           <circle cx={zigzag.lastX} cy={zigzag.lastY} r="3.5" fill={isPositive ? "#00d09c" : "#EB5B3C"} />
                         </svg>
                       </div>
@@ -990,18 +995,16 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                     </div>
                   </div>
 
-                  {/* Expanded View: High-Resolution Candle / Trajectory Breakdown */}
+                  {/* Expanded View */}
                   {isExpanded && (
                     <div style={{ marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #202b3d", animation: "fadeIn 0.15s ease-out" }}>
                       
-                      {/* Header of Expanded Area */}
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                           <span style={{ fontSize: "13px", fontWeight: "700", color: "#ffffff" }}>📈 Price Journey Since Last Check</span>
                           <span style={{ fontSize: "11px", color: "#94a3b8" }}>(₹{s.prev_close} ➔ ₹{s.price})</span>
                         </div>
 
-                        {/* Chart View Toggle */}
                         <div style={{ display: "flex", background: "#0c1017", padding: "2px", borderRadius: "6px", border: "1px solid #202b3d" }}>
                           <button
                             onClick={(e) => { e.stopPropagation(); setChartViewMode("zigzag"); }}
@@ -1026,10 +1029,8 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                         </div>
                       </div>
 
-                      {/* Attractive Expanded Chart Box */}
                       <div style={{ background: "#0c1017", padding: "14px 18px", borderRadius: "10px", border: "1px solid #1a2233", marginBottom: "14px" }}>
                         {chartViewMode === "zigzag" ? (
-                          /* Detailed ZigZag with Checkpoint Anchor, High, Low and Live Price Points */
                           <div>
                             <svg viewBox="0 0 500 70" style={{ width: "100%", height: "65px", overflow: "visible" }}>
                               <defs>
@@ -1039,7 +1040,6 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                                 </linearGradient>
                               </defs>
                               
-                              {/* Shaded Area */}
                               <polygon
                                 points={isPositive
                                   ? "10,70 10,50 110,56 220,28 340,36 440,14 490,12 490,70"
@@ -1047,7 +1047,6 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                                 fill={`url(#big-grad-${s.symbol})`}
                               />
 
-                              {/* Crisp Trajectory Polyline */}
                               <polyline
                                 points={isPositive
                                   ? "10,50 110,56 220,28 340,36 440,14 490,12"
@@ -1059,25 +1058,20 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                                 strokeLinejoin="round"
                               />
 
-                              {/* Start Point */}
                               <circle cx="10" cy={isPositive ? 50 : 16} r="4.5" fill="#38bdf8" stroke="#0c1017" strokeWidth="2" />
                               <text x="18" y={isPositive ? 64 : 14} fill="#38bdf8" fontSize="11" fontWeight="700">📍 Checkpoint: ₹{s.prev_close}</text>
 
-                              {/* End Live Point */}
                               <circle cx="490" cy={isPositive ? 12 : 60} r="5" fill={isPositive ? "#00d09c" : "#EB5B3C"} stroke="#ffffff" strokeWidth="2" />
                               <text x="390" y={isPositive ? 10 : 66} fill={isPositive ? "#00d09c" : "#EB5B3C"} fontSize="12" fontWeight="800">Live: ₹{s.price}</text>
                             </svg>
                           </div>
                         ) : (
-                          /* Mini Candlesticks Rendering */
                           <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", height: "65px", padding: "0 20px" }}>
                             {candleData.map((c, i) => (
                               <div key={c.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
                                 <span style={{ fontSize: "10px", color: "#64748b", marginBottom: "2px" }}>Phase {i + 1}</span>
                                 <div style={{ position: "relative", width: "16px", height: "42px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                  {/* Wick */}
                                   <div style={{ position: "absolute", width: "1.5px", height: "100%", background: c.green ? "#00d09c" : "#EB5B3C" }} />
-                                  {/* Body */}
                                   <div style={{
                                     width: "12px",
                                     height: "22px",
@@ -1096,7 +1090,6 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                         )}
                       </div>
 
-                      {/* 4 Attribution Metrics Grid */}
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px", fontSize: "12px" }}>
                         <div style={{ background: "#0c1017", padding: "8px 12px", borderRadius: "6px", border: "1px solid #1a2233" }}>
                           <div style={{ color: "#94a3b8" }}>Volatility-Normalized Move:</div>
@@ -1205,7 +1198,7 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
           </div>
         )}
 
-        {/* 6. Clean Modal: System & Info (Tabbed Principles, Scaling, History, Scoring) */}
+        {/* 6. Clean Modal: System & Info */}
         {showInfoModal && (
           <div style={{
             position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
@@ -1225,7 +1218,6 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                 <button onClick={() => setShowInfoModal(false)} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "16px" }}>✕</button>
               </div>
 
-              {/* Tabs */}
               <div style={{ display: "flex", background: "#0c1017", padding: "4px", borderRadius: "8px", marginBottom: "16px", gap: "4px" }}>
                 {[
                   { id: "principles", label: "🛡️ Principles" },
@@ -1248,7 +1240,6 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                 ))}
               </div>
 
-              {/* Tab Contents */}
               {infoTab === "principles" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px" }}>
                   <div style={{ background: "#0c1017", padding: "12px", borderRadius: "8px", borderLeft: "3px solid #00d09c" }}>
@@ -1425,7 +1416,7 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
           </div>
         )}
 
-        {/* 8. Modal: User / Cross-Device Sync */}
+        {/* 8. Modal: User / Cross-Device Sync & Account Switch */}
         {showUserModal && (
           <div style={{
             position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
@@ -1442,22 +1433,29 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <span style={{ fontSize: "18px" }}>👤</span>
                   <h3 style={{ margin: 0, fontSize: "17px", color: "#ffffff", fontWeight: "800" }}>
-                    User Profile & Multi-Device Sync
+                    Groww Profile & Sync
                   </h3>
                 </div>
                 <button onClick={() => setShowUserModal(false)} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "16px" }}>✕</button>
               </div>
 
+              <div style={{ background: "#0c1017", padding: "12px 14px", borderRadius: "10px", border: "1px solid #202b3d", marginBottom: "16px" }}>
+                <div style={{ fontSize: "11px", color: "#94a3b8" }}>Active Groww Account:</div>
+                <div style={{ fontSize: "14px", fontWeight: "800", color: "#00d09c", marginTop: "2px" }}>
+                  {userId || "Not Signed In"}
+                </div>
+              </div>
+
               <form onSubmit={handleSwitchUser} style={{ marginBottom: "16px" }}>
                 <label style={{ display: "block", fontSize: "12px", color: "#94a3b8", fontWeight: "700", marginBottom: "6px" }}>
-                  Active User Identity:
+                  Switch Account (Email / Mobile / User ID):
                 </label>
                 <div style={{ display: "flex", gap: "8px" }}>
                   <input
                     type="text"
                     value={userIdInput}
                     onChange={(e) => setUserIdInput(e.target.value)}
-                    placeholder="Enter user ID (e.g. vaishnavi_groww)..."
+                    placeholder="Enter email or mobile..."
                     style={{
                       flex: 1, padding: "9px 12px", borderRadius: "8px",
                       border: "1px solid #334155", backgroundColor: "#0c1017",
@@ -1494,11 +1492,17 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                   </button>
                 </div>
                 <div style={{ fontSize: "11px", color: "#94a3b8", wordBreak: "break-all" }}>
-                  {window.location.origin}{window.location.pathname}?user={encodeURIComponent(userId)}
+                  {window.location.origin}{window.location.pathname}?user={encodeURIComponent(userId || "vaishnavi.mudhole@groww.in")}
                 </div>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <button
+                  onClick={handleSignOut}
+                  style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid #ef4444", color: "#f87171", padding: "8px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}
+                >
+                  🚪 Sign Out
+                </button>
                 <button
                   onClick={() => setShowUserModal(false)}
                   style={{ background: "#1e293b", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "8px", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}
@@ -1597,7 +1601,7 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
           </div>
         )}
 
-        {/* 11. Security Auth Modal */}
+        {/* 11. Groww Authentication & Login Modal (Enforced on Page Load if not logged in) */}
         {showAuthModal && (
           <AuthModal
             onLoginSuccess={(newUid, isNewSignUp) => {
@@ -1611,8 +1615,10 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                 loadAllWatchlists(newUid);
               }
             }}
-            onClose={() => setShowAuthModal(false)}
-            canClose={true}
+            onClose={() => {
+              if (userId) setShowAuthModal(false);
+            }}
+            canClose={Boolean(userId)}
           />
         )}
 
