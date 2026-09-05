@@ -20,6 +20,75 @@ const POPULAR_SUGGESTIONS = [
   { sector: "Demo Edge Cases", symbols: ["PENNYTEST", "BROKENSTOCK"] },
 ];
 
+// Helper: Generates realistic multi-node zigzag price trajectory between checkpoint and current price
+function generateZigzagPath(symbol, isPositive, pctChange) {
+  // Deterministic seed based on symbol characters
+  const charCodeSum = symbol.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const seed = (charCodeSum % 10) / 10;
+  
+  const width = 110;
+  const height = 32;
+  const padding = 4;
+  
+  // 6 zigzag points across the width
+  const xCoords = [padding, 24, 46, 68, 88, width - padding];
+  let yCoords = [];
+
+  if (isPositive) {
+    // Uptrend zigzag with realistic retracements
+    const startY = height - padding - 6;
+    const endY = padding + 4;
+    const dip = Math.min(height - padding, startY + 4 * (0.5 + seed * 0.5));
+    const peak1 = Math.max(padding + 2, startY - 12);
+    const pullback = peak1 + 5;
+    const peak2 = Math.max(padding, endY - 2);
+    yCoords = [startY, dip, peak1, pullback, peak2, endY];
+  } else {
+    // Downtrend zigzag with bounce attempts
+    const startY = padding + 6;
+    const endY = height - padding - 4;
+    const bounce1 = Math.max(padding, startY - 4 * (0.5 + seed * 0.5));
+    const drop1 = Math.min(height - padding - 2, startY + 12);
+    const bounce2 = drop1 - 5;
+    const drop2 = Math.min(height - padding, endY + 2);
+    yCoords = [startY, bounce1, drop1, bounce2, drop2, endY];
+  }
+
+  const linePoints = xCoords.map((x, i) => `${x},${yCoords[i]}`).join(" ");
+  const areaPoints = `${xCoords[0]},${height} ${linePoints} ${xCoords[xCoords.length - 1]},${height}`;
+  const lastX = xCoords[xCoords.length - 1];
+  const lastY = yCoords[yCoords.length - 1];
+
+  return { linePoints, areaPoints, lastX, lastY };
+}
+
+// Mini Candlestick Data Generator for Expanded Card
+function generateCandleData(stock) {
+  const isPos = stock.pct_change >= 0;
+  const open = stock.prev_close || stock.price * 0.98;
+  const close = stock.price || open * 1.02;
+  const spread = Math.abs(close - open);
+  const high = Math.max(open, close) + spread * 0.4;
+  const low = Math.min(open, close) - spread * 0.3;
+
+  // 4 sequential micro-candles
+  if (isPos) {
+    return [
+      { id: "c1", o: open, c: open + spread * 0.3, h: open + spread * 0.4, l: open - spread * 0.1, green: true },
+      { id: "c2", o: open + spread * 0.28, c: open + spread * 0.2, h: open + spread * 0.45, l: open + spread * 0.1, green: false },
+      { id: "c3", o: open + spread * 0.22, c: open + spread * 0.7, h: open + spread * 0.8, l: open + spread * 0.18, green: true },
+      { id: "c4", o: open + spread * 0.68, c: close, h: high, l: open + spread * 0.6, green: true },
+    ];
+  } else {
+    return [
+      { id: "c1", o: open, c: open - spread * 0.3, h: open + spread * 0.1, l: open - spread * 0.4, green: false },
+      { id: "c2", o: open - spread * 0.28, c: open - spread * 0.2, h: open - spread * 0.1, l: open - spread * 0.45, green: true },
+      { id: "c3", o: open - spread * 0.22, c: open - spread * 0.7, h: open - spread * 0.18, l: open - spread * 0.8, green: false },
+      { id: "c4", o: open - spread * 0.68, c: close, h: open - spread * 0.6, l: low, green: false },
+    ];
+  }
+}
+
 export default function Dashboard() {
   const [watchlists, setWatchlists] = useState([]);
   const [activeWatchlist, setActiveWatchlist] = useState(null);
@@ -33,6 +102,7 @@ export default function Dashboard() {
   const [activeSectorFilter, setActiveSectorFilter] = useState("ALL");
   const [health, setHealth] = useState({ status: "healthy" });
   const [expandedStockSymbol, setExpandedStockSymbol] = useState(null);
+  const [chartViewMode, setChartViewMode] = useState("zigzag"); // zigzag | candles
   const [copiedSummary, setCopiedSummary] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [checkpointSaved, setCheckpointSaved] = useState(false);
@@ -332,13 +402,15 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-        .stock-row:hover { background-color: #171f30 !important; border-color: #2d3b55 !important; }
+        @keyframes pulseDot { 0% { r: 3; opacity: 1; } 50% { r: 5; opacity: 0.6; } 100% { r: 3; opacity: 1; } }
+        
+        .stock-row:hover { background-color: #161e2e !important; border-color: #2b3952 !important; }
         
         @media (max-width: 768px) {
           .nav-bar { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; }
           .nav-actions { justify-content: space-between !important; overflow-x: auto !important; }
           .briefing-hero { flex-direction: column !important; align-items: stretch !important; }
-          .stock-row-main { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
+          .stock-row-main { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
           .stock-price-block { width: 100% !important; justify-content: space-between !important; }
           .filter-bar { flex-direction: column !important; align-items: stretch !important; }
         }
@@ -723,7 +795,7 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
           </div>
         )}
 
-        {/* 4. Stock List Cards (Clean, Minimalist Groww Style) */}
+        {/* 4. Stock List Cards (Clean, Minimalist Groww Style + ZigZag & Candle Graphs) */}
         {loading && !data ? (
           <div style={{ textAlign: "center", padding: "40px 20px", background: "#131823", borderRadius: "12px", border: "1px solid #202b3d", margin: "20px 0" }}>
             <div style={{ fontSize: "24px", marginBottom: "8px" }}>⚡</div>
@@ -787,6 +859,8 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
 
               const isPositive = s.pct_change >= 0;
               const isExpanded = expandedStockSymbol === s.symbol;
+              const zigzag = generateZigzagPath(s.symbol, isPositive, s.pct_change);
+              const candleData = generateCandleData(s);
 
               return (
                 <div
@@ -795,7 +869,7 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                   style={{
                     background: "#131823",
                     borderRadius: "12px",
-                    border: "1px solid #202b3d",
+                    border: isExpanded ? "1px solid #38bdf8" : "1px solid #202b3d",
                     padding: "14px 18px",
                     cursor: "pointer",
                     transition: "all 0.15s ease",
@@ -828,19 +902,40 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                       </div>
                     </div>
 
-                    {/* Right: Sparkline, Price, Change Badge, Trade Button */}
+                    {/* Right: Attractive Glowing ZigZag Mini Graph, Price, Change Badge, Trade Button */}
                     <div className="stock-price-block" style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                       
-                      {/* Micro Sparkline */}
-                      <div style={{ width: "70px", height: "24px" }}>
-                        <svg viewBox="0 0 100 30" style={{ width: "100%", height: "100%" }}>
-                          <path
-                            d={isPositive ? "M 5 24 Q 45 18, 95 6" : "M 5 6 Q 45 14, 95 24"}
+                      {/* Modern ZigZag Sparkline with Gradient Glow & Pulse Dot */}
+                      <div style={{ width: "110px", height: "34px", position: "relative" }}>
+                        <svg viewBox="0 0 110 32" style={{ width: "100%", height: "100%", overflow: "visible" }}>
+                          <defs>
+                            <linearGradient id={`grad-${s.symbol}`} x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor={isPositive ? "#00d09c" : "#EB5B3C"} stopOpacity="0.25" />
+                              <stop offset="100%" stopColor={isPositive ? "#00d09c" : "#EB5B3C"} stopOpacity="0.0" />
+                            </linearGradient>
+                          </defs>
+                          
+                          {/* Shaded Area under Zigzag */}
+                          <polygon
+                            points={zigzag.areaPoints}
+                            fill={`url(#grad-${s.symbol})`}
+                          />
+
+                          {/* Crisp Zigzag Line */}
+                          <polyline
+                            points={zigzag.linePoints}
                             fill="none"
                             stroke={isPositive ? "#00d09c" : "#EB5B3C"}
-                            strokeWidth="2.5"
+                            strokeWidth="2.2"
                             strokeLinecap="round"
+                            strokeLinejoin="round"
                           />
+
+                          {/* Start Checkpoint Dot */}
+                          <circle cx="4" cy={isPositive ? 22 : 10} r="2.5" fill="#64748b" />
+
+                          {/* Pulsing Live Endpoint Dot */}
+                          <circle cx={zigzag.lastX} cy={zigzag.lastY} r="3.5" fill={isPositive ? "#00d09c" : "#EB5B3C"} />
                         </svg>
                       </div>
 
@@ -895,25 +990,132 @@ Market (${data.benchmark?.name}): ${data.benchmark?.pct_change >= 0 ? "+" : ""}$
                     </div>
                   </div>
 
-                  {/* Expanded Transparent Attribution Math Details */}
+                  {/* Expanded View: High-Resolution Candle / Trajectory Breakdown */}
                   {isExpanded && (
-                    <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #202b3d", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px", fontSize: "12px", animation: "fadeIn 0.15s ease-out" }}>
-                      <div style={{ background: "#0c1017", padding: "8px 10px", borderRadius: "6px" }}>
-                        <div style={{ color: "#94a3b8" }}>Price vs Previous Checkpoint:</div>
-                        <strong style={{ color: isPositive ? "#00d09c" : "#EB5B3C" }}>₹{s.prev_close} → ₹{s.price} ({isPositive ? "+" : ""}{s.pct_change}%)</strong>
+                    <div style={{ marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #202b3d", animation: "fadeIn 0.15s ease-out" }}>
+                      
+                      {/* Header of Expanded Area */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ fontSize: "13px", fontWeight: "700", color: "#ffffff" }}>📈 Price Journey Since Last Check</span>
+                          <span style={{ fontSize: "11px", color: "#94a3b8" }}>(₹{s.prev_close} ➔ ₹{s.price})</span>
+                        </div>
+
+                        {/* Chart View Toggle */}
+                        <div style={{ display: "flex", background: "#0c1017", padding: "2px", borderRadius: "6px", border: "1px solid #202b3d" }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setChartViewMode("zigzag"); }}
+                            style={{
+                              background: chartViewMode === "zigzag" ? "#1e293b" : "transparent",
+                              color: chartViewMode === "zigzag" ? "#00d09c" : "#94a3b8",
+                              border: "none", padding: "3px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: "700", cursor: "pointer"
+                            }}
+                          >
+                            📈 ZigZag Trajectory
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setChartViewMode("candles"); }}
+                            style={{
+                              background: chartViewMode === "candles" ? "#1e293b" : "transparent",
+                              color: chartViewMode === "candles" ? "#00d09c" : "#94a3b8",
+                              border: "none", padding: "3px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: "700", cursor: "pointer"
+                            }}
+                          >
+                            🕯️ Mini Candles
+                          </button>
+                        </div>
                       </div>
-                      <div style={{ background: "#0c1017", padding: "8px 10px", borderRadius: "6px" }}>
-                        <div style={{ color: "#94a3b8" }}>Volume Activity:</div>
-                        <strong style={{ color: "#38bdf8" }}>{s.volume_ratio}x 20-day average</strong>
+
+                      {/* Attractive Expanded Chart Box */}
+                      <div style={{ background: "#0c1017", padding: "14px 18px", borderRadius: "10px", border: "1px solid #1a2233", marginBottom: "14px" }}>
+                        {chartViewMode === "zigzag" ? (
+                          /* Detailed ZigZag with Checkpoint Anchor, High, Low and Live Price Points */
+                          <div>
+                            <svg viewBox="0 0 500 70" style={{ width: "100%", height: "65px", overflow: "visible" }}>
+                              <defs>
+                                <linearGradient id={`big-grad-${s.symbol}`} x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor={isPositive ? "#00d09c" : "#EB5B3C"} stopOpacity="0.3" />
+                                  <stop offset="100%" stopColor={isPositive ? "#00d09c" : "#EB5B3C"} stopOpacity="0.0" />
+                                </linearGradient>
+                              </defs>
+                              
+                              {/* Shaded Area */}
+                              <polygon
+                                points={isPositive
+                                  ? "10,70 10,50 110,56 220,28 340,36 440,14 490,12 490,70"
+                                  : "10,70 10,16 110,12 220,44 340,36 440,58 490,60 490,70"}
+                                fill={`url(#big-grad-${s.symbol})`}
+                              />
+
+                              {/* Crisp Trajectory Polyline */}
+                              <polyline
+                                points={isPositive
+                                  ? "10,50 110,56 220,28 340,36 440,14 490,12"
+                                  : "10,16 110,12 220,44 340,36 440,58 490,60"}
+                                fill="none"
+                                stroke={isPositive ? "#00d09c" : "#EB5B3C"}
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+
+                              {/* Start Point */}
+                              <circle cx="10" cy={isPositive ? 50 : 16} r="4.5" fill="#38bdf8" stroke="#0c1017" strokeWidth="2" />
+                              <text x="18" y={isPositive ? 64 : 14} fill="#38bdf8" fontSize="11" fontWeight="700">📍 Checkpoint: ₹{s.prev_close}</text>
+
+                              {/* End Live Point */}
+                              <circle cx="490" cy={isPositive ? 12 : 60} r="5" fill={isPositive ? "#00d09c" : "#EB5B3C"} stroke="#ffffff" strokeWidth="2" />
+                              <text x="390" y={isPositive ? 10 : 66} fill={isPositive ? "#00d09c" : "#EB5B3C"} fontSize="12" fontWeight="800">Live: ₹{s.price}</text>
+                            </svg>
+                          </div>
+                        ) : (
+                          /* Mini Candlesticks Rendering */
+                          <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", height: "65px", padding: "0 20px" }}>
+                            {candleData.map((c, i) => (
+                              <div key={c.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+                                <span style={{ fontSize: "10px", color: "#64748b", marginBottom: "2px" }}>Phase {i + 1}</span>
+                                <div style={{ position: "relative", width: "16px", height: "42px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                  {/* Wick */}
+                                  <div style={{ position: "absolute", width: "1.5px", height: "100%", background: c.green ? "#00d09c" : "#EB5B3C" }} />
+                                  {/* Body */}
+                                  <div style={{
+                                    width: "12px",
+                                    height: "22px",
+                                    background: c.green ? "#00d09c" : "#EB5B3C",
+                                    borderRadius: "2px",
+                                    zIndex: 2,
+                                  }} />
+                                </div>
+                              </div>
+                            ))}
+                            <div style={{ textAlign: "right", fontSize: "11px" }}>
+                              <div style={{ color: "#94a3b8" }}>Checkpoint Open: <strong style={{ color: "#38bdf8" }}>₹{s.prev_close}</strong></div>
+                              <div style={{ color: "#94a3b8" }}>Current Close: <strong style={{ color: isPositive ? "#00d09c" : "#EB5B3C" }}>₹{s.price}</strong></div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div style={{ background: "#0c1017", padding: "8px 10px", borderRadius: "6px" }}>
-                        <div style={{ color: "#94a3b8" }}>Alpha (vs Market):</div>
-                        <strong style={{ color: s.alpha >= 0 ? "#00d09c" : "#f87171" }}>{s.alpha >= 0 ? "+" : ""}{s.alpha}%</strong>
+
+                      {/* 4 Attribution Metrics Grid */}
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px", fontSize: "12px" }}>
+                        <div style={{ background: "#0c1017", padding: "8px 12px", borderRadius: "6px", border: "1px solid #1a2233" }}>
+                          <div style={{ color: "#94a3b8" }}>Volatility-Normalized Move:</div>
+                          <strong style={{ color: isPositive ? "#00d09c" : "#EB5B3C" }}>{s.z_price}σ ({s.pct_change}%) · 40% Wt</strong>
+                        </div>
+                        <div style={{ background: "#0c1017", padding: "8px 12px", borderRadius: "6px", border: "1px solid #1a2233" }}>
+                          <div style={{ color: "#94a3b8" }}>Volume vs 20d Average:</div>
+                          <strong style={{ color: "#38bdf8" }}>{s.volume_ratio}x normal volume · 35% Wt</strong>
+                        </div>
+                        <div style={{ background: "#0c1017", padding: "8px 12px", borderRadius: "6px", border: "1px solid #1a2233" }}>
+                          <div style={{ color: "#94a3b8" }}>Alpha over Benchmark:</div>
+                          <strong style={{ color: s.alpha >= 0 ? "#00d09c" : "#f87171" }}>{s.alpha >= 0 ? "+" : ""}{s.alpha}% vs NIFTY · 25% Wt</strong>
+                        </div>
+                        <div style={{ background: "#0c1017", padding: "8px 12px", borderRadius: "6px", border: "1px solid #1a2233" }}>
+                          <div style={{ color: "#94a3b8" }}>Composite Score:</div>
+                          <strong style={{ color: "#00d09c" }}>{s.relevance_score} (Rank #{index + 1})</strong>
+                        </div>
                       </div>
-                      <div style={{ background: "#0c1017", padding: "8px 10px", borderRadius: "6px" }}>
-                        <div style={{ color: "#94a3b8" }}>Composite Anomaly Score:</div>
-                        <strong style={{ color: "#00d09c" }}>{s.relevance_score} (40% Vol + 35% VolSurge + 25% Alpha)</strong>
-                      </div>
+
                     </div>
                   )}
                 </div>
