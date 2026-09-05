@@ -474,10 +474,6 @@ export default function Dashboard() {
               <h1 className={`text-xl sm:text-2xl font-black tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
                 What Changed Since You Last Checked?
               </h1>
-
-              <p className={`text-xs sm:text-sm max-w-2xl font-medium leading-relaxed ${isDark ? "text-slate-200" : "text-slate-600"}`}>
-                Live stock prices, rupee deltas, and percentage returns automatically tracked against your last visit snapshot.
-              </p>
             </div>
 
             {/* Clean Metrics Cards */}
