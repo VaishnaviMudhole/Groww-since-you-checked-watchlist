@@ -949,32 +949,20 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      {/* 3. DIRECT BUY / SELL ACTIONS */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                        <div className="flex items-center space-x-3">
-                          <button
-                            onClick={() => setTradeModal({ symbol: stock.symbol, type: "BUY", price: stock.price })}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm px-6 py-2.5 rounded-xl shadow-lg active:scale-95 transition flex items-center space-x-2"
-                          >
-                            <span>🟢 BUY {stock.symbol}</span>
-                          </button>
-
-                          <button
-                            onClick={() => setTradeModal({ symbol: stock.symbol, type: "SELL", price: stock.price })}
-                            className="bg-rose-600 hover:bg-rose-500 text-white font-black text-sm px-6 py-2.5 rounded-xl shadow-lg active:scale-95 transition flex items-center space-x-2"
-                          >
-                            <span>🔴 SELL {stock.symbol}</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleSetAlert(stock.symbol, stock.key_levels?.target || formatCurrency(stock.price * 1.05))}
-                            className={`text-xs font-bold px-4 py-2.5 rounded-xl border transition ${
-                              isDark ? "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700" : "bg-white border-slate-300 text-slate-700 hover:bg-slate-100"
-                            }`}
-                          >
-                            <span>🔔 Set Alert</span>
-                          </button>
-                        </div>
+                      {/* Set Alert Action */}
+                      <div className="flex items-center justify-between pt-1">
+                        <button
+                          onClick={() => handleSetAlert(stock.symbol, stock.key_levels?.target || formatCurrency(stock.price * 1.05))}
+                          className={`text-xs font-bold px-4 py-2 rounded-xl border transition flex items-center space-x-1.5 ${
+                            isDark ? "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700" : "bg-white border-slate-300 text-slate-700 hover:bg-slate-100"
+                          }`}
+                        >
+                          <span>🔔</span>
+                          <span>Set Price Notification Alert</span>
+                        </button>
+                        <span className={`text-[11px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                          Click BUY or SELL above to execute order
+                        </span>
                       </div>
 
                     </div>
