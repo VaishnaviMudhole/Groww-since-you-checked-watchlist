@@ -10505,7 +10505,62 @@ export const createDynamicNSEStock = (symbolInput) => {
   const existing = ALL_202_NSE_STOCKS.find((s) => s.symbol === cleanSym);
   if (existing) return existing;
 
-  const mockPrice = Math.floor(Math.random() * 2500) + 120;
+  // 1. SPECIAL CASE: BROKEN STOCK / EXCHANGE OUTAGE SIMULATION
+  if (cleanSym.includes("BROKEN") || cleanSym.includes("UNAVAILABLE") || cleanSym === "FAILTEST") {
+    return {
+      symbol: cleanSym,
+      name: cleanSym + " (Exchange Offline)",
+      subtitle: cleanSym + " ? Deliberate Mock Outage",
+      sector: "?? Feed Offline",
+      exchange: "NSE",
+      price: 0.00,
+      checkpoint_price: 0.00,
+      pct_change: 0.00,
+      day_change_amount: 0.00,
+      logo_type: "generic_blue",
+      isHolding: false,
+      shares: 0,
+      avg_buy_price: 0,
+      invested_value: 0,
+      current_value: 0,
+      unrealized_pnl: 0,
+      unrealized_pnl_pct: 0,
+      portfolio_allocation: "0.0%",
+      today_move_from: 0.00,
+      today_move_to: 0.00,
+      pos_return_from: 0.00,
+      pos_return_to: 0.00,
+      pos_return_amt: 0.00,
+      pos_return_pct: 0.00,
+      action_type: "OFFLINE",
+      action_badge: "?? Feed Offline",
+      confidence_score: 0,
+      action_reason: "?? Deliberate mock failure ? Exchange API timeout. Isolated error boundary active without crashing UI.",
+      upside_amt: 0.00,
+      upside_pct: 0.00,
+      downside_amt: 0.00,
+      downside_pct: 0.00,
+      risk_reward_ratio: "N/A",
+      risk_warning: "?? Exchange Feed Offline / Delisted Symbol",
+      support_num: 0.00,
+      target_num: 0.00,
+      stoploss_num: 0.00,
+      order_flow_buyers: 0,
+      volume_multiplier: "0.0x (No Feed)",
+      low52: 0.00,
+      high52: 0.00,
+      range_status: "?? Live Feed Unavailable",
+      news_title: "Exchange API connection timeout for this symbol",
+      news_source: "Today, Just Now ? Error Boundary Log",
+      isBreakout: false,
+      isIlliquid: false,
+      isError: true,
+    };
+  }
+
+  // 2. SPECIAL CASE: PENNY STOCK / LOW LIQUIDITY SIMULATION
+  const isPenny = cleanSym.includes("PENNY") || cleanSym === "IDEA" || cleanSym === "SUZLON" || cleanSym === "RCOM";
+  const mockPrice = isPenny ? parseFloat((Math.random() * 15 + 4).toFixed(2)) : (Math.floor(Math.random() * 2500) + 120);
   const changePct = parseFloat(((Math.random() * 5.5) - 1.2).toFixed(2));
   const changeAmt = parseFloat(((mockPrice * changePct) / 100).toFixed(2));
   const checkpoint = parseFloat((mockPrice - changeAmt).toFixed(2));
@@ -10515,9 +10570,9 @@ export const createDynamicNSEStock = (symbolInput) => {
 
   return {
     symbol: cleanSym,
-    name: cleanSym,
-    subtitle: `${cleanSym} Equity • NSE Listed`,
-    sector: "Equity",
+    name: isPenny ? cleanSym + " (Microcap)" : cleanSym,
+    subtitle: isPenny ? cleanSym + " Microcap ? Low Turnover" : cleanSym + " Equity ? NSE Listed",
+    sector: isPenny ? "Microcap (< ?2 Cr)" : "Equity",
     exchange: "NSE",
     price: mockPrice,
     checkpoint_price: checkpoint,
@@ -10538,27 +10593,31 @@ export const createDynamicNSEStock = (symbolInput) => {
     pos_return_to: mockPrice,
     pos_return_amt: changeAmt,
     pos_return_pct: changePct,
-    action_type: changePct > 0 ? "STRONG BUY" : "ACCUMULATE",
-    action_badge: changePct > 0 ? "Buy" : "Accumulate",
-    confidence_score: 88,
-    action_reason: `Live exchange volume breakout with high institutional interest on NSE.`,
+    action_type: isPenny ? "LOW LIQUIDITY" : (changePct > 0 ? "STRONG BUY" : "ACCUMULATE"),
+    action_badge: isPenny ? "?? Low Liquidity" : (changePct > 0 ? "Buy" : "Accumulate"),
+    confidence_score: isPenny ? 25 : 88,
+    action_reason: isPenny 
+      ? "?? Low liquidity warning ? daily turnover is below ?2 Crore. Anomaly scoring suppressed to avoid false alarms." 
+      : "Live exchange volume breakout with high institutional interest on NSE.",
     upside_amt: parseFloat((target - mockPrice).toFixed(2)),
     upside_pct: 8.00,
     downside_amt: parseFloat((stoploss - mockPrice).toFixed(2)),
     downside_pct: -6.00,
     risk_reward_ratio: "1.33 : 1",
-    risk_warning: "Custom tracked NSE equity",
+    risk_warning: isPenny ? "?? High Bid-Ask Spread and Illiquidity Risk" : "Custom tracked NSE equity",
     support_num: support,
     target_num: target,
     stoploss_num: stoploss,
-    order_flow_buyers: 88,
-    volume_multiplier: "2.8x vs 30-day average",
+    order_flow_buyers: isPenny ? 32 : 88,
+    volume_multiplier: isPenny ? "0.4x (Illiquid Volume)" : "2.8x vs 30-day average",
     low52: parseFloat((mockPrice * 0.65).toFixed(2)),
     high52: parseFloat((mockPrice * 1.25).toFixed(2)),
-    range_status: "Active live exchange tracking",
-    news_title: `${cleanSym} trading volumes surge on NSE with strong order book flow`,
-    news_source: "Today, Just Now • NSE Live Feed",
-    isBreakout: changePct > 2.0,
+    range_status: isPenny ? "?? Low Turnover (< ?2 Cr)" : "Active live exchange tracking",
+    news_title: isPenny ? cleanSym + " shows low trading liquidity on exchange" : cleanSym + " trading volumes surge on NSE with strong order book flow",
+    news_source: "Today, Just Now ? NSE Live Feed",
+    isBreakout: !isPenny && changePct > 2.0,
+    isIlliquid: isPenny,
+    isError: false,
   };
 };
 
