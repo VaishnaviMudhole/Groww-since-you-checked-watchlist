@@ -10536,7 +10536,7 @@ export const INITIAL_WATCHLIST_SYMBOLS = [
   "ZOMATO", "HAL", "TATAMOTORS", "RELIANCE", "INFY", "TATAPOWER",
   "HDFCBANK", "ICICIBANK", "SBIN", "LT", "BHARTIARTL", "ITC",
   "MARUTI", "SUNPHARMA", "TITAN", "TATASTEEL", "KOTAKBANK",
-  "BAJFINANCE", "WIPRO", "HINDUNILVR", "BEL"
+  "BAJFINANCE", "WIPRO", "HINDUNILVR", "BEL", "PENNYTEST"
 ];
 
 // Helper to create dynamic stock entries for ANY custom symbol typed by user
@@ -11737,6 +11737,16 @@ export default function Dashboard() {
                             {stock.isHolding && stock.shares > 0 && (
                               <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
                                 {stock.shares} SH
+                              </span>
+                            )}
+                            {stock.isLowLiquidity && (
+                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                                ⚠️ PENNY
+                              </span>
+                            )}
+                            {stock.isBrokenFeed && (
+                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-500/30">
+                                ⚠️ BROKEN
                               </span>
                             )}
                           </div>
