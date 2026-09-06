@@ -97,11 +97,15 @@ export const DEFAULT_FALLBACK_SIGNALS = {
 // --- Authentication ---
 export async function signupUser(username, password) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
     const res = await fetch(`${BASE_URL}/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Signup failed" }));
       throw new Error(err.detail || "Signup failed");
@@ -114,11 +118,15 @@ export async function signupUser(username, password) {
 
 export async function loginUser(username, password) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
     const res = await fetch(`${BASE_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Login failed" }));
       throw new Error(err.detail || "Login failed");
