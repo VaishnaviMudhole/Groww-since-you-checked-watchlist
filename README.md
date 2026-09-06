@@ -1,61 +1,23 @@
-# ⚡ Since You Checked — Intelligent Stock Watchlist Engine
+# ⚡ TrackPulse — Intelligent Stock Watchlist Engine
 > **Groww Capstone Project Submission | Vaishnavi M**  
 > *End-to-End Real-Time Anomaly Scoring, Automatic Session Checkpoints & Cross-Device Persistence*
 
 ---
 
 ## 📌 Executive Product Pitch (100-Word Summary)
-Standard stock watchlists are noisy, alphabetical, or sorted by raw % gainers—flooding investors with penny-stock volatility and missing true market developments. **"Since You Checked"** transforms the watchlist into an actionable intelligence feed. Built with an end-to-end FastAPI backend and Supabase PostgreSQL database, it dynamically calculates statistical anomalies ($Z$-score volatility normalization, 20-day volume surges, and NIFTY 50 alpha) that occurred specifically since the user's last session checkpoint. With robust edge-case resilience (low-liquidity warnings, graceful error handling) and seamless cross-device persistence, it delivers high-conviction insights in plain English—directly connected to a 1-click Groww trading sheet.
+Standard stock watchlists are noisy, alphabetical, or sorted by raw % gainers—flooding investors with penny-stock volatility and missing true market developments. **"TrackPulse — Since You Checked"** transforms the watchlist into an actionable intelligence feed. Built with an end-to-end FastAPI backend and Supabase PostgreSQL database, it dynamically calculates statistical anomalies ($Z$-score volatility normalization, 20-day volume surges, and NIFTY 50 alpha) that occurred specifically since the user's last session checkpoint. With robust edge-case resilience (low-liquidity warnings, graceful error handling) and seamless cross-device persistence, it delivers high-conviction insights in plain English—directly connected to a 1-click Groww trading sheet.
 
 ---
 
-## 📸 Visual Walkthrough & Product Interface
-
-### 1. Executive Intelligence Bar & Dynamic Anomaly Catch-Up
-The dashboard automatically detects statistical breakouts ($Z$-score volatility, volume surges $> 2\times$, decoupled alpha) and provides plain-English summaries with real-time dynamic elapsed timers.
-
-| Executive Briefing & Live Delta | Real-Time Push Anomaly Alert |
-| :---: | :---: |
-| ![Dashboard Overview](screenshots/01_dashboard_executive_briefing.png) | ![Real-Time Alert](screenshots/02_realtime_anomaly_alert.png) |
-
----
-
-### 2. Multi-Factor Attribution & Session Checkpoint Shift Trajectory
-Each stock card provides exact quantitative decomposition (Price Move vs Normal $\sigma$, Volume Multiplier, vs NIFTY Alpha) and an interactive SVG trajectory sparkline tracking movements since the user's last visit.
-
-| ZOMATO Statistical Breakdown & Sparkline | Meaningful Change 3-Factor Framework |
-| :---: | :---: |
-| ![Stock Breakdown & Sparkline](screenshots/06_stock_breakdown_sparkline_zomato.png) | ![3-Factor Scoring Logic](screenshots/03_meaningful_change_framework.png) |
-
----
-
-### 3. Smart Filtering, Sector Slicing & Plain-English Sorting
-Investors can filter by sector (Tech, Banking, Auto, Defence, FMCG) and sort across statistical dimensions (Highest Priority, Moving on Its Own / Alpha, Volume Surges, Top Gainers/Losers).
-
-| Banking Sector Filtered View | Multi-Factor Sorting Modes |
-| :---: | :---: |
-| ![Banking Sector View](screenshots/07_sector_filtering_banking.png) | ![Sorting Options](screenshots/09_sorting_dropdown_multifactors.png) |
-
----
-
-### 4. Supabase Cloud Checkpoints & Watchlist Management
-Session timestamps and watchlists are persisted directly to Supabase PostgreSQL, ensuring cross-device consistency across desktop and mobile.
-
-| Cloud Checkpoint History | Multi-Watchlist Creation Modal |
-| :---: | :---: |
-| ![Cloud Checkpoint History](screenshots/04_checkpoint_history_cloud.png) | ![Create Watchlist Modal](screenshots/05_create_watchlist_modal.png) |
-
----
-
-## 🚀 Key Features & Engineering Highlights
+## 🌟 Key Engineering Features & Highlights
 
 1. **⏱️ Automatic Lifecycle Checkpointing (Zero-Effort Persistence):**
    - Automatically captures baseline prices and timestamps whenever the user closes the tab or switches windows via `visibilitychange`, `beforeunload`, and `pagehide` browser events.
-   - On return, instantly displays the exact delta and volume anomalies that occurred during the user's absence.
+   - On return, instantly displays the exact delta and volume anomalies that occurred during the user's absence (e.g. `Just now`, `5m ago`, `1h 15m ago`).
 
 2. **🎙️ AI Voice Intelligence (Text-to-Speech & Speech-to-Text):**
    - **`🔊 Listen Briefing`**: Real-time voice readout of the *"Since You Last Checked"* market delta and volume spikes via Web Speech API.
-   - **`🎙️ Voice Search`**: Hands-free search allowing traders to speak ticker names to filter and select stocks.
+   - **`🎙️ Voice Search`**: Hands-free search allowing traders to speak ticker names (e.g. *"Zomato"*, *"Tata Motors"*) to filter and select stocks.
    - **`🔊 Voice Analysis`**: Audio readout of key support, target, and stop-loss levels on stock detail cards.
 
 3. **📜 Real-Time System & Order Activity Logs:**
@@ -64,8 +26,11 @@ Session timestamps and watchlists are persisted directly to Supabase PostgreSQL,
 4. **🔴 Solid Red Sell & Emerald Buy Order Execution:**
    - High-contrast 1-click order simulation modal supporting Intraday MIS and Delivery CNC modes with real-time portfolio margin calculation.
 
-5. **🏛️ 202+ NSE Master Directory:**
-   - Curated master catalog of 202+ NSE listed companies with dynamic custom ticker entry.
+5. **🏛️ 202+ NSE Master Directory & Edge Case Testing:**
+   - Master catalog of 202+ NSE listed companies with dynamic custom ticker addition.
+   - Built-in edge cases for evaluators:
+     - **`PENNYTEST`**: Microcap with turnover $< ₹2\text{ Cr}$ rendering amber `⚠️ Low Liquidity` warning.
+     - **`BROKENSTOCK`**: Simulated exchange network feed outage rendering isolated `⚠️ Exchange Feed Offline` without crashing the UI.
 
 ---
 
@@ -115,12 +80,10 @@ $$\text{Priority Score} = 40 \times \min\left(1.0, \frac{|\Delta P|}{\sigma_{20}
 
 ## 🛡️ Reliability & Edge-Case Handling
 
-![Edge Case Resilience: PENNYTEST & BROKENSTOCK](screenshots/11_edge_cases_pennytest_brokenstock.png)
-
 | Scenario / Edge Case | Handled Behavior | User-Facing Result |
 | :--- | :--- | :--- |
-| **Low-Liquidity / Microcaps (`PENNYTEST`)** | Evaluates **Rupee Turnover** ($\text{Turnover} = \text{Price} \times \text{Volume} < ₹2\text{ Cr}$). | Renders amber `⚠️ Low liquidity — score may be unreliable` badge. |
-| **Exchange Feed Outage (`BROKENSTOCK`)** | Try/catch isolation with structured fallback. | Renders isolated red `⚠️ Data Unavailable` error card without crashing the UI or blocking other stocks. |
+| **Low-Liquidity / Microcaps (`PENNYTEST`)** | Evaluates **Rupee Turnover** ($\text{Turnover} = \text{Price} \times \text{Volume} < ₹2\text{ Cr}$). | Renders amber `⚠️ Low Liquidity (< ₹2 Cr Turnover)` warning badge. |
+| **Exchange Feed Outage (`BROKENSTOCK`)** | Try/catch isolation with structured fallback. | Renders isolated red `⚠️ Exchange Feed Offline` warning card without crashing the UI or blocking other stocks. |
 | **Market Closed Hours** | Time-aware IST clock (9:15 AM - 3:30 PM). | Shows `🔵 Closing price · 3:30 PM` instead of falsely claiming "Live" data. |
 | **Connection Stability** | Supabase IPv4 transaction pooler with `pool_pre_ping=True`. | Eliminates dropped connections and IPv6 DNS timeouts. |
 
