@@ -12135,20 +12135,6 @@ export default function Dashboard() {
 
             </div>
 
-            {/* Live Feed Note */}
-            <div className="p-3 bg-slate-50 dark:bg-[#0B101B] border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between text-xs">
-              <div className="min-w-0 pr-2">
-                <p className="font-bold text-slate-900 dark:text-white truncate">
-                  📰 {activeStock.news_title}
-                </p>
-                <p className="text-[10px] text-slate-600 dark:text-slate-400">
-                  {activeStock.news_source}
-                </p>
-              </div>
-              <span className="text-emerald-700 dark:text-emerald-400 font-bold shrink-0 hover:underline cursor-pointer">
-                Read News ↗
-              </span>
-            </div>
 
           </div>
         </div>
