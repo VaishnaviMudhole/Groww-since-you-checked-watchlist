@@ -11873,6 +11873,13 @@ export default function Dashboard() {
           {/* ====================================================
               RIGHT COLUMN: STREAMLINED STOCK DETAIL & TRAJECTORY
              ==================================================== */}
+          {(() => {
+            const isActiveOffline = Boolean(activeStock.isError || activeStock.sector?.includes("Offline") || activeStock.symbol?.includes("BROKEN") || activeStock.symbol === "FAILTEST");
+            const isActivePenny = !isActiveOffline && Boolean(activeStock.price < 50 || activeStock.isIlliquid || activeStock.sector?.includes("Microcap") || activeStock.symbol?.includes("PENNY") || activeStock.symbol === "IDEA" || activeStock.symbol === "SUZLON");
+            const isActiveUp = !isActiveOffline && (activeStock.pct_change >= 0);
+            const trajThemeColor = isActiveOffline ? "#94A3B8" : isActivePenny ? "#F59E0B" : isActiveUp ? "#00D09C" : "#EF4444";
+
+            return (
           <div className="lg:col-span-7 bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
             
             {/* Edge Case Warning Banners */}
@@ -11949,14 +11956,26 @@ export default function Dashboard() {
                     <span className="hidden md:inline">Voice</span>
                   </button>
                   <button
+                    disabled={isActiveOffline}
                     onClick={() => setOrderModalState({ isOpen: true, type: "BUY" })}
-                    className="px-4 py-2 text-xs font-black rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all cursor-pointer"
+                    title={isActiveOffline ? "Trading paused — exchange feed offline" : "Place Buy Order"}
+                    className={`px-4 py-2 text-xs font-black rounded-xl text-white shadow-sm transition-all ${
+                      isActiveOffline
+                        ? "bg-slate-400 dark:bg-slate-700 cursor-not-allowed opacity-60"
+                        : "bg-emerald-600 hover:bg-emerald-500 cursor-pointer"
+                    }`}
                   >
                     Buy
                   </button>
                   <button
+                    disabled={isActiveOffline}
                     onClick={() => setOrderModalState({ isOpen: true, type: "SELL" })}
-                    className="px-4 py-2 text-xs font-black rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-sm transition-all cursor-pointer"
+                    title={isActiveOffline ? "Trading paused — exchange feed offline" : "Place Sell Order"}
+                    className={`px-4 py-2 text-xs font-black rounded-xl text-white shadow-sm transition-all ${
+                      isActiveOffline
+                        ? "bg-slate-400 dark:bg-slate-700 cursor-not-allowed opacity-60"
+                        : "bg-rose-600 hover:bg-rose-500 cursor-pointer"
+                    }`}
                   >
                     Sell
                   </button>
@@ -11971,76 +11990,101 @@ export default function Dashboard() {
                   <span className="font-extrabold text-slate-900 dark:text-white">
                     Since You Checked Trajectory
                   </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
-                    Live Channel
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                    isActiveOffline
+                      ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+                      : isActivePenny
+                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
+                      : isActiveUp
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300"
+                      : "bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300"
+                  }`}>
+                    {isActiveOffline ? "🛑 Feed Offline" : isActivePenny ? "⚠️ Microcap Channel" : "Live Channel"}
                   </span>
                 </div>
                 <div className="text-[11px] font-mono text-slate-600 dark:text-slate-400">
-                  Checkpoint: <span className="font-bold text-slate-900 dark:text-white">₹{(activeStock?.checkpoint_price ?? 0).toFixed(2)}</span>
+                  Checkpoint: <span className="font-bold text-slate-900 dark:text-white">{isActiveOffline ? "₹100.00 (Historical)" : `₹${(activeStock?.checkpoint_price ?? 0).toFixed(2)}`}</span>
                 </div>
               </div>
 
-              {/* Trajectory SVG */}
-              <div className="w-full h-24 relative">
-                <svg viewBox="0 0 600 100" className="w-full h-full" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="trajGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#00D09C" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#00D09C" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-                  
-                  {/* Grid Lines */}
-                  <line x1="0" y1="25" x2="600" y2="25" stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.4" />
-                  <line x1="0" y1="50" x2="600" y2="50" stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.4" />
-                  <line x1="0" y1="75" x2="600" y2="75" stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.4" />
-
-                  {/* Gradient Area */}
-                  <path
-                    d="M 20,80 Q 150,75 280,45 T 450,25 L 580,15 L 580,95 L 20,95 Z"
-                    fill="url(#trajGrad)"
-                  />
-
-                  {/* Historical Solid Line */}
-                  <path
-                    d="M 20,80 Q 150,75 280,45 T 450,25"
-                    fill="none"
-                    stroke="#00D09C"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                  />
-
-                  {/* Forecast Projected Dashed Line */}
-                  <path
-                    d="M 450,25 L 580,15"
-                    fill="none"
-                    stroke="#00D09C"
-                    strokeWidth="2.5"
-                    strokeDasharray="4 4"
-                    strokeLinecap="round"
-                  />
-
-                  {/* Left Checkpoint Dot */}
-                  <circle cx="20" cy="80" r="4.5" fill="#64748B" stroke="#FFFFFF" strokeWidth="1.5" />
-                  {/* Current LTP Dot */}
-                  <circle cx="450" cy="25" r="5.5" fill="#00D09C" stroke="#FFFFFF" strokeWidth="2" />
-                  {/* Forecast Target Dot */}
-                  <circle cx="580" cy="15" r="4.5" fill="#38BDF8" stroke="#FFFFFF" strokeWidth="1.5" />
-                </svg>
-
-                {/* 3 Step Labels on Chart */}
-                <div className="absolute inset-0 flex justify-between items-end px-3 pb-1 pointer-events-none">
-                  <div className="text-[10px] font-bold text-slate-700 dark:text-slate-400 bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-800">
-                    ● Checkpoint ₹{(activeStock?.checkpoint_price ?? 0).toFixed(2)}
+              {/* Trajectory Display */}
+              {isActiveOffline ? (
+                <div className="w-full h-24 flex flex-col items-center justify-center border border-dashed border-rose-300 dark:border-rose-800/60 rounded-xl bg-rose-50/40 dark:bg-rose-950/20 text-center px-4">
+                  <div className="flex items-center gap-1.5 text-xs font-black text-rose-700 dark:text-rose-400">
+                    <span>🛑</span> Live Trajectory Stream Disconnected
                   </div>
-                  <div className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-800">
-                    ● Now ₹{activeStock.price.toFixed(2)} ({activeStock.pct_change >= 0 ? `+${(activeStock?.pct_change ?? 0).toFixed(2)}%` : `${(activeStock?.pct_change ?? 0).toFixed(2)}%`})
-                  </div>
-                  <div className="text-[10px] font-bold text-sky-700 dark:text-sky-400 bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-800">
-                    Target ₹{(activeStock?.target_num ?? 0).toFixed(2)} ↗
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 font-medium">
+                    Exchange API timeout for {activeStock.symbol}. Error boundary active — other 200+ stocks continue streaming live.
+                  </p>
+                </div>
+              ) : (
+                <div className="w-full h-24 relative">
+                  <svg viewBox="0 0 600 100" className="w-full h-full" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id={`trajGrad-${activeStock.symbol}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor={trajThemeColor} stopOpacity="0.25" />
+                        <stop offset="100%" stopColor={trajThemeColor} stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+                    
+                    {/* Grid Lines */}
+                    <line x1="0" y1="25" x2="600" y2="25" stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.4" />
+                    <line x1="0" y1="50" x2="600" y2="50" stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.4" />
+                    <line x1="0" y1="75" x2="600" y2="75" stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.4" />
+
+                    {/* Gradient Area */}
+                    <path
+                      d={isActiveUp ? "M 20,80 Q 150,75 280,45 T 450,25 L 580,15 L 580,95 L 20,95 Z" : "M 20,25 Q 150,30 280,60 T 450,80 L 580,90 L 580,95 L 20,95 Z"}
+                      fill={`url(#trajGrad-${activeStock.symbol})`}
+                    />
+
+                    {/* Historical Solid Line */}
+                    <path
+                      d={isActiveUp ? "M 20,80 Q 150,75 280,45 T 450,25" : "M 20,25 Q 150,30 280,60 T 450,80"}
+                      fill="none"
+                      stroke={trajThemeColor}
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+
+                    {/* Forecast Projected Dashed Line */}
+                    <path
+                      d={isActiveUp ? "M 450,25 L 580,15" : "M 450,80 L 580,90"}
+                      fill="none"
+                      stroke={trajThemeColor}
+                      strokeWidth="2.5"
+                      strokeDasharray="4 4"
+                      strokeLinecap="round"
+                    />
+
+                    {/* Left Checkpoint Dot */}
+                    <circle cx="20" cy={isActiveUp ? "80" : "25"} r="4.5" fill="#64748B" stroke="#FFFFFF" strokeWidth="1.5" />
+                    {/* Current LTP Dot */}
+                    <circle cx="450" cy={isActiveUp ? "25" : "80"} r="5.5" fill={trajThemeColor} stroke="#FFFFFF" strokeWidth="2" />
+                    {/* Forecast Target Dot */}
+                    <circle cx="580" cy={isActiveUp ? "15" : "90"} r="4.5" fill="#38BDF8" stroke="#FFFFFF" strokeWidth="1.5" />
+                  </svg>
+
+                  {/* 3 Step Labels on Chart */}
+                  <div className="absolute inset-0 flex justify-between items-end px-3 pb-1 pointer-events-none">
+                    <div className="text-[10px] font-bold text-slate-700 dark:text-slate-400 bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-800">
+                      ● Checkpoint ₹{(activeStock?.checkpoint_price ?? 0).toFixed(2)}
+                    </div>
+                    <div className={`text-[10px] font-black bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border ${
+                      isActivePenny 
+                        ? 'text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800'
+                        : isActiveUp 
+                        ? 'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
+                        : 'text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-800'
+                    }`}>
+                      ● Now ₹{activeStock.price.toFixed(2)} ({activeStock.pct_change >= 0 ? `+${(activeStock?.pct_change ?? 0).toFixed(2)}%` : `${(activeStock?.pct_change ?? 0).toFixed(2)}%`})
+                    </div>
+                    <div className="text-[10px] font-bold text-sky-700 dark:text-sky-400 bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-800">
+                      Target ₹{(activeStock?.target_num ?? 0).toFixed(2)} ↗
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* 3-Pill Key Levels */}
@@ -12050,25 +12094,25 @@ export default function Dashboard() {
                   Support Floor
                 </span>
                 <span className="text-sm font-black font-mono text-slate-900 dark:text-white">
-                  ₹{(activeStock?.support_num ?? 0).toFixed(2)}
+                  {isActiveOffline ? "N/A" : `₹${(activeStock?.support_num ?? 0).toFixed(2)}`}
                 </span>
               </div>
 
-              <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl p-2.5 text-center">
-                <span className="text-[10px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-wider block">
+              <div className={`${isActiveOffline ? 'bg-slate-50 dark:bg-[#0B101B] border-slate-200 dark:border-slate-800' : 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50'} border rounded-xl p-2.5 text-center`}>
+                <span className={`text-[10px] font-black ${isActiveOffline ? 'text-slate-600 dark:text-slate-400' : 'text-emerald-800 dark:text-emerald-300'} uppercase tracking-wider block`}>
                   Target Price
                 </span>
-                <span className="text-sm font-black font-mono text-emerald-700 dark:text-emerald-400">
-                  ₹{(activeStock?.target_num ?? 0).toFixed(2)}
+                <span className={`text-sm font-black font-mono ${isActiveOffline ? 'text-slate-700 dark:text-slate-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
+                  {isActiveOffline ? "N/A" : `₹${(activeStock?.target_num ?? 0).toFixed(2)}`}
                 </span>
               </div>
 
-              <div className="bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-xl p-2.5 text-center">
-                <span className="text-[10px] font-black text-rose-800 dark:text-rose-300 uppercase tracking-wider block">
+              <div className={`${isActiveOffline ? 'bg-slate-50 dark:bg-[#0B101B] border-slate-200 dark:border-slate-800' : 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'} border rounded-xl p-2.5 text-center`}>
+                <span className={`text-[10px] font-black ${isActiveOffline ? 'text-slate-600 dark:text-slate-400' : 'text-rose-800 dark:text-rose-300'} uppercase tracking-wider block`}>
                   Stop Loss
                 </span>
-                <span className="text-sm font-black font-mono text-rose-700 dark:text-rose-400">
-                  ₹{(activeStock?.stoploss_num ?? 0).toFixed(2)}
+                <span className={`text-sm font-black font-mono ${isActiveOffline ? 'text-slate-700 dark:text-slate-400' : 'text-rose-700 dark:text-rose-400'}`}>
+                  {isActiveOffline ? "N/A" : `₹${(activeStock?.stoploss_num ?? 0).toFixed(2)}`}
                 </span>
               </div>
             </div>
@@ -12145,8 +12189,9 @@ export default function Dashboard() {
 
             </div>
 
-
           </div>
+            );
+          })()}
         </div>
       </main>
 
