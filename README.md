@@ -56,11 +56,11 @@ To ensure institutional-grade reliability, TrackPulse includes dedicated algorit
 
 ---
 
-### 2. 🔌 Exchange Outage & Network Dropout Resilience
-- **Failure Scenario:** Exchange API timeouts, delisted symbols, or corrupted JSON feeds from upstream brokers.
-- **Why It Matters:** A single malformed quote or 504 gateway timeout from one ticker should never crash the user's entire watchlist or blank out their screen.
+### 2. 🔌 Exchange Outage & Network Dropout Resilience (BROKENSTOCK)
+- **Failure Scenario:** Upstream exchange API connection timeouts (HTTP 504), delisted symbols, or corrupted JSON feeds from broker endpoints.
+- **Why It Matters:** A single malformed quote or network timeout on one ticker should **never** crash the user's entire portfolio, cause blank screens, or stop live streaming for other stocks.
 - **How TrackPulse Handles It:**
-  1. Wraps all external calls in isolated try/catch safety boundaries with structured error models:
+  1. Wraps all exchange calls in isolated safety error boundaries with structured error models:
      ```json
      {
        "symbol": "BROKENSTOCK",
@@ -68,13 +68,33 @@ To ensure institutional-grade reliability, TrackPulse includes dedicated algorit
        "error_message": "Deliberate mock failure — Exchange API timeout",
        "relevance_score": 0.0,
        "confidence": "none",
-       "insight": "Data unavailable — could not retrieve live quote from exchange."
+       "isError": true,
+       "insight": "Data unavailable — isolated boundary active."
      }
      ```
-  2. Renders an isolated Rose/Red fallback warning card without breaking any neighboring stock calculations or blocking the session checkpoint.
-- **How to Test in UI & Backend:**
-  - **In Web App:** Click **`+ Add Stock`**, select category **`Demo Edge Cases`** or add **`BROKENSTOCK`**. Notice that the rest of the watchlist operates smoothly while `BROKENSTOCK` displays an isolated offline warning.
-  - **In Automated CLI:** Run `python backend/test_engine.py` (executes `test_07_graceful_error_handling_brokenstock`).
+  2. The frontend isolates the failed ticker in a **Rose/Red status card** (`🛑 Exchange Connection Timeout`) with offline sparkline placeholders (`#94A3B8`), while all other 202+ active stocks continue live websocket tick streaming without interruption.
+  3. Mathematical formulas enforce `Number.isFinite()` and division-by-zero checks to prevent `+Infinity%` or `NaN` calculations.
+
+#### 🛠️ How to Check / Test BROKENSTOCK in the Live UI:
+1. **Open the Live App:** [https://frontend-alpha-five-43.vercel.app/](https://frontend-alpha-five-43.vercel.app/)
+2. **Click `+ Add Stock`:** Open the search & directory modal at the top-left.
+3. **Select "Demo Edge Cases" or Search `BROKENSTOCK`:**
+   - Type `BROKENSTOCK` or `FAILTEST` in the search bar.
+   - Click **`Add to Watchlist`**.
+4. **Observe Fault Isolation in Real Time:**
+   - The stock appears with a **Rose/Red border** and `Exchange Feed Offline` badge.
+   - Clicking it reveals the **Rose Warning Banner**: *"Exchange Connection Timeout (Simulated Outage) — Deliberate mock failure active. Isolated error boundary prevents app crashes while 200+ neighboring stocks continue streaming live data."*
+   - All other stocks in your watchlist (ZOMATO, HAL, TATAMOTORS) continue updating their live prices seamlessly.
+
+#### 🧪 How to Check BROKENSTOCK via Automated Test Suite:
+Run the automated test suite from your terminal:
+```bash
+cd backend
+python test_engine.py
+```
+> **Output Confirmation:**  
+> `test_07_graceful_error_handling_brokenstock (__main__.WatchlistEngineTestSuite) ... ok`  
+> `[PASS] Broken/unquoted stocks do not crash the engine.`
 
 ---
 
