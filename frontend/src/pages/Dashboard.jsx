@@ -825,26 +825,28 @@ export default function Dashboard() {
                       </button>
                     </div>
 
-                    {/* Expand & Delete */}
+                    {/* Expand Chevron & Delete */}
                     <div className="lg:col-span-2 flex items-center justify-end space-x-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setExpandedStockSymbol(isExpanded ? null : stock.symbol);
                         }}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black border transition ${
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center text-base font-black transition-transform duration-200 border ${
                           isExpanded
-                            ? "bg-indigo-600 text-white border-indigo-600 shadow"
+                            ? "bg-indigo-600 text-white border-indigo-600 rotate-180 shadow-md"
                             : isDark
-                            ? "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                            ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white"
                             : "bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200"
                         }`}
+                        title={isExpanded ? "Collapse" : "Expand Analytics"}
                       >
-                        {isExpanded ? "▲ Less" : "▼ Details"}
+                        ▾
                       </button>
                       <button
                         onClick={(e) => handleRemoveStock(stock.symbol, e)}
-                        className="p-1.5 rounded-xl text-xs text-rose-500 hover:bg-rose-500/10 transition"
+                        className="p-2 rounded-xl text-xs text-rose-500 hover:bg-rose-500/10 transition"
+                        title="Remove stock"
                       >
                         🗑️
                       </button>
