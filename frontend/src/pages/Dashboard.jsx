@@ -710,38 +710,40 @@ export default function Dashboard() {
                     className="p-4 sm:p-5 cursor-pointer grid grid-cols-1 lg:grid-cols-12 gap-4 items-center"
                   >
                     
-                    {/* Stock Identity & Explicit Change Reason */}
+                    {/* Stock Identity & Explicit Meaningful Change Trigger */}
                     <div className="lg:col-span-3 flex items-center space-x-3">
                       <div className={`w-10 h-10 rounded-xl border flex items-center justify-center font-black text-sm shrink-0 ${
                         isDark ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-100 border-slate-300 text-slate-900"
                       }`}>
                         {stock.symbol.slice(0, 3)}
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 space-y-0.5">
                         <div className="flex items-center space-x-2">
                           <span className={`font-black text-base truncate ${isDark ? "text-white" : "text-slate-900"}`}>
                             {stock.symbol}
                           </span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${
+                          <span className={`text-[10px] px-2 py-0.5 rounded font-bold border ${
                             isDark ? "bg-slate-800 text-slate-200 border-slate-700" : "bg-slate-100 text-slate-800 border-slate-300"
                           }`}>
                             {meta.sector}
                           </span>
                         </div>
-                        {/* Explicit Meaningful Change Trigger Reason */}
-                        <div className={`text-xs truncate font-extrabold mt-0.5 ${
-                          stock.signal_type === "CRITICAL"
-                            ? (isDark ? "text-rose-400" : "text-rose-600")
-                            : stock.signal_type === "SIGNIFICANT"
-                            ? (isDark ? "text-indigo-400" : "text-indigo-600")
-                            : (isDark ? "text-slate-300" : "text-slate-600")
-                        }`}>
-                          {stock.change_reason || meta.name}
+                        {/* High-Visibility Actionable Change Trigger Badge */}
+                        <div className="flex items-center">
+                          <span className={`inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-md border truncate max-w-[260px] ${
+                            stock.signal_type === "CRITICAL"
+                              ? (isDark ? "bg-rose-950/80 text-rose-300 border-rose-700/80" : "bg-rose-100 text-rose-800 border-rose-300")
+                              : stock.signal_type === "SIGNIFICANT"
+                              ? (isDark ? "bg-emerald-950/80 text-emerald-300 border-emerald-700/80" : "bg-emerald-100 text-emerald-800 border-emerald-300")
+                              : (isDark ? "bg-indigo-950/80 text-indigo-300 border-indigo-700/80" : "bg-indigo-100 text-indigo-800 border-indigo-300")
+                          }`}>
+                            {stock.change_reason || (stock.volume_multiplier ? `⚡ Vol Surge (${stock.volume_multiplier}) • ${stock.catalyst_headline || meta.name}` : `📊 ${stock.catalyst_headline || meta.name}`)}
+                          </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* CHECKPOINT ENTRY PRICE ➔ CURRENT LIVE PRICE */}
+                    {/* CHECKPOINT ENTRY PRICE{/* CHECKPOINT ENTRY PRICE ➔ CURRENT LIVE PRICE */}
                     <div className="lg:col-span-3 flex flex-col justify-center">
                       <div className="flex items-baseline space-x-2 flex-wrap">
                         <span className={`text-xs font-bold ${isDark ? "text-slate-300" : "text-slate-600"}`}>
