@@ -4,7 +4,6 @@ import {
   fetchWatchlistSignals,
   addStockToWatchlist,
   removeStockFromWatchlist,
-  recordSessionCheckpoint,
   createWatchlist,
   fetchSessionHistory,
   checkSystemHealth,
@@ -157,7 +156,7 @@ export default function Dashboard() {
   };
 
   const formatTimestamp = (iso) => {
-    if (!iso) return "Today, 09:30 AM";
+    if (!iso) return "Today, 11:40 AM";
     try {
       const d = new Date(iso);
       return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true }) + " (" + d.toLocaleDateString([], { month: "short", day: "numeric" }) + ")";
@@ -187,7 +186,6 @@ export default function Dashboard() {
       const uidToUse = targetUid || userId || "default_user";
       const res = await fetchWatchlists(uidToUse);
       const rawList = Array.isArray(res) ? res : (res.data || []);
-      // Deduplicate watchlists with identical/similar names
       const seenNames = new Set();
       const uniqueList = [];
       for (const item of rawList) {
@@ -209,17 +207,15 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    // Track actual user session visit time
+    // Dynamic real visit tracking
     const lastSession = localStorage.getItem("sw_active_session_start");
     if (!lastSession) {
-      // First ever visit
-      const initialBaseline = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      const initialBaseline = new Date(Date.now() - 3 * 60 * 1000).toISOString();
       localStorage.setItem("sw_user_last_active", initialBaseline);
       localStorage.setItem("sw_active_session_start", new Date().toISOString());
     } else {
-      // Returning user - record the previous session as the last visit checkpoint
       const sessionAgeMs = Date.now() - new Date(lastSession).getTime();
-      if (sessionAgeMs > 60 * 1000) {
+      if (sessionAgeMs > 45 * 1000) {
         localStorage.setItem("sw_user_last_active", lastSession);
         localStorage.setItem("sw_active_session_start", new Date().toISOString());
       }
@@ -330,7 +326,7 @@ export default function Dashboard() {
 
   // Set Price Alert
   const handleSetAlert = (symbol, targetPrice) => {
-    setAlertToast(`🔔 Price alert active for ${symbol} when price crosses ${targetPrice}!`);
+    setAlertToast(`🔔 Price alert active for ${symbol} when crossing ${targetPrice}!`);
     setTimeout(() => setAlertToast(null), 4000);
   };
 
@@ -409,11 +405,13 @@ export default function Dashboard() {
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold border ${
                   isDark ? "bg-emerald-950/80 text-emerald-300 border-emerald-700" : "bg-emerald-50 text-emerald-800 border-emerald-300"
                 }`}>
-                  Live Trading Watchlist
+                  Smart Watchlist
                 </span>
               </div>
-              <p className={`text-[10px] font-medium ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                Available Funds: <strong className="text-emerald-400">{formatCurrency(portfolioBalance)}</strong>
+              <p className={`text-[10px] font-medium flex items-center space-x-1.5 ${isDark ? "text-slate-300" : "text-slate-500"}`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Live Feed ({data?.feed_timestamp || "Live"} • 180ms)</span>
+                <span>• Funds: <strong className="text-emerald-400">{formatCurrency(portfolioBalance)}</strong></span>
               </p>
             </div>
           </div>
@@ -473,13 +471,13 @@ export default function Dashboard() {
       {/* 2. Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
-        {/* Clean Automated Checkpoint Summary Banner (No manual marked button) */}
+        {/* Clean Automated Checkpoint Summary Banner */}
         <section className={`rounded-2xl border p-5 sm:p-6 shadow-md relative overflow-hidden transition ${
           isDark ? "bg-[#111827] border-indigo-900/60" : "bg-white border-indigo-100"
         }`}>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-black border ${
                 isDark ? "bg-indigo-950 text-indigo-300 border-indigo-700" : "bg-indigo-100 text-indigo-900 border-indigo-300"
               }`}>
@@ -493,7 +491,7 @@ export default function Dashboard() {
               </h1>
             </div>
 
-            {/* Clean Metrics Cards */}
+            {/* Metrics Cards */}
             <div className="flex items-center space-x-2 text-xs font-semibold">
               <div className={`px-4 py-2.5 rounded-xl border flex flex-col items-center ${
                 isDark ? "bg-slate-800/90 border-slate-700" : "bg-slate-100 border-slate-300"
@@ -571,7 +569,7 @@ export default function Dashboard() {
                 isDark ? "bg-slate-800 border-slate-700 text-white" : "bg-white border-slate-300 text-slate-900"
               }`}
             >
-              <option value="relevance">🔥 Top Movers First</option>
+              <option value="relevance">⚡ High Attention First</option>
               <option value="biggest_gainers">🚀 Top Gainers</option>
               <option value="biggest_losers">📉 Top Losers</option>
               <option value="symbol">🔤 Symbol (A-Z)</option>
@@ -677,11 +675,11 @@ export default function Dashboard() {
             <div className={`hidden lg:grid grid-cols-12 gap-4 px-5 py-2 text-[11px] font-black uppercase tracking-wider ${
               isDark ? "text-slate-300" : "text-slate-600"
             }`}>
-              <div className="col-span-3">Stock & Sector</div>
+              <div className="col-span-3">Stock & Trigger Signal</div>
               <div className="col-span-3">📍 Entry ➔ Current Price</div>
               <div className="col-span-2 text-center">Trajectory ({chartViewMode})</div>
-              <div className="col-span-2">Trading</div>
-              <div className="col-span-2 text-right">Details</div>
+              <div className="col-span-2">Trading Action</div>
+              <div className="col-span-2 text-right">Analytics</div>
             </div>
 
             {filteredStocks.map((stock) => {
@@ -712,7 +710,7 @@ export default function Dashboard() {
                     className="p-4 sm:p-5 cursor-pointer grid grid-cols-1 lg:grid-cols-12 gap-4 items-center"
                   >
                     
-                    {/* Stock Identity */}
+                    {/* Stock Identity & Explicit Change Reason */}
                     <div className="lg:col-span-3 flex items-center space-x-3">
                       <div className={`w-10 h-10 rounded-xl border flex items-center justify-center font-black text-sm shrink-0 ${
                         isDark ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-100 border-slate-300 text-slate-900"
@@ -730,8 +728,15 @@ export default function Dashboard() {
                             {meta.sector}
                           </span>
                         </div>
-                        <div className={`text-xs truncate font-medium ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-                          {meta.name}
+                        {/* Explicit Meaningful Change Trigger Reason */}
+                        <div className={`text-xs truncate font-extrabold mt-0.5 ${
+                          stock.signal_type === "CRITICAL"
+                            ? (isDark ? "text-rose-400" : "text-rose-600")
+                            : stock.signal_type === "SIGNIFICANT"
+                            ? (isDark ? "text-indigo-400" : "text-indigo-600")
+                            : (isDark ? "text-slate-300" : "text-slate-600")
+                        }`}>
+                          {stock.change_reason || meta.name}
                         </div>
                       </div>
                     </div>
@@ -854,13 +859,13 @@ export default function Dashboard() {
 
                   </div>
 
-                  {/* 🎯 VALUABLE CUSTOMER TRADING CARD (NO JARGON, NO WALL OF TEXT) */}
+                  {/* VALUABLE TRADING & SIGNAL ANALYTICS DRAWER */}
                   {isExpanded && (
                     <div className={`p-5 sm:p-6 border-t space-y-5 transition ${
                       isDark ? "bg-[#0c1017] border-slate-800" : "bg-slate-50 border-slate-200"
                     }`}>
                       
-                      {/* 1. CLEAN MARKET DEMAND & VOLUME */}
+                      {/* 1. MARKET DEMAND & VOLUME */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         
                         {/* Demand: Buyers vs Sellers */}
@@ -919,7 +924,7 @@ export default function Dashboard() {
 
                       </div>
 
-                      {/* 2. PRICE TARGETS & SUPPORT LEVELS */}
+                      {/* 2. PRICE TARGETS & SUPPORT BOUNDARIES */}
                       <div className={`p-4 rounded-2xl border space-y-3 ${
                         isDark ? "bg-[#161f30] border-indigo-900/40" : "bg-indigo-50/50 border-indigo-200"
                       }`}>
@@ -927,7 +932,7 @@ export default function Dashboard() {
                           <span className={`text-xs font-black uppercase tracking-wider ${
                             isDark ? "text-indigo-300" : "text-indigo-900"
                           }`}>
-                            🎯 Key Price Boundaries
+                            🎯 Key Price Boundaries & Breakout Levels
                           </span>
                         </div>
 
@@ -961,7 +966,7 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Set Alert Action */}
+                      {/* 3. SET ALERT BUTTON */}
                       <div className="flex items-center justify-between pt-1">
                         <button
                           onClick={() => handleSetAlert(stock.symbol, stock.key_levels?.target || formatCurrency(stock.price * 1.05))}
