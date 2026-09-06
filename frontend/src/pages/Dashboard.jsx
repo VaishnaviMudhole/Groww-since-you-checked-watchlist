@@ -12141,7 +12141,7 @@ export default function Dashboard() {
                       Potential Upside
                     </span>
                     <span className="font-extrabold text-emerald-700 dark:text-emerald-400">
-                      +{activeStock.upside_pct}% (+₹{activeStock.upside_amt})
+                      {isActiveOffline ? "N/A" : `+${activeStock.upside_pct}% (+₹${activeStock.upside_amt})`}
                     </span>
                   </div>
                   <div className="text-right">
