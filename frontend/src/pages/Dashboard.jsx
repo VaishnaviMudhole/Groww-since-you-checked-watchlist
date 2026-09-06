@@ -11359,11 +11359,13 @@ export default function Dashboard() {
 
   // Overall Statistics
   const totalCount = trackedStocks.length;
-  const gainersCount = trackedStocks.filter((s) => s.pct_change > 0).length;
-  const losersCount = trackedStocks.filter((s) => s.pct_change < 0).length;
-  const avgMove = (
-    trackedStocks.reduce((acc, s) => acc + s.pct_change, 0) / (totalCount || 1)
-  ).toFixed(2);
+  const finiteStocks = trackedStocks.filter((s) => Number.isFinite(s.pct_change));
+  const gainersCount = finiteStocks.filter((s) => s.pct_change > 0).length;
+  const losersCount = finiteStocks.filter((s) => s.pct_change < 0).length;
+  const rawAvg = finiteStocks.length > 0 
+    ? (finiteStocks.reduce((acc, s) => acc + s.pct_change, 0) / finiteStocks.length)
+    : 0;
+  const avgMove = Number.isFinite(rawAvg) ? rawAvg.toFixed(2) : "0.00";
 
   // Available directory stocks for the Add Modal (shows all 202+ stocks with + Add button)
   const modalAvailableStocks = useMemo(() => {
