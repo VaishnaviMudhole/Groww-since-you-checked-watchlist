@@ -11349,7 +11349,13 @@ export default function Dashboard() {
   const modalAvailableStocks = useMemo(() => {
     let list = [...ALL_202_NSE_STOCKS];
     if (addSelectedCategory !== "ALL") {
-      list = list.filter((s) => s.sector.toLowerCase().includes(addSelectedCategory.toLowerCase()));
+      if (addSelectedCategory === "Microcap") {
+        list = list.filter((s) => s.isIlliquid || s.sector.toLowerCase().includes("microcap") || s.price < 50);
+      } else if (addSelectedCategory === "Demo Edge Cases") {
+        list = list.filter((s) => s.isError || s.isIlliquid || s.symbol.includes("BROKEN") || s.symbol.includes("PENNY"));
+      } else {
+        list = list.filter((s) => s.sector.toLowerCase().includes(addSelectedCategory.toLowerCase()));
+      }
     }
     if (addSearchInput.trim()) {
       const q = addSearchInput.toLowerCase();
@@ -11730,13 +11736,23 @@ export default function Dashboard() {
                   const isSelected = stock.symbol === activeStock.symbol;
                   const isUp = stock.pct_change >= 0;
                   const flashState = recentlyUpdatedSymbols[stock.symbol];
+                  const isPenny = stock.isIlliquid || stock.sector?.includes("Microcap") || stock.symbol.includes("PENNY");
+                  const isOffline = stock.isError || stock.sector?.includes("Offline") || stock.symbol.includes("BROKEN");
 
                   return (
                     <div
                       key={stock.symbol}
                       onClick={() => setSelectedStockSymbol(stock.symbol)}
                       className={`group p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                        isSelected
+                        isOffline
+                          ? isSelected
+                            ? "bg-rose-100/90 dark:bg-rose-950/50 border-rose-500 ring-2 ring-rose-500/60 shadow-sm"
+                            : "bg-rose-50/70 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800/60 hover:bg-rose-100/60"
+                          : isPenny
+                          ? isSelected
+                            ? "bg-amber-100/90 dark:bg-amber-950/50 border-amber-500 ring-2 ring-amber-500/60 shadow-sm"
+                            : "bg-amber-50/70 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800/60 hover:bg-amber-100/60"
+                          : isSelected
                           ? "bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-500/80 dark:border-emerald-500/60 shadow-sm ring-1 ring-emerald-500/50"
                           : flashState === "up"
                           ? "bg-emerald-500/10 border-emerald-500/60"
@@ -11756,6 +11772,16 @@ export default function Dashboard() {
                             {stock.isHolding && stock.shares > 0 && (
                               <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
                                 {stock.shares} SH
+                              </span>
+                            )}
+                            {isPenny && (
+                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                                ⚠️ Low Liquidity
+                              </span>
+                            )}
+                            {isOffline && (
+                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-700">
+                                🛑 Feed Offline
                               </span>
                             )}
                           </div>
@@ -11819,6 +11845,25 @@ export default function Dashboard() {
              ==================================================== */}
           <div className="lg:col-span-7 bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
             
+            {/* Edge Case Warning Banners */}
+            {activeStock.isError || activeStock.sector?.includes("Offline") || activeStock.symbol.includes("BROKEN") ? (
+              <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 rounded-xl flex items-start gap-2.5 text-xs text-rose-900 dark:text-rose-200 shadow-sm">
+                <span className="text-lg">🛑</span>
+                <div className="min-w-0">
+                  <p className="font-black text-rose-800 dark:text-rose-300">Exchange Connection Timeout (Simulated Outage)</p>
+                  <p className="text-[11px] text-rose-700 dark:text-rose-400 mt-0.5">Deliberate mock failure active. Isolated error boundary prevents app crashes while 200+ neighboring stocks continue streaming live data.</p>
+                </div>
+              </div>
+            ) : (activeStock.isIlliquid || activeStock.sector?.includes("Microcap") || activeStock.symbol.includes("PENNY")) ? (
+              <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-xl flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200 shadow-sm">
+                <span className="text-lg">⚠️</span>
+                <div className="min-w-0">
+                  <p className="font-black text-amber-800 dark:text-amber-300">Low Liquidity Warning (Daily Turnover &lt; ₹2 Crore)</p>
+                  <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">Trading volume is too low for reliable anomaly scoring. Percentage fluctuations may reflect wide bid-ask spreads rather than institutional accumulation.</p>
+                </div>
+              </div>
+            ) : null}
+
             {/* Header: Stock Logo, Symbol, Price, Buy/Sell */}
             <div className="flex items-start justify-between gap-4 pb-3 border-b border-slate-200 dark:border-slate-800 flex-wrap sm:flex-nowrap">
               <div className="flex items-center gap-3">
@@ -12134,8 +12179,8 @@ export default function Dashboard() {
             </div>
 
             {/* Category Quick Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-              {["ALL", "Defence", "Railways", "Energy", "Banking", "Financials", "Consumer", "Tech", "Auto", "Pharma", "Metals", "Chemicals"].map((cat) => (
+            <div className="flex items-center gap-1.5 overflow-x-auto py-1.5 px-0.5 text-xs" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+              {["ALL", "Tech", "Banking", "Financials", "Auto", "Energy", "Defence", "Consumer", "Pharma", "Railways", "Microcap", "Demo Edge Cases"].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setAddSelectedCategory(cat)}
