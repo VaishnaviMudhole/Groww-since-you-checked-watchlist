@@ -1,1194 +1,12239 @@
-import { useEffect, useState } from "react";
-import {
-  fetchWatchlists,
-  fetchWatchlistSignals,
-  addStockToWatchlist,
-  removeStockFromWatchlist,
-  createWatchlist,
-  fetchSessionHistory,
-  checkSystemHealth,
-} from "../api/client";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import AuthModal from "../components/AuthModal";
+import ActivityLogsModal from "../components/ActivityLogsModal";
+import { useVoiceAssistant, AudioWaves } from "../components/VoiceModule";
+import OrderModal from "../components/OrderModal";
 
-// Company Metadata
-const COMPANY_META = {
-  "TATAMOTORS": { name: "Tata Motors Ltd.", sector: "Auto", low52: 640, high52: 1179 },
-  "TATASTEEL":  { name: "Tata Steel Ltd.", sector: "Metals", low52: 114, high52: 184 },
-  "RELIANCE":   { name: "Reliance Industries", sector: "Energy", low52: 2220, high52: 3217 },
-  "HDFCBANK":   { name: "HDFC Bank Ltd.", sector: "Banking", low52: 1363, high52: 1794 },
-  "ICICIBANK":  { name: "ICICI Bank Ltd.", sector: "Banking", low52: 910, high52: 1330 },
-  "INFY":       { name: "Infosys Ltd.", sector: "Tech", low52: 1358, high52: 1990 },
-  "TCS":        { name: "Tata Consultancy Services", sector: "Tech", low52: 3313, high52: 4585 },
-  "WIPRO":      { name: "Wipro Ltd.", sector: "Tech", low52: 375, high52: 580 },
-  "ZOMATO":     { name: "Eternal (Zomato Ltd.)", sector: "Consumer", low52: 98, high52: 298 },
-  "SBIN":       { name: "State Bank of India", sector: "Banking", low52: 555, high52: 912 },
-  "ITC":        { name: "ITC Ltd.", sector: "FMCG", low52: 399, high52: 528 },
-  "HINDUNILVR": { name: "Hindustan Unilever", sector: "FMCG", low52: 2172, high52: 3034 },
-  "HAL":        { name: "Hindustan Aeronautics", sector: "Defense", low52: 2350, high52: 5675 },
-  "BEL":        { name: "Bharat Electronics", sector: "Defense", low52: 125, high52: 340 },
-  "MARUTI":     { name: "Maruti Suzuki India", sector: "Auto", low52: 9600, high52: 13680 },
-  "LT":         { name: "Larsen & Toubro", sector: "Infra", low52: 2850, high52: 3948 },
+// Master Directory of all 202+ NSE Listed Stocks across NIFTY 200
+export const ALL_202_NSE_STOCKS = [
+  {
+    "symbol": "TCS",
+    "name": "Tata Consultancy Services",
+    "subtitle": "Tata Consultancy Services \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 4180.0,
+    "checkpoint_price": 4140.0,
+    "pct_change": 0.97,
+    "day_change_amount": 40.0,
+    "logo_type": "tata",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 4140.0,
+    "today_move_to": 4180.0,
+    "pos_return_from": 4140.0,
+    "pos_return_to": 4180.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 0.97,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 87,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 334.4,
+    "upside_pct": 8.0,
+    "downside_amt": -250.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 4012.8,
+    "target_num": 4514.4,
+    "stoploss_num": 3929.2,
+    "order_flow_buyers": 78,
+    "volume_multiplier": "2.4x vs 30-day average",
+    "low52": 2717.0,
+    "high52": 5225.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TCS trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "INFY",
+    "name": "Infosys Ltd",
+    "subtitle": "Infosys Ltd \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 1845.0,
+    "checkpoint_price": 1812.0,
+    "pct_change": 1.82,
+    "day_change_amount": 33.0,
+    "logo_type": "infosys",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1812.0,
+    "today_move_to": 1845.0,
+    "pos_return_from": 1812.0,
+    "pos_return_to": 1845.0,
+    "pos_return_amt": 33.0,
+    "pos_return_pct": 1.82,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 147.6,
+    "upside_pct": 8.0,
+    "downside_amt": -110.7,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1771.2,
+    "target_num": 1992.6,
+    "stoploss_num": 1734.3,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 1199.25,
+    "high52": 2306.25,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "INFY trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "HCLTECH",
+    "name": "HCL Technologies",
+    "subtitle": "HCL Technologies \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 1790.0,
+    "checkpoint_price": 1765.0,
+    "pct_change": 1.42,
+    "day_change_amount": 25.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1765.0,
+    "today_move_to": 1790.0,
+    "pos_return_from": 1765.0,
+    "pos_return_to": 1790.0,
+    "pos_return_amt": 25.0,
+    "pos_return_pct": 1.42,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 143.2,
+    "upside_pct": 8.0,
+    "downside_amt": -107.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1718.4,
+    "target_num": 1933.2,
+    "stoploss_num": 1682.6,
+    "order_flow_buyers": 80,
+    "volume_multiplier": "2.7x vs 30-day average",
+    "low52": 1163.5,
+    "high52": 2237.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "HCLTECH trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "WIPRO",
+    "name": "Wipro Ltd",
+    "subtitle": "Wipro Ltd \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 532.0,
+    "checkpoint_price": 537.0,
+    "pct_change": -0.93,
+    "day_change_amount": -5.0,
+    "logo_type": "wipro",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 537.0,
+    "today_move_to": 532.0,
+    "pos_return_from": 537.0,
+    "pos_return_to": 532.0,
+    "pos_return_amt": -5.0,
+    "pos_return_pct": -0.93,
+    "action_type": "ACCUMULATE",
+    "action_badge": "Accumulate",
+    "confidence_score": 87,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 42.56,
+    "upside_pct": 8.0,
+    "downside_amt": -31.92,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 510.72,
+    "target_num": 574.56,
+    "stoploss_num": 500.08,
+    "order_flow_buyers": 71,
+    "volume_multiplier": "1.2x vs 30-day average",
+    "low52": 345.8,
+    "high52": 665.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "WIPRO trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "TECHM",
+    "name": "Tech Mahindra",
+    "subtitle": "Tech Mahindra \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 1620.0,
+    "checkpoint_price": 1595.0,
+    "pct_change": 1.57,
+    "day_change_amount": 25.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1595.0,
+    "today_move_to": 1620.0,
+    "pos_return_from": 1595.0,
+    "pos_return_to": 1620.0,
+    "pos_return_amt": 25.0,
+    "pos_return_pct": 1.57,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 129.6,
+    "upside_pct": 8.0,
+    "downside_amt": -97.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1555.2,
+    "target_num": 1749.6,
+    "stoploss_num": 1522.8,
+    "order_flow_buyers": 81,
+    "volume_multiplier": "2.7x vs 30-day average",
+    "low52": 1053.0,
+    "high52": 2025.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TECHM trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "LTIM",
+    "name": "LTIMindtree Ltd",
+    "subtitle": "LTIMindtree Ltd \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 5850.0,
+    "checkpoint_price": 5780.0,
+    "pct_change": 1.21,
+    "day_change_amount": 70.0,
+    "logo_type": "lt",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 5780.0,
+    "today_move_to": 5850.0,
+    "pos_return_from": 5780.0,
+    "pos_return_to": 5850.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 1.21,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 88,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 468.0,
+    "upside_pct": 8.0,
+    "downside_amt": -351.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 5616.0,
+    "target_num": 6318.0,
+    "stoploss_num": 5499.0,
+    "order_flow_buyers": 79,
+    "volume_multiplier": "2.5x vs 30-day average",
+    "low52": 3802.5,
+    "high52": 7312.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "LTIM trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "PERSISTENT",
+    "name": "Persistent Systems",
+    "subtitle": "Persistent Systems \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 5240.0,
+    "checkpoint_price": 5120.0,
+    "pct_change": 2.34,
+    "day_change_amount": 120.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 5120.0,
+    "today_move_to": 5240.0,
+    "pos_return_from": 5120.0,
+    "pos_return_to": 5240.0,
+    "pos_return_amt": 120.0,
+    "pos_return_pct": 2.34,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 419.2,
+    "upside_pct": 8.0,
+    "downside_amt": -314.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 5030.4,
+    "target_num": 5659.2,
+    "stoploss_num": 4925.6,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 3406.0,
+    "high52": 6550.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "PERSISTENT trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "COFORGE",
+    "name": "Coforge Ltd",
+    "subtitle": "Coforge Ltd \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 7350.0,
+    "checkpoint_price": 7180.0,
+    "pct_change": 2.37,
+    "day_change_amount": 170.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 7180.0,
+    "today_move_to": 7350.0,
+    "pos_return_from": 7180.0,
+    "pos_return_to": 7350.0,
+    "pos_return_amt": 170.0,
+    "pos_return_pct": 2.37,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 588.0,
+    "upside_pct": 8.0,
+    "downside_amt": -441.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 7056.0,
+    "target_num": 7938.0,
+    "stoploss_num": 6909.0,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 4777.5,
+    "high52": 9187.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "COFORGE trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "MPHASIS",
+    "name": "Mphasis Ltd",
+    "subtitle": "Mphasis Ltd \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 3020.0,
+    "checkpoint_price": 2980.0,
+    "pct_change": 1.34,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2980.0,
+    "today_move_to": 3020.0,
+    "pos_return_from": 2980.0,
+    "pos_return_to": 3020.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 1.34,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 241.6,
+    "upside_pct": 8.0,
+    "downside_amt": -181.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2899.2,
+    "target_num": 3261.6,
+    "stoploss_num": 2838.8,
+    "order_flow_buyers": 80,
+    "volume_multiplier": "2.6x vs 30-day average",
+    "low52": 1963.0,
+    "high52": 3775.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "MPHASIS trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "KPITTECH",
+    "name": "KPIT Technologies",
+    "subtitle": "KPIT Technologies \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 1680.0,
+    "checkpoint_price": 1640.0,
+    "pct_change": 2.44,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1640.0,
+    "today_move_to": 1680.0,
+    "pos_return_from": 1640.0,
+    "pos_return_to": 1680.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 2.44,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 134.4,
+    "upside_pct": 8.0,
+    "downside_amt": -100.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1612.8,
+    "target_num": 1814.4,
+    "stoploss_num": 1579.2,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.3x vs 30-day average",
+    "low52": 1092.0,
+    "high52": 2100.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "KPITTECH trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "TATAELXSI",
+    "name": "Tata Elxsi Ltd",
+    "subtitle": "Tata Elxsi Ltd \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 7650.0,
+    "checkpoint_price": 7520.0,
+    "pct_change": 1.73,
+    "day_change_amount": 130.0,
+    "logo_type": "tata",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 7520.0,
+    "today_move_to": 7650.0,
+    "pos_return_from": 7520.0,
+    "pos_return_to": 7650.0,
+    "pos_return_amt": 130.0,
+    "pos_return_pct": 1.73,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 612.0,
+    "upside_pct": 8.0,
+    "downside_amt": -459.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 7344.0,
+    "target_num": 8262.0,
+    "stoploss_num": 7191.0,
+    "order_flow_buyers": 81,
+    "volume_multiplier": "2.8x vs 30-day average",
+    "low52": 4972.5,
+    "high52": 9562.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TATAELXSI trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "OFSS",
+    "name": "Oracle Financial Services",
+    "subtitle": "Oracle Financial Services \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 11450.0,
+    "checkpoint_price": 11200.0,
+    "pct_change": 2.23,
+    "day_change_amount": 250.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 11200.0,
+    "today_move_to": 11450.0,
+    "pos_return_from": 11200.0,
+    "pos_return_to": 11450.0,
+    "pos_return_amt": 250.0,
+    "pos_return_pct": 2.23,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 916.0,
+    "upside_pct": 8.0,
+    "downside_amt": -687.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 10992.0,
+    "target_num": 12366.0,
+    "stoploss_num": 10763.0,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 7442.5,
+    "high52": 14312.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "OFSS trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "CYIENT",
+    "name": "Cyient Ltd",
+    "subtitle": "Cyient Ltd \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 1950.0,
+    "checkpoint_price": 1910.0,
+    "pct_change": 2.09,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1910.0,
+    "today_move_to": 1950.0,
+    "pos_return_from": 1910.0,
+    "pos_return_to": 1950.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 2.09,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 156.0,
+    "upside_pct": 8.0,
+    "downside_amt": -117.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1872.0,
+    "target_num": 2106.0,
+    "stoploss_num": 1833.0,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 1267.5,
+    "high52": 2437.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "CYIENT trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "BSOFT",
+    "name": "Birlasoft Ltd",
+    "subtitle": "Birlasoft Ltd \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 620.0,
+    "checkpoint_price": 608.0,
+    "pct_change": 1.97,
+    "day_change_amount": 12.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 608.0,
+    "today_move_to": 620.0,
+    "pos_return_from": 608.0,
+    "pos_return_to": 620.0,
+    "pos_return_amt": 12.0,
+    "pos_return_pct": 1.97,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 49.6,
+    "upside_pct": 8.0,
+    "downside_amt": -37.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 595.2,
+    "target_num": 669.6,
+    "stoploss_num": 582.8,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 403.0,
+    "high52": 775.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BSOFT trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "LATENTVIEW",
+    "name": "Latent View Analytics",
+    "subtitle": "Latent View Analytics \u2022 Tech",
+    "sector": "Tech",
+    "exchange": "NSE",
+    "price": 510.0,
+    "checkpoint_price": 498.0,
+    "pct_change": 2.41,
+    "day_change_amount": 12.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 498.0,
+    "today_move_to": 510.0,
+    "pos_return_from": 498.0,
+    "pos_return_to": 510.0,
+    "pos_return_amt": 12.0,
+    "pos_return_pct": 2.41,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Tech supporting upside target.",
+    "upside_amt": 40.8,
+    "upside_pct": 8.0,
+    "downside_amt": -30.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 489.6,
+    "target_num": 550.8,
+    "stoploss_num": 479.4,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 331.5,
+    "high52": 637.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "LATENTVIEW trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "HDFCBANK",
+    "name": "HDFC Bank Ltd",
+    "subtitle": "HDFC Bank Ltd \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 1655.0,
+    "checkpoint_price": 1634.0,
+    "pct_change": 1.29,
+    "day_change_amount": 21.0,
+    "logo_type": "hdfc",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1634.0,
+    "today_move_to": 1655.0,
+    "pos_return_from": 1634.0,
+    "pos_return_to": 1655.0,
+    "pos_return_amt": 21.0,
+    "pos_return_pct": 1.29,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 88,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 132.4,
+    "upside_pct": 8.0,
+    "downside_amt": -99.3,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1588.8,
+    "target_num": 1787.4,
+    "stoploss_num": 1555.7,
+    "order_flow_buyers": 80,
+    "volume_multiplier": "2.6x vs 30-day average",
+    "low52": 1075.75,
+    "high52": 2068.75,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "HDFCBANK trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "ICICIBANK",
+    "name": "ICICI Bank Ltd",
+    "subtitle": "ICICI Bank Ltd \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 1224.0,
+    "checkpoint_price": 1209.0,
+    "pct_change": 1.24,
+    "day_change_amount": 15.0,
+    "logo_type": "icici",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1209.0,
+    "today_move_to": 1224.0,
+    "pos_return_from": 1209.0,
+    "pos_return_to": 1224.0,
+    "pos_return_amt": 15.0,
+    "pos_return_pct": 1.24,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 88,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 97.92,
+    "upside_pct": 8.0,
+    "downside_amt": -73.44,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1175.04,
+    "target_num": 1321.92,
+    "stoploss_num": 1150.56,
+    "order_flow_buyers": 79,
+    "volume_multiplier": "2.5x vs 30-day average",
+    "low52": 795.6,
+    "high52": 1530.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ICICIBANK trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "SBIN",
+    "name": "State Bank of India",
+    "subtitle": "State Bank of India \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 818.0,
+    "checkpoint_price": 809.0,
+    "pct_change": 1.11,
+    "day_change_amount": 9.0,
+    "logo_type": "sbi",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 809.0,
+    "today_move_to": 818.0,
+    "pos_return_from": 809.0,
+    "pos_return_to": 818.0,
+    "pos_return_amt": 9.0,
+    "pos_return_pct": 1.11,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 88,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 65.44,
+    "upside_pct": 8.0,
+    "downside_amt": -49.08,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 785.28,
+    "target_num": 883.44,
+    "stoploss_num": 768.92,
+    "order_flow_buyers": 79,
+    "volume_multiplier": "2.5x vs 30-day average",
+    "low52": 531.7,
+    "high52": 1022.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "SBIN trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "KOTAKBANK",
+    "name": "Kotak Mahindra Bank",
+    "subtitle": "Kotak Mahindra Bank \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 1785.0,
+    "checkpoint_price": 1786.0,
+    "pct_change": -0.06,
+    "day_change_amount": -1.0,
+    "logo_type": "kotak",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1786.0,
+    "today_move_to": 1785.0,
+    "pos_return_from": 1786.0,
+    "pos_return_to": 1785.0,
+    "pos_return_amt": -1.0,
+    "pos_return_pct": -0.06,
+    "action_type": "ACCUMULATE",
+    "action_badge": "Accumulate",
+    "confidence_score": 85,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 142.8,
+    "upside_pct": 8.0,
+    "downside_amt": -107.1,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1713.6,
+    "target_num": 1927.8,
+    "stoploss_num": 1677.9,
+    "order_flow_buyers": 74,
+    "volume_multiplier": "1.8x vs 30-day average",
+    "low52": 1160.25,
+    "high52": 2231.25,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "KOTAKBANK trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "AXISBANK",
+    "name": "Axis Bank Ltd",
+    "subtitle": "Axis Bank Ltd \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 1180.0,
+    "checkpoint_price": 1165.0,
+    "pct_change": 1.29,
+    "day_change_amount": 15.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1165.0,
+    "today_move_to": 1180.0,
+    "pos_return_from": 1165.0,
+    "pos_return_to": 1180.0,
+    "pos_return_amt": 15.0,
+    "pos_return_pct": 1.29,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 88,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 94.4,
+    "upside_pct": 8.0,
+    "downside_amt": -70.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1132.8,
+    "target_num": 1274.4,
+    "stoploss_num": 1109.2,
+    "order_flow_buyers": 80,
+    "volume_multiplier": "2.6x vs 30-day average",
+    "low52": 767.0,
+    "high52": 1475.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "AXISBANK trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "INDUSINDBK",
+    "name": "IndusInd Bank Ltd",
+    "subtitle": "IndusInd Bank Ltd \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 1440.0,
+    "checkpoint_price": 1420.0,
+    "pct_change": 1.41,
+    "day_change_amount": 20.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1420.0,
+    "today_move_to": 1440.0,
+    "pos_return_from": 1420.0,
+    "pos_return_to": 1440.0,
+    "pos_return_amt": 20.0,
+    "pos_return_pct": 1.41,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 115.2,
+    "upside_pct": 8.0,
+    "downside_amt": -86.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1382.4,
+    "target_num": 1555.2,
+    "stoploss_num": 1353.6,
+    "order_flow_buyers": 80,
+    "volume_multiplier": "2.6x vs 30-day average",
+    "low52": 936.0,
+    "high52": 1800.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "INDUSINDBK trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "BANKBARODA",
+    "name": "Bank of Baroda",
+    "subtitle": "Bank of Baroda \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 252.0,
+    "checkpoint_price": 246.0,
+    "pct_change": 2.44,
+    "day_change_amount": 6.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 246.0,
+    "today_move_to": 252.0,
+    "pos_return_from": 246.0,
+    "pos_return_to": 252.0,
+    "pos_return_amt": 6.0,
+    "pos_return_pct": 2.44,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 20.16,
+    "upside_pct": 8.0,
+    "downside_amt": -15.12,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 241.92,
+    "target_num": 272.16,
+    "stoploss_num": 236.88,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.3x vs 30-day average",
+    "low52": 163.8,
+    "high52": 315.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BANKBARODA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "PNB",
+    "name": "Punjab National Bank",
+    "subtitle": "Punjab National Bank \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 108.0,
+    "checkpoint_price": 105.0,
+    "pct_change": 2.86,
+    "day_change_amount": 3.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 105.0,
+    "today_move_to": 108.0,
+    "pos_return_from": 105.0,
+    "pos_return_to": 108.0,
+    "pos_return_amt": 3.0,
+    "pos_return_pct": 2.86,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 8.64,
+    "upside_pct": 8.0,
+    "downside_amt": -6.48,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 103.68,
+    "target_num": 116.64,
+    "stoploss_num": 101.52,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.5x vs 30-day average",
+    "low52": 70.2,
+    "high52": 135.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "PNB trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "CANBK",
+    "name": "Canara Bank",
+    "subtitle": "Canara Bank \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 104.0,
+    "checkpoint_price": 101.0,
+    "pct_change": 2.97,
+    "day_change_amount": 3.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 101.0,
+    "today_move_to": 104.0,
+    "pos_return_from": 101.0,
+    "pos_return_to": 104.0,
+    "pos_return_amt": 3.0,
+    "pos_return_pct": 2.97,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 8.32,
+    "upside_pct": 8.0,
+    "downside_amt": -6.24,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 99.84,
+    "target_num": 112.32,
+    "stoploss_num": 97.76,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.6x vs 30-day average",
+    "low52": 67.6,
+    "high52": 130.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "CANBK trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "UNIONBANK",
+    "name": "Union Bank of India",
+    "subtitle": "Union Bank of India \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 122.0,
+    "checkpoint_price": 119.0,
+    "pct_change": 2.52,
+    "day_change_amount": 3.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 119.0,
+    "today_move_to": 122.0,
+    "pos_return_from": 119.0,
+    "pos_return_to": 122.0,
+    "pos_return_amt": 3.0,
+    "pos_return_pct": 2.52,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 9.76,
+    "upside_pct": 8.0,
+    "downside_amt": -7.32,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 117.12,
+    "target_num": 131.76,
+    "stoploss_num": 114.68,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.3x vs 30-day average",
+    "low52": 79.3,
+    "high52": 152.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "UNIONBANK trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "IDFCFIRSTB",
+    "name": "IDFC First Bank",
+    "subtitle": "IDFC First Bank \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 73.5,
+    "checkpoint_price": 72.0,
+    "pct_change": 2.08,
+    "day_change_amount": 1.5,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 72.0,
+    "today_move_to": 73.5,
+    "pos_return_from": 72.0,
+    "pos_return_to": 73.5,
+    "pos_return_amt": 1.5,
+    "pos_return_pct": 2.08,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 5.88,
+    "upside_pct": 8.0,
+    "downside_amt": -4.41,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 70.56,
+    "target_num": 79.38,
+    "stoploss_num": 69.09,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 47.77,
+    "high52": 91.88,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "IDFCFIRSTB trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "FEDERALBNK",
+    "name": "Federal Bank Ltd",
+    "subtitle": "Federal Bank Ltd \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 192.0,
+    "checkpoint_price": 188.0,
+    "pct_change": 2.13,
+    "day_change_amount": 4.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 188.0,
+    "today_move_to": 192.0,
+    "pos_return_from": 188.0,
+    "pos_return_to": 192.0,
+    "pos_return_amt": 4.0,
+    "pos_return_pct": 2.13,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 15.36,
+    "upside_pct": 8.0,
+    "downside_amt": -11.52,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 184.32,
+    "target_num": 207.36,
+    "stoploss_num": 180.48,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 124.8,
+    "high52": 240.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "FEDERALBNK trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "BANDHANBNK",
+    "name": "Bandhan Bank Ltd",
+    "subtitle": "Bandhan Bank Ltd \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 198.0,
+    "checkpoint_price": 194.0,
+    "pct_change": 2.06,
+    "day_change_amount": 4.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 194.0,
+    "today_move_to": 198.0,
+    "pos_return_from": 194.0,
+    "pos_return_to": 198.0,
+    "pos_return_amt": 4.0,
+    "pos_return_pct": 2.06,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 15.84,
+    "upside_pct": 8.0,
+    "downside_amt": -11.88,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 190.08,
+    "target_num": 213.84,
+    "stoploss_num": 186.12,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 128.7,
+    "high52": 247.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BANDHANBNK trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "AUBANK",
+    "name": "AU Small Finance Bank",
+    "subtitle": "AU Small Finance Bank \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 650.0,
+    "checkpoint_price": 638.0,
+    "pct_change": 1.88,
+    "day_change_amount": 12.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 638.0,
+    "today_move_to": 650.0,
+    "pos_return_from": 638.0,
+    "pos_return_to": 650.0,
+    "pos_return_amt": 12.0,
+    "pos_return_pct": 1.88,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 52.0,
+    "upside_pct": 8.0,
+    "downside_amt": -39.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 624.0,
+    "target_num": 702.0,
+    "stoploss_num": 611.0,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 422.5,
+    "high52": 812.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "AUBANK trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "YESBANK",
+    "name": "Yes Bank Ltd",
+    "subtitle": "Yes Bank Ltd \u2022 Banking",
+    "sector": "Banking",
+    "exchange": "NSE",
+    "price": 22.4,
+    "checkpoint_price": 21.8,
+    "pct_change": 2.75,
+    "day_change_amount": 0.6,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 21.8,
+    "today_move_to": 22.4,
+    "pos_return_from": 21.8,
+    "pos_return_to": 22.4,
+    "pos_return_amt": 0.6,
+    "pos_return_pct": 2.75,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Banking supporting upside target.",
+    "upside_amt": 1.79,
+    "upside_pct": 7.99,
+    "downside_amt": -1.34,
+    "downside_pct": -5.98,
+    "risk_reward_ratio": "1.34 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 21.5,
+    "target_num": 24.19,
+    "stoploss_num": 21.06,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.5x vs 30-day average",
+    "low52": 14.56,
+    "high52": 28.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "YESBANK trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "BAJFINANCE",
+    "name": "Bajaj Finance Ltd",
+    "subtitle": "Bajaj Finance Ltd \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 7180.0,
+    "checkpoint_price": 7244.0,
+    "pct_change": -0.88,
+    "day_change_amount": -64.0,
+    "logo_type": "bajfinance",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 7244.0,
+    "today_move_to": 7180.0,
+    "pos_return_from": 7244.0,
+    "pos_return_to": 7180.0,
+    "pos_return_amt": -64.0,
+    "pos_return_pct": -0.88,
+    "action_type": "ACCUMULATE",
+    "action_badge": "Accumulate",
+    "confidence_score": 87,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 574.4,
+    "upside_pct": 8.0,
+    "downside_amt": -430.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 6892.8,
+    "target_num": 7754.4,
+    "stoploss_num": 6749.2,
+    "order_flow_buyers": 71,
+    "volume_multiplier": "1.3x vs 30-day average",
+    "low52": 4667.0,
+    "high52": 8975.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BAJFINANCE trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "BAJAJFINSV",
+    "name": "Bajaj Finserv Ltd",
+    "subtitle": "Bajaj Finserv Ltd \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 1860.0,
+    "checkpoint_price": 1835.0,
+    "pct_change": 1.36,
+    "day_change_amount": 25.0,
+    "logo_type": "bajfinance",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1835.0,
+    "today_move_to": 1860.0,
+    "pos_return_from": 1835.0,
+    "pos_return_to": 1860.0,
+    "pos_return_amt": 25.0,
+    "pos_return_pct": 1.36,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 148.8,
+    "upside_pct": 8.0,
+    "downside_amt": -111.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1785.6,
+    "target_num": 2008.8,
+    "stoploss_num": 1748.4,
+    "order_flow_buyers": 80,
+    "volume_multiplier": "2.6x vs 30-day average",
+    "low52": 1209.0,
+    "high52": 2325.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BAJAJFINSV trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "CHOLAFIN",
+    "name": "Cholamandalam Invest",
+    "subtitle": "Cholamandalam Invest \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 1540.0,
+    "checkpoint_price": 1510.0,
+    "pct_change": 1.99,
+    "day_change_amount": 30.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1510.0,
+    "today_move_to": 1540.0,
+    "pos_return_from": 1510.0,
+    "pos_return_to": 1540.0,
+    "pos_return_amt": 30.0,
+    "pos_return_pct": 1.99,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 123.2,
+    "upside_pct": 8.0,
+    "downside_amt": -92.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1478.4,
+    "target_num": 1663.2,
+    "stoploss_num": 1447.6,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 1001.0,
+    "high52": 1925.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "CHOLAFIN trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "SHRIRAMFIN",
+    "name": "Shriram Finance Ltd",
+    "subtitle": "Shriram Finance Ltd \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 3280.0,
+    "checkpoint_price": 3210.0,
+    "pct_change": 2.18,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 3210.0,
+    "today_move_to": 3280.0,
+    "pos_return_from": 3210.0,
+    "pos_return_to": 3280.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 2.18,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 262.4,
+    "upside_pct": 8.0,
+    "downside_amt": -196.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 3148.8,
+    "target_num": 3542.4,
+    "stoploss_num": 3083.2,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 2132.0,
+    "high52": 4100.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "SHRIRAMFIN trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "MUTHOOTFIN",
+    "name": "Muthoot Finance Ltd",
+    "subtitle": "Muthoot Finance Ltd \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 1950.0,
+    "checkpoint_price": 1910.0,
+    "pct_change": 2.09,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1910.0,
+    "today_move_to": 1950.0,
+    "pos_return_from": 1910.0,
+    "pos_return_to": 1950.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 2.09,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 156.0,
+    "upside_pct": 8.0,
+    "downside_amt": -117.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1872.0,
+    "target_num": 2106.0,
+    "stoploss_num": 1833.0,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 1267.5,
+    "high52": 2437.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "MUTHOOTFIN trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "MANAPPURAM",
+    "name": "Manappuram Finance",
+    "subtitle": "Manappuram Finance \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 215.0,
+    "checkpoint_price": 210.0,
+    "pct_change": 2.38,
+    "day_change_amount": 5.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 210.0,
+    "today_move_to": 215.0,
+    "pos_return_from": 210.0,
+    "pos_return_to": 215.0,
+    "pos_return_amt": 5.0,
+    "pos_return_pct": 2.38,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 17.2,
+    "upside_pct": 8.0,
+    "downside_amt": -12.9,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 206.4,
+    "target_num": 232.2,
+    "stoploss_num": 202.1,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 139.75,
+    "high52": 268.75,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "MANAPPURAM trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "M&MFIN",
+    "name": "Mahindra Financial",
+    "subtitle": "Mahindra Financial \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 310.0,
+    "checkpoint_price": 304.0,
+    "pct_change": 1.97,
+    "day_change_amount": 6.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 304.0,
+    "today_move_to": 310.0,
+    "pos_return_from": 304.0,
+    "pos_return_to": 310.0,
+    "pos_return_amt": 6.0,
+    "pos_return_pct": 1.97,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 24.8,
+    "upside_pct": 8.0,
+    "downside_amt": -18.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 297.6,
+    "target_num": 334.8,
+    "stoploss_num": 291.4,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 201.5,
+    "high52": 387.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "M&MFIN trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "POONAWALLA",
+    "name": "Poonawalla Fincorp",
+    "subtitle": "Poonawalla Fincorp \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 380.0,
+    "checkpoint_price": 372.0,
+    "pct_change": 2.15,
+    "day_change_amount": 8.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 372.0,
+    "today_move_to": 380.0,
+    "pos_return_from": 372.0,
+    "pos_return_to": 380.0,
+    "pos_return_amt": 8.0,
+    "pos_return_pct": 2.15,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 30.4,
+    "upside_pct": 8.0,
+    "downside_amt": -22.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 364.8,
+    "target_num": 410.4,
+    "stoploss_num": 357.2,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 247.0,
+    "high52": 475.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "POONAWALLA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "LICHSGFIN",
+    "name": "LIC Housing Finance",
+    "subtitle": "LIC Housing Finance \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 680.0,
+    "checkpoint_price": 668.0,
+    "pct_change": 1.8,
+    "day_change_amount": 12.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 668.0,
+    "today_move_to": 680.0,
+    "pos_return_from": 668.0,
+    "pos_return_to": 680.0,
+    "pos_return_amt": 12.0,
+    "pos_return_pct": 1.8,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 54.4,
+    "upside_pct": 8.0,
+    "downside_amt": -40.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 652.8,
+    "target_num": 734.4,
+    "stoploss_num": 639.2,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 442.0,
+    "high52": 850.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "LICHSGFIN trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "PFC",
+    "name": "Power Finance Corp",
+    "subtitle": "Power Finance Corp \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 510.0,
+    "checkpoint_price": 498.0,
+    "pct_change": 2.41,
+    "day_change_amount": 12.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 498.0,
+    "today_move_to": 510.0,
+    "pos_return_from": 498.0,
+    "pos_return_to": 510.0,
+    "pos_return_amt": 12.0,
+    "pos_return_pct": 2.41,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 40.8,
+    "upside_pct": 8.0,
+    "downside_amt": -30.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 489.6,
+    "target_num": 550.8,
+    "stoploss_num": 479.4,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 331.5,
+    "high52": 637.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "PFC trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "RECLTD",
+    "name": "REC Ltd",
+    "subtitle": "REC Ltd \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 560.0,
+    "checkpoint_price": 545.0,
+    "pct_change": 2.75,
+    "day_change_amount": 15.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 545.0,
+    "today_move_to": 560.0,
+    "pos_return_from": 545.0,
+    "pos_return_to": 560.0,
+    "pos_return_amt": 15.0,
+    "pos_return_pct": 2.75,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 44.8,
+    "upside_pct": 8.0,
+    "downside_amt": -33.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 537.6,
+    "target_num": 604.8,
+    "stoploss_num": 526.4,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.5x vs 30-day average",
+    "low52": 364.0,
+    "high52": 700.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "RECLTD trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "LICI",
+    "name": "Life Insurance Corp",
+    "subtitle": "Life Insurance Corp \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 1020.0,
+    "checkpoint_price": 1005.0,
+    "pct_change": 1.49,
+    "day_change_amount": 15.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1005.0,
+    "today_move_to": 1020.0,
+    "pos_return_from": 1005.0,
+    "pos_return_to": 1020.0,
+    "pos_return_amt": 15.0,
+    "pos_return_pct": 1.49,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 81.6,
+    "upside_pct": 8.0,
+    "downside_amt": -61.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 979.2,
+    "target_num": 1101.6,
+    "stoploss_num": 958.8,
+    "order_flow_buyers": 80,
+    "volume_multiplier": "2.7x vs 30-day average",
+    "low52": 663.0,
+    "high52": 1275.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "LICI trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "HDFCLIFE",
+    "name": "HDFC Life Insurance",
+    "subtitle": "HDFC Life Insurance \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 715.0,
+    "checkpoint_price": 702.0,
+    "pct_change": 1.85,
+    "day_change_amount": 13.0,
+    "logo_type": "hdfc",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 702.0,
+    "today_move_to": 715.0,
+    "pos_return_from": 702.0,
+    "pos_return_to": 715.0,
+    "pos_return_amt": 13.0,
+    "pos_return_pct": 1.85,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 57.2,
+    "upside_pct": 8.0,
+    "downside_amt": -42.9,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 686.4,
+    "target_num": 772.2,
+    "stoploss_num": 672.1,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 464.75,
+    "high52": 893.75,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "HDFCLIFE trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "SBILIFE",
+    "name": "SBI Life Insurance",
+    "subtitle": "SBI Life Insurance \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 1820.0,
+    "checkpoint_price": 1795.0,
+    "pct_change": 1.39,
+    "day_change_amount": 25.0,
+    "logo_type": "sbi",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1795.0,
+    "today_move_to": 1820.0,
+    "pos_return_from": 1795.0,
+    "pos_return_to": 1820.0,
+    "pos_return_amt": 25.0,
+    "pos_return_pct": 1.39,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 145.6,
+    "upside_pct": 8.0,
+    "downside_amt": -109.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1747.2,
+    "target_num": 1965.6,
+    "stoploss_num": 1710.8,
+    "order_flow_buyers": 80,
+    "volume_multiplier": "2.6x vs 30-day average",
+    "low52": 1183.0,
+    "high52": 2275.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "SBILIFE trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "ICICIPRULI",
+    "name": "ICICI Prudential Life",
+    "subtitle": "ICICI Prudential Life \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 740.0,
+    "checkpoint_price": 728.0,
+    "pct_change": 1.65,
+    "day_change_amount": 12.0,
+    "logo_type": "icici",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 728.0,
+    "today_move_to": 740.0,
+    "pos_return_from": 728.0,
+    "pos_return_to": 740.0,
+    "pos_return_amt": 12.0,
+    "pos_return_pct": 1.65,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 59.2,
+    "upside_pct": 8.0,
+    "downside_amt": -44.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 710.4,
+    "target_num": 799.2,
+    "stoploss_num": 695.6,
+    "order_flow_buyers": 81,
+    "volume_multiplier": "2.8x vs 30-day average",
+    "low52": 481.0,
+    "high52": 925.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ICICIPRULI trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "ICICIGI",
+    "name": "ICICI Lombard General",
+    "subtitle": "ICICI Lombard General \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 2120.0,
+    "checkpoint_price": 2080.0,
+    "pct_change": 1.92,
+    "day_change_amount": 40.0,
+    "logo_type": "icici",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2080.0,
+    "today_move_to": 2120.0,
+    "pos_return_from": 2080.0,
+    "pos_return_to": 2120.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 1.92,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 169.6,
+    "upside_pct": 8.0,
+    "downside_amt": -127.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2035.2,
+    "target_num": 2289.6,
+    "stoploss_num": 1992.8,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 1378.0,
+    "high52": 2650.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ICICIGI trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "CDSL",
+    "name": "Central Depository Services",
+    "subtitle": "Central Depository Services \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 1480.0,
+    "checkpoint_price": 1425.0,
+    "pct_change": 3.86,
+    "day_change_amount": 55.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1425.0,
+    "today_move_to": 1480.0,
+    "pos_return_from": 1425.0,
+    "pos_return_to": 1480.0,
+    "pos_return_amt": 55.0,
+    "pos_return_pct": 3.86,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 96,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 118.4,
+    "upside_pct": 8.0,
+    "downside_amt": -88.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1420.8,
+    "target_num": 1598.4,
+    "stoploss_num": 1391.2,
+    "order_flow_buyers": 90,
+    "volume_multiplier": "4.1x vs 30-day average",
+    "low52": 962.0,
+    "high52": 1850.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "CDSL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "BSE",
+    "name": "BSE Ltd (Exchange)",
+    "subtitle": "BSE Ltd (Exchange) \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 2850.0,
+    "checkpoint_price": 2740.0,
+    "pct_change": 4.01,
+    "day_change_amount": 110.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2740.0,
+    "today_move_to": 2850.0,
+    "pos_return_from": 2740.0,
+    "pos_return_to": 2850.0,
+    "pos_return_amt": 110.0,
+    "pos_return_pct": 4.01,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 85,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 228.0,
+    "upside_pct": 8.0,
+    "downside_amt": -171.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2736.0,
+    "target_num": 3078.0,
+    "stoploss_num": 2679.0,
+    "order_flow_buyers": 91,
+    "volume_multiplier": "4.2x vs 30-day average",
+    "low52": 1852.5,
+    "high52": 3562.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BSE trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "MCX",
+    "name": "Multi Commodity Exchange",
+    "subtitle": "Multi Commodity Exchange \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 5600.0,
+    "checkpoint_price": 5420.0,
+    "pct_change": 3.32,
+    "day_change_amount": 180.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 5420.0,
+    "today_move_to": 5600.0,
+    "pos_return_from": 5420.0,
+    "pos_return_to": 5600.0,
+    "pos_return_amt": 180.0,
+    "pos_return_pct": 3.32,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 94,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 448.0,
+    "upside_pct": 8.0,
+    "downside_amt": -336.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 5376.0,
+    "target_num": 6048.0,
+    "stoploss_num": 5264.0,
+    "order_flow_buyers": 88,
+    "volume_multiplier": "3.8x vs 30-day average",
+    "low52": 3640.0,
+    "high52": 7000.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "MCX trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ANGELONE",
+    "name": "Angel One Ltd",
+    "subtitle": "Angel One Ltd \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 2720.0,
+    "checkpoint_price": 2640.0,
+    "pct_change": 3.03,
+    "day_change_amount": 80.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2640.0,
+    "today_move_to": 2720.0,
+    "pos_return_from": 2640.0,
+    "pos_return_to": 2720.0,
+    "pos_return_amt": 80.0,
+    "pos_return_pct": 3.03,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 94,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 217.6,
+    "upside_pct": 8.0,
+    "downside_amt": -163.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2611.2,
+    "target_num": 2937.6,
+    "stoploss_num": 2556.8,
+    "order_flow_buyers": 87,
+    "volume_multiplier": "3.6x vs 30-day average",
+    "low52": 1768.0,
+    "high52": 3400.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ANGELONE trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "CAMS",
+    "name": "Computer Age Mgmt",
+    "subtitle": "Computer Age Mgmt \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 4350.0,
+    "checkpoint_price": 4260.0,
+    "pct_change": 2.11,
+    "day_change_amount": 90.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 4260.0,
+    "today_move_to": 4350.0,
+    "pos_return_from": 4260.0,
+    "pos_return_to": 4350.0,
+    "pos_return_amt": 90.0,
+    "pos_return_pct": 2.11,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 348.0,
+    "upside_pct": 8.0,
+    "downside_amt": -261.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 4176.0,
+    "target_num": 4698.0,
+    "stoploss_num": 4089.0,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 2827.5,
+    "high52": 5437.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "CAMS trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "KFINTECH",
+    "name": "KFin Technologies",
+    "subtitle": "KFin Technologies \u2022 Financials",
+    "sector": "Financials",
+    "exchange": "NSE",
+    "price": 980.0,
+    "checkpoint_price": 955.0,
+    "pct_change": 2.62,
+    "day_change_amount": 25.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 955.0,
+    "today_move_to": 980.0,
+    "pos_return_from": 955.0,
+    "pos_return_to": 980.0,
+    "pos_return_amt": 25.0,
+    "pos_return_pct": 2.62,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Financials supporting upside target.",
+    "upside_amt": 78.4,
+    "upside_pct": 8.0,
+    "downside_amt": -58.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 940.8,
+    "target_num": 1058.4,
+    "stoploss_num": 921.2,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 637.0,
+    "high52": 1225.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "KFINTECH trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "HAL",
+    "name": "Hindustan Aeronautics",
+    "subtitle": "Hindustan Aeronautics \u2022 Defence",
+    "sector": "Defence",
+    "exchange": "NSE",
+    "price": 4620.0,
+    "checkpoint_price": 4448.0,
+    "pct_change": 3.87,
+    "day_change_amount": 172.0,
+    "logo_type": "hal",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 4448.0,
+    "today_move_to": 4620.0,
+    "pos_return_from": 4448.0,
+    "pos_return_to": 4620.0,
+    "pos_return_amt": 172.0,
+    "pos_return_pct": 3.87,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 96,
+    "action_reason": "Institutional order flow and sector momentum in Defence supporting upside target.",
+    "upside_amt": 369.6,
+    "upside_pct": 8.0,
+    "downside_amt": -277.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 4435.2,
+    "target_num": 4989.6,
+    "stoploss_num": 4342.8,
+    "order_flow_buyers": 90,
+    "volume_multiplier": "4.1x vs 30-day average",
+    "low52": 3003.0,
+    "high52": 5775.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "HAL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "BEL",
+    "name": "Bharat Electronics",
+    "subtitle": "Bharat Electronics \u2022 Defence",
+    "sector": "Defence",
+    "exchange": "NSE",
+    "price": 304.0,
+    "checkpoint_price": 296.0,
+    "pct_change": 2.7,
+    "day_change_amount": 8.0,
+    "logo_type": "bel",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 296.0,
+    "today_move_to": 304.0,
+    "pos_return_from": 296.0,
+    "pos_return_to": 304.0,
+    "pos_return_amt": 8.0,
+    "pos_return_pct": 2.7,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Defence supporting upside target.",
+    "upside_amt": 24.32,
+    "upside_pct": 8.0,
+    "downside_amt": -18.24,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 291.84,
+    "target_num": 328.32,
+    "stoploss_num": 285.76,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 197.6,
+    "high52": 380.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BEL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "MAZDOCK",
+    "name": "Mazagon Dock Shipbuilders",
+    "subtitle": "Mazagon Dock Shipbuilders \u2022 Defence",
+    "sector": "Defence",
+    "exchange": "NSE",
+    "price": 4350.0,
+    "checkpoint_price": 4180.0,
+    "pct_change": 4.07,
+    "day_change_amount": 170.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 4180.0,
+    "today_move_to": 4350.0,
+    "pos_return_from": 4180.0,
+    "pos_return_to": 4350.0,
+    "pos_return_amt": 170.0,
+    "pos_return_pct": 4.07,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 85,
+    "action_reason": "Institutional order flow and sector momentum in Defence supporting upside target.",
+    "upside_amt": 348.0,
+    "upside_pct": 8.0,
+    "downside_amt": -261.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 4176.0,
+    "target_num": 4698.0,
+    "stoploss_num": 4089.0,
+    "order_flow_buyers": 91,
+    "volume_multiplier": "4.2x vs 30-day average",
+    "low52": 2827.5,
+    "high52": 5437.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "MAZDOCK trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "COCHINSHIP",
+    "name": "Cochin Shipyard Ltd",
+    "subtitle": "Cochin Shipyard Ltd \u2022 Defence",
+    "sector": "Defence",
+    "exchange": "NSE",
+    "price": 1780.0,
+    "checkpoint_price": 1710.0,
+    "pct_change": 4.09,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1710.0,
+    "today_move_to": 1780.0,
+    "pos_return_from": 1710.0,
+    "pos_return_to": 1780.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 4.09,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 85,
+    "action_reason": "Institutional order flow and sector momentum in Defence supporting upside target.",
+    "upside_amt": 142.4,
+    "upside_pct": 8.0,
+    "downside_amt": -106.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1708.8,
+    "target_num": 1922.4,
+    "stoploss_num": 1673.2,
+    "order_flow_buyers": 91,
+    "volume_multiplier": "4.3x vs 30-day average",
+    "low52": 1157.0,
+    "high52": 2225.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "COCHINSHIP trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "BDL",
+    "name": "Bharat Dynamics Ltd",
+    "subtitle": "Bharat Dynamics Ltd \u2022 Defence",
+    "sector": "Defence",
+    "exchange": "NSE",
+    "price": 1160.0,
+    "checkpoint_price": 1125.0,
+    "pct_change": 3.11,
+    "day_change_amount": 35.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1125.0,
+    "today_move_to": 1160.0,
+    "pos_return_from": 1125.0,
+    "pos_return_to": 1160.0,
+    "pos_return_amt": 35.0,
+    "pos_return_pct": 3.11,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 94,
+    "action_reason": "Institutional order flow and sector momentum in Defence supporting upside target.",
+    "upside_amt": 92.8,
+    "upside_pct": 8.0,
+    "downside_amt": -69.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1113.6,
+    "target_num": 1252.8,
+    "stoploss_num": 1090.4,
+    "order_flow_buyers": 87,
+    "volume_multiplier": "3.7x vs 30-day average",
+    "low52": 754.0,
+    "high52": 1450.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BDL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "GRSE",
+    "name": "Garden Reach Shipbuilders",
+    "subtitle": "Garden Reach Shipbuilders \u2022 Defence",
+    "sector": "Defence",
+    "exchange": "NSE",
+    "price": 1680.0,
+    "checkpoint_price": 1620.0,
+    "pct_change": 3.7,
+    "day_change_amount": 60.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1620.0,
+    "today_move_to": 1680.0,
+    "pos_return_from": 1620.0,
+    "pos_return_to": 1680.0,
+    "pos_return_amt": 60.0,
+    "pos_return_pct": 3.7,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 96,
+    "action_reason": "Institutional order flow and sector momentum in Defence supporting upside target.",
+    "upside_amt": 134.4,
+    "upside_pct": 8.0,
+    "downside_amt": -100.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1612.8,
+    "target_num": 1814.4,
+    "stoploss_num": 1579.2,
+    "order_flow_buyers": 89,
+    "volume_multiplier": "4.0x vs 30-day average",
+    "low52": 1092.0,
+    "high52": 2100.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "GRSE trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "SOLARINDS",
+    "name": "Solar Industries India",
+    "subtitle": "Solar Industries India \u2022 Defence",
+    "sector": "Defence",
+    "exchange": "NSE",
+    "price": 10250.0,
+    "checkpoint_price": 9980.0,
+    "pct_change": 2.71,
+    "day_change_amount": 270.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 9980.0,
+    "today_move_to": 10250.0,
+    "pos_return_from": 9980.0,
+    "pos_return_to": 10250.0,
+    "pos_return_amt": 270.0,
+    "pos_return_pct": 2.71,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Defence supporting upside target.",
+    "upside_amt": 820.0,
+    "upside_pct": 8.0,
+    "downside_amt": -615.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 9840.0,
+    "target_num": 11070.0,
+    "stoploss_num": 9635.0,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 6662.5,
+    "high52": 12812.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "SOLARINDS trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "DATAPATTNS",
+    "name": "Data Patterns India",
+    "subtitle": "Data Patterns India \u2022 Defence",
+    "sector": "Defence",
+    "exchange": "NSE",
+    "price": 2480.0,
+    "checkpoint_price": 2410.0,
+    "pct_change": 2.9,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2410.0,
+    "today_move_to": 2480.0,
+    "pos_return_from": 2410.0,
+    "pos_return_to": 2480.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 2.9,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Defence supporting upside target.",
+    "upside_amt": 198.4,
+    "upside_pct": 8.0,
+    "downside_amt": -148.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2380.8,
+    "target_num": 2678.4,
+    "stoploss_num": 2331.2,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.5x vs 30-day average",
+    "low52": 1612.0,
+    "high52": 3100.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "DATAPATTNS trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ASTRAMICRO",
+    "name": "Astra Microwave",
+    "subtitle": "Astra Microwave \u2022 Defence",
+    "sector": "Defence",
+    "exchange": "NSE",
+    "price": 890.0,
+    "checkpoint_price": 865.0,
+    "pct_change": 2.89,
+    "day_change_amount": 25.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 865.0,
+    "today_move_to": 890.0,
+    "pos_return_from": 865.0,
+    "pos_return_to": 890.0,
+    "pos_return_amt": 25.0,
+    "pos_return_pct": 2.89,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Defence supporting upside target.",
+    "upside_amt": 71.2,
+    "upside_pct": 8.0,
+    "downside_amt": -53.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 854.4,
+    "target_num": 961.2,
+    "stoploss_num": 836.6,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.5x vs 30-day average",
+    "low52": 578.5,
+    "high52": 1112.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ASTRAMICRO trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "IRFC",
+    "name": "Indian Railway Finance",
+    "subtitle": "Indian Railway Finance \u2022 Railways",
+    "sector": "Railways",
+    "exchange": "NSE",
+    "price": 182.0,
+    "checkpoint_price": 174.0,
+    "pct_change": 4.6,
+    "day_change_amount": 8.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 174.0,
+    "today_move_to": 182.0,
+    "pos_return_from": 174.0,
+    "pos_return_to": 182.0,
+    "pos_return_amt": 8.0,
+    "pos_return_pct": 4.6,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 86,
+    "action_reason": "Institutional order flow and sector momentum in Railways supporting upside target.",
+    "upside_amt": 14.56,
+    "upside_pct": 8.0,
+    "downside_amt": -10.92,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 174.72,
+    "target_num": 196.56,
+    "stoploss_num": 171.08,
+    "order_flow_buyers": 93,
+    "volume_multiplier": "4.6x vs 30-day average",
+    "low52": 118.3,
+    "high52": 227.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "IRFC trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "RVNL",
+    "name": "Rail Vikas Nigam Ltd",
+    "subtitle": "Rail Vikas Nigam Ltd \u2022 Railways",
+    "sector": "Railways",
+    "exchange": "NSE",
+    "price": 578.0,
+    "checkpoint_price": 552.0,
+    "pct_change": 4.71,
+    "day_change_amount": 26.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 552.0,
+    "today_move_to": 578.0,
+    "pos_return_from": 552.0,
+    "pos_return_to": 578.0,
+    "pos_return_amt": 26.0,
+    "pos_return_pct": 4.71,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 87,
+    "action_reason": "Institutional order flow and sector momentum in Railways supporting upside target.",
+    "upside_amt": 46.24,
+    "upside_pct": 8.0,
+    "downside_amt": -34.68,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 554.88,
+    "target_num": 624.24,
+    "stoploss_num": 543.32,
+    "order_flow_buyers": 93,
+    "volume_multiplier": "4.6x vs 30-day average",
+    "low52": 375.7,
+    "high52": 722.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "RVNL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "IRCTC",
+    "name": "Indian Railway Catering",
+    "subtitle": "Indian Railway Catering \u2022 Railways",
+    "sector": "Railways",
+    "exchange": "NSE",
+    "price": 920.0,
+    "checkpoint_price": 905.0,
+    "pct_change": 1.66,
+    "day_change_amount": 15.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 905.0,
+    "today_move_to": 920.0,
+    "pos_return_from": 905.0,
+    "pos_return_to": 920.0,
+    "pos_return_amt": 15.0,
+    "pos_return_pct": 1.66,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Railways supporting upside target.",
+    "upside_amt": 73.6,
+    "upside_pct": 8.0,
+    "downside_amt": -55.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 883.2,
+    "target_num": 993.6,
+    "stoploss_num": 864.8,
+    "order_flow_buyers": 81,
+    "volume_multiplier": "2.8x vs 30-day average",
+    "low52": 598.0,
+    "high52": 1150.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "IRCTC trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "IRCON",
+    "name": "Ircon International",
+    "subtitle": "Ircon International \u2022 Railways",
+    "sector": "Railways",
+    "exchange": "NSE",
+    "price": 242.0,
+    "checkpoint_price": 234.0,
+    "pct_change": 3.42,
+    "day_change_amount": 8.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 234.0,
+    "today_move_to": 242.0,
+    "pos_return_from": 234.0,
+    "pos_return_to": 242.0,
+    "pos_return_amt": 8.0,
+    "pos_return_pct": 3.42,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 95,
+    "action_reason": "Institutional order flow and sector momentum in Railways supporting upside target.",
+    "upside_amt": 19.36,
+    "upside_pct": 8.0,
+    "downside_amt": -14.52,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 232.32,
+    "target_num": 261.36,
+    "stoploss_num": 227.48,
+    "order_flow_buyers": 88,
+    "volume_multiplier": "3.9x vs 30-day average",
+    "low52": 157.3,
+    "high52": 302.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "IRCON trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "RITES",
+    "name": "Rites Ltd",
+    "subtitle": "Rites Ltd \u2022 Railways",
+    "sector": "Railways",
+    "exchange": "NSE",
+    "price": 335.0,
+    "checkpoint_price": 326.0,
+    "pct_change": 2.76,
+    "day_change_amount": 9.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 326.0,
+    "today_move_to": 335.0,
+    "pos_return_from": 326.0,
+    "pos_return_to": 335.0,
+    "pos_return_amt": 9.0,
+    "pos_return_pct": 2.76,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Railways supporting upside target.",
+    "upside_amt": 26.8,
+    "upside_pct": 8.0,
+    "downside_amt": -20.1,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 321.6,
+    "target_num": 361.8,
+    "stoploss_num": 314.9,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.5x vs 30-day average",
+    "low52": 217.75,
+    "high52": 418.75,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "RITES trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "TITAGARH",
+    "name": "Titagarh Rail Systems",
+    "subtitle": "Titagarh Rail Systems \u2022 Railways",
+    "sector": "Railways",
+    "exchange": "NSE",
+    "price": 1380.0,
+    "checkpoint_price": 1320.0,
+    "pct_change": 4.55,
+    "day_change_amount": 60.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1320.0,
+    "today_move_to": 1380.0,
+    "pos_return_from": 1320.0,
+    "pos_return_to": 1380.0,
+    "pos_return_amt": 60.0,
+    "pos_return_pct": 4.55,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 86,
+    "action_reason": "Institutional order flow and sector momentum in Railways supporting upside target.",
+    "upside_amt": 110.4,
+    "upside_pct": 8.0,
+    "downside_amt": -82.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1324.8,
+    "target_num": 1490.4,
+    "stoploss_num": 1297.2,
+    "order_flow_buyers": 93,
+    "volume_multiplier": "4.5x vs 30-day average",
+    "low52": 897.0,
+    "high52": 1725.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TITAGARH trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "JWL",
+    "name": "Jupiter Wagons Ltd",
+    "subtitle": "Jupiter Wagons Ltd \u2022 Railways",
+    "sector": "Railways",
+    "exchange": "NSE",
+    "price": 520.0,
+    "checkpoint_price": 498.0,
+    "pct_change": 4.42,
+    "day_change_amount": 22.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 498.0,
+    "today_move_to": 520.0,
+    "pos_return_from": 498.0,
+    "pos_return_to": 520.0,
+    "pos_return_amt": 22.0,
+    "pos_return_pct": 4.42,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 86,
+    "action_reason": "Institutional order flow and sector momentum in Railways supporting upside target.",
+    "upside_amt": 41.6,
+    "upside_pct": 8.0,
+    "downside_amt": -31.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 499.2,
+    "target_num": 561.6,
+    "stoploss_num": 488.8,
+    "order_flow_buyers": 92,
+    "volume_multiplier": "4.5x vs 30-day average",
+    "low52": 338.0,
+    "high52": 650.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "JWL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "TATAPOWER",
+    "name": "Tata Power Company",
+    "subtitle": "Tata Power Company \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 438.0,
+    "checkpoint_price": 427.0,
+    "pct_change": 2.58,
+    "day_change_amount": 11.0,
+    "logo_type": "tatapower",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 427.0,
+    "today_move_to": 438.0,
+    "pos_return_from": 427.0,
+    "pos_return_to": 438.0,
+    "pos_return_amt": 11.0,
+    "pos_return_pct": 2.58,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 35.04,
+    "upside_pct": 8.0,
+    "downside_amt": -26.28,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 420.48,
+    "target_num": 473.04,
+    "stoploss_num": 411.72,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.3x vs 30-day average",
+    "low52": 284.7,
+    "high52": 547.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TATAPOWER trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "NTPC",
+    "name": "NTPC Ltd",
+    "subtitle": "NTPC Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 412.0,
+    "checkpoint_price": 403.0,
+    "pct_change": 2.23,
+    "day_change_amount": 9.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 403.0,
+    "today_move_to": 412.0,
+    "pos_return_from": 403.0,
+    "pos_return_to": 412.0,
+    "pos_return_amt": 9.0,
+    "pos_return_pct": 2.23,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 32.96,
+    "upside_pct": 8.0,
+    "downside_amt": -24.72,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 395.52,
+    "target_num": 444.96,
+    "stoploss_num": 387.28,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 267.8,
+    "high52": 515.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "NTPC trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "POWERGRID",
+    "name": "Power Grid Corporation",
+    "subtitle": "Power Grid Corporation \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 332.0,
+    "checkpoint_price": 326.0,
+    "pct_change": 1.84,
+    "day_change_amount": 6.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 326.0,
+    "today_move_to": 332.0,
+    "pos_return_from": 326.0,
+    "pos_return_to": 332.0,
+    "pos_return_amt": 6.0,
+    "pos_return_pct": 1.84,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 26.56,
+    "upside_pct": 8.0,
+    "downside_amt": -19.92,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 318.72,
+    "target_num": 358.56,
+    "stoploss_num": 312.08,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 215.8,
+    "high52": 415.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "POWERGRID trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "SUZLON",
+    "name": "Suzlon Energy Ltd",
+    "subtitle": "Suzlon Energy Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 74.2,
+    "checkpoint_price": 70.8,
+    "pct_change": 4.8,
+    "day_change_amount": 3.4,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 70.8,
+    "today_move_to": 74.2,
+    "pos_return_from": 70.8,
+    "pos_return_to": 74.2,
+    "pos_return_amt": 3.4,
+    "pos_return_pct": 4.8,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 87,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 5.94,
+    "upside_pct": 8.01,
+    "downside_amt": -4.45,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 71.23,
+    "target_num": 80.14,
+    "stoploss_num": 69.75,
+    "order_flow_buyers": 94,
+    "volume_multiplier": "4.7x vs 30-day average",
+    "low52": 48.23,
+    "high52": 92.75,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "SUZLON trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ADANIGREEN",
+    "name": "Adani Green Energy",
+    "subtitle": "Adani Green Energy \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 1890.0,
+    "checkpoint_price": 1840.0,
+    "pct_change": 2.72,
+    "day_change_amount": 50.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1840.0,
+    "today_move_to": 1890.0,
+    "pos_return_from": 1840.0,
+    "pos_return_to": 1890.0,
+    "pos_return_amt": 50.0,
+    "pos_return_pct": 2.72,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 151.2,
+    "upside_pct": 8.0,
+    "downside_amt": -113.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1814.4,
+    "target_num": 2041.2,
+    "stoploss_num": 1776.6,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 1228.5,
+    "high52": 2362.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ADANIGREEN trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ADANIPOWER",
+    "name": "Adani Power Ltd",
+    "subtitle": "Adani Power Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 645.0,
+    "checkpoint_price": 628.0,
+    "pct_change": 2.71,
+    "day_change_amount": 17.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 628.0,
+    "today_move_to": 645.0,
+    "pos_return_from": 628.0,
+    "pos_return_to": 645.0,
+    "pos_return_amt": 17.0,
+    "pos_return_pct": 2.71,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 51.6,
+    "upside_pct": 8.0,
+    "downside_amt": -38.7,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 619.2,
+    "target_num": 696.6,
+    "stoploss_num": 606.3,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 419.25,
+    "high52": 806.25,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ADANIPOWER trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ADANIENSOL",
+    "name": "Adani Energy Solutions",
+    "subtitle": "Adani Energy Solutions \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 990.0,
+    "checkpoint_price": 965.0,
+    "pct_change": 2.59,
+    "day_change_amount": 25.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 965.0,
+    "today_move_to": 990.0,
+    "pos_return_from": 965.0,
+    "pos_return_to": 990.0,
+    "pos_return_amt": 25.0,
+    "pos_return_pct": 2.59,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 79.2,
+    "upside_pct": 8.0,
+    "downside_amt": -59.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 950.4,
+    "target_num": 1069.2,
+    "stoploss_num": 930.6,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 643.5,
+    "high52": 1237.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ADANIENSOL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "JSWENERGY",
+    "name": "JSW Energy Ltd",
+    "subtitle": "JSW Energy Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 690.0,
+    "checkpoint_price": 672.0,
+    "pct_change": 2.68,
+    "day_change_amount": 18.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 672.0,
+    "today_move_to": 690.0,
+    "pos_return_from": 672.0,
+    "pos_return_to": 690.0,
+    "pos_return_amt": 18.0,
+    "pos_return_pct": 2.68,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 55.2,
+    "upside_pct": 8.0,
+    "downside_amt": -41.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 662.4,
+    "target_num": 745.2,
+    "stoploss_num": 648.6,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 448.5,
+    "high52": 862.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "JSWENERGY trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "NHPC",
+    "name": "NHPC Ltd",
+    "subtitle": "NHPC Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 93.5,
+    "checkpoint_price": 90.8,
+    "pct_change": 2.97,
+    "day_change_amount": 2.7,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 90.8,
+    "today_move_to": 93.5,
+    "pos_return_from": 90.8,
+    "pos_return_to": 93.5,
+    "pos_return_amt": 2.7,
+    "pos_return_pct": 2.97,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 7.48,
+    "upside_pct": 8.0,
+    "downside_amt": -5.61,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 89.76,
+    "target_num": 100.98,
+    "stoploss_num": 87.89,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.6x vs 30-day average",
+    "low52": 60.77,
+    "high52": 116.88,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "NHPC trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "SJVN",
+    "name": "SJVN Ltd",
+    "subtitle": "SJVN Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 128.0,
+    "checkpoint_price": 124.0,
+    "pct_change": 3.23,
+    "day_change_amount": 4.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 124.0,
+    "today_move_to": 128.0,
+    "pos_return_from": 124.0,
+    "pos_return_to": 128.0,
+    "pos_return_amt": 4.0,
+    "pos_return_pct": 3.23,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 94,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 10.24,
+    "upside_pct": 8.0,
+    "downside_amt": -7.68,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 122.88,
+    "target_num": 138.24,
+    "stoploss_num": 120.32,
+    "order_flow_buyers": 87,
+    "volume_multiplier": "3.7x vs 30-day average",
+    "low52": 83.2,
+    "high52": 160.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "SJVN trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "IREDA",
+    "name": "Indian Renewable Energy Dev",
+    "subtitle": "Indian Renewable Energy Dev \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 228.0,
+    "checkpoint_price": 218.0,
+    "pct_change": 4.59,
+    "day_change_amount": 10.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 218.0,
+    "today_move_to": 228.0,
+    "pos_return_from": 218.0,
+    "pos_return_to": 228.0,
+    "pos_return_amt": 10.0,
+    "pos_return_pct": 4.59,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 86,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 18.24,
+    "upside_pct": 8.0,
+    "downside_amt": -13.68,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 218.88,
+    "target_num": 246.24,
+    "stoploss_num": 214.32,
+    "order_flow_buyers": 93,
+    "volume_multiplier": "4.6x vs 30-day average",
+    "low52": 148.2,
+    "high52": 285.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "IREDA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "TORNTPOWER",
+    "name": "Torrent Power Ltd",
+    "subtitle": "Torrent Power Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 1750.0,
+    "checkpoint_price": 1710.0,
+    "pct_change": 2.34,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1710.0,
+    "today_move_to": 1750.0,
+    "pos_return_from": 1710.0,
+    "pos_return_to": 1750.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 2.34,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 140.0,
+    "upside_pct": 8.0,
+    "downside_amt": -105.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1680.0,
+    "target_num": 1890.0,
+    "stoploss_num": 1645.0,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 1137.5,
+    "high52": 2187.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TORNTPOWER trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "CESC",
+    "name": "CESC Ltd",
+    "subtitle": "CESC Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 178.0,
+    "checkpoint_price": 173.0,
+    "pct_change": 2.89,
+    "day_change_amount": 5.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 173.0,
+    "today_move_to": 178.0,
+    "pos_return_from": 173.0,
+    "pos_return_to": 178.0,
+    "pos_return_amt": 5.0,
+    "pos_return_pct": 2.89,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 14.24,
+    "upside_pct": 8.0,
+    "downside_amt": -10.68,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 170.88,
+    "target_num": 192.24,
+    "stoploss_num": 167.32,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.5x vs 30-day average",
+    "low52": 115.7,
+    "high52": 222.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "CESC trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "BHEL",
+    "name": "Bharat Heavy Electricals",
+    "subtitle": "Bharat Heavy Electricals \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 286.0,
+    "checkpoint_price": 276.0,
+    "pct_change": 3.62,
+    "day_change_amount": 10.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 276.0,
+    "today_move_to": 286.0,
+    "pos_return_from": 276.0,
+    "pos_return_to": 286.0,
+    "pos_return_amt": 10.0,
+    "pos_return_pct": 3.62,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 95,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 22.88,
+    "upside_pct": 8.0,
+    "downside_amt": -17.16,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 274.56,
+    "target_num": 308.88,
+    "stoploss_num": 268.84,
+    "order_flow_buyers": 89,
+    "volume_multiplier": "4.0x vs 30-day average",
+    "low52": 185.9,
+    "high52": 357.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BHEL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "IEX",
+    "name": "Indian Energy Exchange",
+    "subtitle": "Indian Energy Exchange \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 204.0,
+    "checkpoint_price": 198.0,
+    "pct_change": 3.03,
+    "day_change_amount": 6.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 198.0,
+    "today_move_to": 204.0,
+    "pos_return_from": 198.0,
+    "pos_return_to": 204.0,
+    "pos_return_amt": 6.0,
+    "pos_return_pct": 3.03,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 94,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 16.32,
+    "upside_pct": 8.0,
+    "downside_amt": -12.24,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 195.84,
+    "target_num": 220.32,
+    "stoploss_num": 191.76,
+    "order_flow_buyers": 87,
+    "volume_multiplier": "3.6x vs 30-day average",
+    "low52": 132.6,
+    "high52": 255.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "IEX trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "INOXWIND",
+    "name": "Inox Wind Ltd",
+    "subtitle": "Inox Wind Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 225.0,
+    "checkpoint_price": 216.0,
+    "pct_change": 4.17,
+    "day_change_amount": 9.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 216.0,
+    "today_move_to": 225.0,
+    "pos_return_from": 216.0,
+    "pos_return_to": 225.0,
+    "pos_return_amt": 9.0,
+    "pos_return_pct": 4.17,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 85,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 18.0,
+    "upside_pct": 8.0,
+    "downside_amt": -13.5,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 216.0,
+    "target_num": 243.0,
+    "stoploss_num": 211.5,
+    "order_flow_buyers": 91,
+    "volume_multiplier": "4.3x vs 30-day average",
+    "low52": 146.25,
+    "high52": 281.25,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "INOXWIND trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "KPIGREEN",
+    "name": "KPI Green Energy",
+    "subtitle": "KPI Green Energy \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 840.0,
+    "checkpoint_price": 810.0,
+    "pct_change": 3.7,
+    "day_change_amount": 30.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 810.0,
+    "today_move_to": 840.0,
+    "pos_return_from": 810.0,
+    "pos_return_to": 840.0,
+    "pos_return_amt": 30.0,
+    "pos_return_pct": 3.7,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 96,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 67.2,
+    "upside_pct": 8.0,
+    "downside_amt": -50.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 806.4,
+    "target_num": 907.2,
+    "stoploss_num": 789.6,
+    "order_flow_buyers": 89,
+    "volume_multiplier": "4.0x vs 30-day average",
+    "low52": 546.0,
+    "high52": 1050.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "KPIGREEN trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "WAAREEENER",
+    "name": "Waaree Energies Ltd",
+    "subtitle": "Waaree Energies Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 2980.0,
+    "checkpoint_price": 2860.0,
+    "pct_change": 4.2,
+    "day_change_amount": 120.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2860.0,
+    "today_move_to": 2980.0,
+    "pos_return_from": 2860.0,
+    "pos_return_to": 2980.0,
+    "pos_return_amt": 120.0,
+    "pos_return_pct": 4.2,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 85,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 238.4,
+    "upside_pct": 8.0,
+    "downside_amt": -178.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2860.8,
+    "target_num": 3218.4,
+    "stoploss_num": 2801.2,
+    "order_flow_buyers": 91,
+    "volume_multiplier": "4.3x vs 30-day average",
+    "low52": 1937.0,
+    "high52": 3725.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "WAAREEENER trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "RELIANCE",
+    "name": "Reliance Industries",
+    "subtitle": "Reliance Industries \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 2985.0,
+    "checkpoint_price": 2932.0,
+    "pct_change": 1.81,
+    "day_change_amount": 53.0,
+    "logo_type": "reliance",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2932.0,
+    "today_move_to": 2985.0,
+    "pos_return_from": 2932.0,
+    "pos_return_to": 2985.0,
+    "pos_return_amt": 53.0,
+    "pos_return_pct": 1.81,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 238.8,
+    "upside_pct": 8.0,
+    "downside_amt": -179.1,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2865.6,
+    "target_num": 3223.8,
+    "stoploss_num": 2805.9,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 1940.25,
+    "high52": 3731.25,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "RELIANCE trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "ONGC",
+    "name": "Oil & Natural Gas Corp",
+    "subtitle": "Oil & Natural Gas Corp \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 314.0,
+    "checkpoint_price": 308.0,
+    "pct_change": 1.95,
+    "day_change_amount": 6.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 308.0,
+    "today_move_to": 314.0,
+    "pos_return_from": 308.0,
+    "pos_return_to": 314.0,
+    "pos_return_amt": 6.0,
+    "pos_return_pct": 1.95,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 25.12,
+    "upside_pct": 8.0,
+    "downside_amt": -18.84,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 301.44,
+    "target_num": 339.12,
+    "stoploss_num": 295.16,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 204.1,
+    "high52": 392.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ONGC trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "COALINDIA",
+    "name": "Coal India Ltd",
+    "subtitle": "Coal India Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 512.0,
+    "checkpoint_price": 504.0,
+    "pct_change": 1.59,
+    "day_change_amount": 8.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 504.0,
+    "today_move_to": 512.0,
+    "pos_return_from": 504.0,
+    "pos_return_to": 512.0,
+    "pos_return_amt": 8.0,
+    "pos_return_pct": 1.59,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 40.96,
+    "upside_pct": 8.0,
+    "downside_amt": -30.72,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 491.52,
+    "target_num": 552.96,
+    "stoploss_num": 481.28,
+    "order_flow_buyers": 81,
+    "volume_multiplier": "2.8x vs 30-day average",
+    "low52": 332.8,
+    "high52": 640.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "COALINDIA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "BPCL",
+    "name": "Bharat Petroleum Corp",
+    "subtitle": "Bharat Petroleum Corp \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 348.0,
+    "checkpoint_price": 342.0,
+    "pct_change": 1.75,
+    "day_change_amount": 6.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 342.0,
+    "today_move_to": 348.0,
+    "pos_return_from": 342.0,
+    "pos_return_to": 348.0,
+    "pos_return_amt": 6.0,
+    "pos_return_pct": 1.75,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 27.84,
+    "upside_pct": 8.0,
+    "downside_amt": -20.88,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 334.08,
+    "target_num": 375.84,
+    "stoploss_num": 327.12,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 226.2,
+    "high52": 435.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BPCL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "IOC",
+    "name": "Indian Oil Corporation",
+    "subtitle": "Indian Oil Corporation \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 172.0,
+    "checkpoint_price": 168.0,
+    "pct_change": 2.38,
+    "day_change_amount": 4.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 168.0,
+    "today_move_to": 172.0,
+    "pos_return_from": 168.0,
+    "pos_return_to": 172.0,
+    "pos_return_amt": 4.0,
+    "pos_return_pct": 2.38,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 13.76,
+    "upside_pct": 8.0,
+    "downside_amt": -10.32,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 165.12,
+    "target_num": 185.76,
+    "stoploss_num": 161.68,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 111.8,
+    "high52": 215.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "IOC trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "HPCL",
+    "name": "Hindustan Petroleum",
+    "subtitle": "Hindustan Petroleum \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 395.0,
+    "checkpoint_price": 388.0,
+    "pct_change": 1.8,
+    "day_change_amount": 7.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 388.0,
+    "today_move_to": 395.0,
+    "pos_return_from": 388.0,
+    "pos_return_to": 395.0,
+    "pos_return_amt": 7.0,
+    "pos_return_pct": 1.8,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 31.6,
+    "upside_pct": 8.0,
+    "downside_amt": -23.7,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 379.2,
+    "target_num": 426.6,
+    "stoploss_num": 371.3,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 256.75,
+    "high52": 493.75,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "HPCL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "GAIL",
+    "name": "GAIL (India) Ltd",
+    "subtitle": "GAIL (India) Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 228.0,
+    "checkpoint_price": 224.0,
+    "pct_change": 1.79,
+    "day_change_amount": 4.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 224.0,
+    "today_move_to": 228.0,
+    "pos_return_from": 224.0,
+    "pos_return_to": 228.0,
+    "pos_return_amt": 4.0,
+    "pos_return_pct": 1.79,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 18.24,
+    "upside_pct": 8.0,
+    "downside_amt": -13.68,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 218.88,
+    "target_num": 246.24,
+    "stoploss_num": 214.32,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 148.2,
+    "high52": 285.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "GAIL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "PETRONET",
+    "name": "Petronet LNG Ltd",
+    "subtitle": "Petronet LNG Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 355.0,
+    "checkpoint_price": 348.0,
+    "pct_change": 2.01,
+    "day_change_amount": 7.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 348.0,
+    "today_move_to": 355.0,
+    "pos_return_from": 348.0,
+    "pos_return_to": 355.0,
+    "pos_return_amt": 7.0,
+    "pos_return_pct": 2.01,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 28.4,
+    "upside_pct": 8.0,
+    "downside_amt": -21.3,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 340.8,
+    "target_num": 383.4,
+    "stoploss_num": 333.7,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 230.75,
+    "high52": 443.75,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "PETRONET trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "OIL",
+    "name": "Oil India Ltd",
+    "subtitle": "Oil India Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 520.0,
+    "checkpoint_price": 505.0,
+    "pct_change": 2.97,
+    "day_change_amount": 15.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 505.0,
+    "today_move_to": 520.0,
+    "pos_return_from": 505.0,
+    "pos_return_to": 520.0,
+    "pos_return_amt": 15.0,
+    "pos_return_pct": 2.97,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 41.6,
+    "upside_pct": 8.0,
+    "downside_amt": -31.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 499.2,
+    "target_num": 561.6,
+    "stoploss_num": 488.8,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.6x vs 30-day average",
+    "low52": 338.0,
+    "high52": 650.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "OIL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "GUJGASLTD",
+    "name": "Gujarat Gas Ltd",
+    "subtitle": "Gujarat Gas Ltd \u2022 Energy",
+    "sector": "Energy",
+    "exchange": "NSE",
+    "price": 590.0,
+    "checkpoint_price": 580.0,
+    "pct_change": 1.72,
+    "day_change_amount": 10.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 580.0,
+    "today_move_to": 590.0,
+    "pos_return_from": 580.0,
+    "pos_return_to": 590.0,
+    "pos_return_amt": 10.0,
+    "pos_return_pct": 1.72,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Energy supporting upside target.",
+    "upside_amt": 47.2,
+    "upside_pct": 8.0,
+    "downside_amt": -35.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 566.4,
+    "target_num": 637.2,
+    "stoploss_num": 554.6,
+    "order_flow_buyers": 81,
+    "volume_multiplier": "2.8x vs 30-day average",
+    "low52": 383.5,
+    "high52": 737.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "GUJGASLTD trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "TATAMOTORS",
+    "name": "Tata Motors Ltd",
+    "subtitle": "Tata Motors Ltd \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 948.0,
+    "checkpoint_price": 917.0,
+    "pct_change": 3.38,
+    "day_change_amount": 31.0,
+    "logo_type": "tata",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 917.0,
+    "today_move_to": 948.0,
+    "pos_return_from": 917.0,
+    "pos_return_to": 948.0,
+    "pos_return_amt": 31.0,
+    "pos_return_pct": 3.38,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 95,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 75.84,
+    "upside_pct": 8.0,
+    "downside_amt": -56.88,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 910.08,
+    "target_num": 1023.84,
+    "stoploss_num": 891.12,
+    "order_flow_buyers": 88,
+    "volume_multiplier": "3.8x vs 30-day average",
+    "low52": 616.2,
+    "high52": 1185.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TATAMOTORS trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "MARUTI",
+    "name": "Maruti Suzuki India",
+    "subtitle": "Maruti Suzuki India \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 12480.0,
+    "checkpoint_price": 12405.0,
+    "pct_change": 0.6,
+    "day_change_amount": 75.0,
+    "logo_type": "maruti",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 12405.0,
+    "today_move_to": 12480.0,
+    "pos_return_from": 12405.0,
+    "pos_return_to": 12480.0,
+    "pos_return_amt": 75.0,
+    "pos_return_pct": 0.6,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 86,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 998.4,
+    "upside_pct": 8.0,
+    "downside_amt": -748.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 11980.8,
+    "target_num": 13478.4,
+    "stoploss_num": 11731.2,
+    "order_flow_buyers": 77,
+    "volume_multiplier": "2.2x vs 30-day average",
+    "low52": 8112.0,
+    "high52": 15600.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "MARUTI trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "M&M",
+    "name": "Mahindra & Mahindra",
+    "subtitle": "Mahindra & Mahindra \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 2890.0,
+    "checkpoint_price": 2835.0,
+    "pct_change": 1.94,
+    "day_change_amount": 55.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2835.0,
+    "today_move_to": 2890.0,
+    "pos_return_from": 2835.0,
+    "pos_return_to": 2890.0,
+    "pos_return_amt": 55.0,
+    "pos_return_pct": 1.94,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 231.2,
+    "upside_pct": 8.0,
+    "downside_amt": -173.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2774.4,
+    "target_num": 3121.2,
+    "stoploss_num": 2716.6,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 1878.5,
+    "high52": 3612.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "M&M trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "BAJAJ-AUTO",
+    "name": "Bajaj Auto Ltd",
+    "subtitle": "Bajaj Auto Ltd \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 11650.0,
+    "checkpoint_price": 11390.0,
+    "pct_change": 2.28,
+    "day_change_amount": 260.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 11390.0,
+    "today_move_to": 11650.0,
+    "pos_return_from": 11390.0,
+    "pos_return_to": 11650.0,
+    "pos_return_amt": 260.0,
+    "pos_return_pct": 2.28,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 932.0,
+    "upside_pct": 8.0,
+    "downside_amt": -699.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 11184.0,
+    "target_num": 12582.0,
+    "stoploss_num": 10951.0,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 7572.5,
+    "high52": 14562.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BAJAJ-AUTO trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "HEROMOTOCO",
+    "name": "Hero MotoCorp Ltd",
+    "subtitle": "Hero MotoCorp Ltd \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 5480.0,
+    "checkpoint_price": 5390.0,
+    "pct_change": 1.67,
+    "day_change_amount": 90.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 5390.0,
+    "today_move_to": 5480.0,
+    "pos_return_from": 5390.0,
+    "pos_return_to": 5480.0,
+    "pos_return_amt": 90.0,
+    "pos_return_pct": 1.67,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 438.4,
+    "upside_pct": 8.0,
+    "downside_amt": -328.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 5260.8,
+    "target_num": 5918.4,
+    "stoploss_num": 5151.2,
+    "order_flow_buyers": 81,
+    "volume_multiplier": "2.8x vs 30-day average",
+    "low52": 3562.0,
+    "high52": 6850.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "HEROMOTOCO trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "EICHERMOT",
+    "name": "Eicher Motors Ltd",
+    "subtitle": "Eicher Motors Ltd \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 4820.0,
+    "checkpoint_price": 4740.0,
+    "pct_change": 1.69,
+    "day_change_amount": 80.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 4740.0,
+    "today_move_to": 4820.0,
+    "pos_return_from": 4740.0,
+    "pos_return_to": 4820.0,
+    "pos_return_amt": 80.0,
+    "pos_return_pct": 1.69,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 385.6,
+    "upside_pct": 8.0,
+    "downside_amt": -289.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 4627.2,
+    "target_num": 5205.6,
+    "stoploss_num": 4530.8,
+    "order_flow_buyers": 81,
+    "volume_multiplier": "2.8x vs 30-day average",
+    "low52": 3133.0,
+    "high52": 6025.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "EICHERMOT trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "TVSMOTOR",
+    "name": "TVS Motor Company",
+    "subtitle": "TVS Motor Company \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 2480.0,
+    "checkpoint_price": 2420.0,
+    "pct_change": 2.48,
+    "day_change_amount": 60.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2420.0,
+    "today_move_to": 2480.0,
+    "pos_return_from": 2420.0,
+    "pos_return_to": 2480.0,
+    "pos_return_amt": 60.0,
+    "pos_return_pct": 2.48,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 198.4,
+    "upside_pct": 8.0,
+    "downside_amt": -148.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2380.8,
+    "target_num": 2678.4,
+    "stoploss_num": 2331.2,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.3x vs 30-day average",
+    "low52": 1612.0,
+    "high52": 3100.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TVSMOTOR trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "BHARATFORG",
+    "name": "Bharat Forge Ltd",
+    "subtitle": "Bharat Forge Ltd \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 1520.0,
+    "checkpoint_price": 1490.0,
+    "pct_change": 2.01,
+    "day_change_amount": 30.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1490.0,
+    "today_move_to": 1520.0,
+    "pos_return_from": 1490.0,
+    "pos_return_to": 1520.0,
+    "pos_return_amt": 30.0,
+    "pos_return_pct": 2.01,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 121.6,
+    "upside_pct": 8.0,
+    "downside_amt": -91.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1459.2,
+    "target_num": 1641.6,
+    "stoploss_num": 1428.8,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 988.0,
+    "high52": 1900.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BHARATFORG trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "MOTHERSON",
+    "name": "Samvardhana Motherson",
+    "subtitle": "Samvardhana Motherson \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 175.0,
+    "checkpoint_price": 170.0,
+    "pct_change": 2.94,
+    "day_change_amount": 5.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 170.0,
+    "today_move_to": 175.0,
+    "pos_return_from": 170.0,
+    "pos_return_to": 175.0,
+    "pos_return_amt": 5.0,
+    "pos_return_pct": 2.94,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 14.0,
+    "upside_pct": 8.0,
+    "downside_amt": -10.5,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 168.0,
+    "target_num": 189.0,
+    "stoploss_num": 164.5,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.6x vs 30-day average",
+    "low52": 113.75,
+    "high52": 218.75,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "MOTHERSON trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "BOSCHLTD",
+    "name": "Bosch Ltd",
+    "subtitle": "Bosch Ltd \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 34500.0,
+    "checkpoint_price": 33900.0,
+    "pct_change": 1.77,
+    "day_change_amount": 600.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 33900.0,
+    "today_move_to": 34500.0,
+    "pos_return_from": 33900.0,
+    "pos_return_to": 34500.0,
+    "pos_return_amt": 600.0,
+    "pos_return_pct": 1.77,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 2760.0,
+    "upside_pct": 8.0,
+    "downside_amt": -2070.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 33120.0,
+    "target_num": 37260.0,
+    "stoploss_num": 32430.0,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 22425.0,
+    "high52": 43125.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BOSCHLTD trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "MRF",
+    "name": "MRF Ltd",
+    "subtitle": "MRF Ltd \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 132000.0,
+    "checkpoint_price": 130500.0,
+    "pct_change": 1.15,
+    "day_change_amount": 1500.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 130500.0,
+    "today_move_to": 132000.0,
+    "pos_return_from": 130500.0,
+    "pos_return_to": 132000.0,
+    "pos_return_amt": 1500.0,
+    "pos_return_pct": 1.15,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 88,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 10560.0,
+    "upside_pct": 8.0,
+    "downside_amt": -7920.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 126720.0,
+    "target_num": 142560.0,
+    "stoploss_num": 124080.0,
+    "order_flow_buyers": 79,
+    "volume_multiplier": "2.5x vs 30-day average",
+    "low52": 85800.0,
+    "high52": 165000.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "MRF trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "BALKRISIND",
+    "name": "Balkrishna Industries",
+    "subtitle": "Balkrishna Industries \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 3050.0,
+    "checkpoint_price": 2990.0,
+    "pct_change": 2.01,
+    "day_change_amount": 60.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2990.0,
+    "today_move_to": 3050.0,
+    "pos_return_from": 2990.0,
+    "pos_return_to": 3050.0,
+    "pos_return_amt": 60.0,
+    "pos_return_pct": 2.01,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 244.0,
+    "upside_pct": 8.0,
+    "downside_amt": -183.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2928.0,
+    "target_num": 3294.0,
+    "stoploss_num": 2867.0,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 1982.5,
+    "high52": 3812.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BALKRISIND trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "APOLLOTYRE",
+    "name": "Apollo Tyres Ltd",
+    "subtitle": "Apollo Tyres Ltd \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 520.0,
+    "checkpoint_price": 510.0,
+    "pct_change": 1.96,
+    "day_change_amount": 10.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 510.0,
+    "today_move_to": 520.0,
+    "pos_return_from": 510.0,
+    "pos_return_to": 520.0,
+    "pos_return_amt": 10.0,
+    "pos_return_pct": 1.96,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 41.6,
+    "upside_pct": 8.0,
+    "downside_amt": -31.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 499.2,
+    "target_num": 561.6,
+    "stoploss_num": 488.8,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 338.0,
+    "high52": 650.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "APOLLOTYRE trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "EXIDEIND",
+    "name": "Exide Industries",
+    "subtitle": "Exide Industries \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 495.0,
+    "checkpoint_price": 482.0,
+    "pct_change": 2.7,
+    "day_change_amount": 13.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 482.0,
+    "today_move_to": 495.0,
+    "pos_return_from": 482.0,
+    "pos_return_to": 495.0,
+    "pos_return_amt": 13.0,
+    "pos_return_pct": 2.7,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 39.6,
+    "upside_pct": 8.0,
+    "downside_amt": -29.7,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 475.2,
+    "target_num": 534.6,
+    "stoploss_num": 465.3,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 321.75,
+    "high52": 618.75,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "EXIDEIND trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "AMARAJABAT",
+    "name": "Amara Raja Energy",
+    "subtitle": "Amara Raja Energy \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 1420.0,
+    "checkpoint_price": 1380.0,
+    "pct_change": 2.9,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1380.0,
+    "today_move_to": 1420.0,
+    "pos_return_from": 1380.0,
+    "pos_return_to": 1420.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 2.9,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 113.6,
+    "upside_pct": 8.0,
+    "downside_amt": -85.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1363.2,
+    "target_num": 1533.6,
+    "stoploss_num": 1334.8,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.5x vs 30-day average",
+    "low52": 923.0,
+    "high52": 1775.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "AMARAJABAT trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "SONACOMS",
+    "name": "Sona BLW Precision",
+    "subtitle": "Sona BLW Precision \u2022 Auto",
+    "sector": "Auto",
+    "exchange": "NSE",
+    "price": 690.0,
+    "checkpoint_price": 675.0,
+    "pct_change": 2.22,
+    "day_change_amount": 15.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 675.0,
+    "today_move_to": 690.0,
+    "pos_return_from": 675.0,
+    "pos_return_to": 690.0,
+    "pos_return_amt": 15.0,
+    "pos_return_pct": 2.22,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Auto supporting upside target.",
+    "upside_amt": 55.2,
+    "upside_pct": 8.0,
+    "downside_amt": -41.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 662.4,
+    "target_num": 745.2,
+    "stoploss_num": 648.6,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 448.5,
+    "high52": 862.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "SONACOMS trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ZOMATO",
+    "name": "Zomato Ltd (Blinkit)",
+    "subtitle": "Zomato Ltd (Blinkit) \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 248.6,
+    "checkpoint_price": 237.2,
+    "pct_change": 4.81,
+    "day_change_amount": 11.4,
+    "logo_type": "zomato",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 237.2,
+    "today_move_to": 248.6,
+    "pos_return_from": 237.2,
+    "pos_return_to": 248.6,
+    "pos_return_amt": 11.4,
+    "pos_return_pct": 4.81,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 87,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 19.89,
+    "upside_pct": 8.0,
+    "downside_amt": -14.92,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 238.66,
+    "target_num": 268.49,
+    "stoploss_num": 233.68,
+    "order_flow_buyers": 94,
+    "volume_multiplier": "4.7x vs 30-day average",
+    "low52": 161.59,
+    "high52": 310.75,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ZOMATO trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "TRENT",
+    "name": "Trent Ltd (Zudio)",
+    "subtitle": "Trent Ltd (Zudio) \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 7120.0,
+    "checkpoint_price": 6880.0,
+    "pct_change": 3.49,
+    "day_change_amount": 240.0,
+    "logo_type": "tata",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 6880.0,
+    "today_move_to": 7120.0,
+    "pos_return_from": 6880.0,
+    "pos_return_to": 7120.0,
+    "pos_return_amt": 240.0,
+    "pos_return_pct": 3.49,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 95,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 569.6,
+    "upside_pct": 8.0,
+    "downside_amt": -427.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 6835.2,
+    "target_num": 7689.6,
+    "stoploss_num": 6692.8,
+    "order_flow_buyers": 88,
+    "volume_multiplier": "3.9x vs 30-day average",
+    "low52": 4628.0,
+    "high52": 8900.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TRENT trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "TITAN",
+    "name": "Titan Company Ltd",
+    "subtitle": "Titan Company Ltd \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 3620.0,
+    "checkpoint_price": 3609.0,
+    "pct_change": 0.3,
+    "day_change_amount": 11.0,
+    "logo_type": "titan",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 3609.0,
+    "today_move_to": 3620.0,
+    "pos_return_from": 3609.0,
+    "pos_return_to": 3620.0,
+    "pos_return_amt": 11.0,
+    "pos_return_pct": 0.3,
+    "action_type": "ACCUMULATE",
+    "action_badge": "Accumulate",
+    "confidence_score": 85,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 289.6,
+    "upside_pct": 8.0,
+    "downside_amt": -217.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 3475.2,
+    "target_num": 3909.6,
+    "stoploss_num": 3402.8,
+    "order_flow_buyers": 76,
+    "volume_multiplier": "2.0x vs 30-day average",
+    "low52": 2353.0,
+    "high52": 4525.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TITAN trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "DMART",
+    "name": "Avenue Supermarts",
+    "subtitle": "Avenue Supermarts \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 4650.0,
+    "checkpoint_price": 4580.0,
+    "pct_change": 1.53,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 4580.0,
+    "today_move_to": 4650.0,
+    "pos_return_from": 4580.0,
+    "pos_return_to": 4650.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 1.53,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 372.0,
+    "upside_pct": 8.0,
+    "downside_amt": -279.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 4464.0,
+    "target_num": 5022.0,
+    "stoploss_num": 4371.0,
+    "order_flow_buyers": 81,
+    "volume_multiplier": "2.7x vs 30-day average",
+    "low52": 3022.5,
+    "high52": 5812.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "DMART trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "NYKAA",
+    "name": "FSN E-Commerce (Nykaa)",
+    "subtitle": "FSN E-Commerce (Nykaa) \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 218.0,
+    "checkpoint_price": 208.0,
+    "pct_change": 4.81,
+    "day_change_amount": 10.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 208.0,
+    "today_move_to": 218.0,
+    "pos_return_from": 208.0,
+    "pos_return_to": 218.0,
+    "pos_return_amt": 10.0,
+    "pos_return_pct": 4.81,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 87,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 17.44,
+    "upside_pct": 8.0,
+    "downside_amt": -13.08,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 209.28,
+    "target_num": 235.44,
+    "stoploss_num": 204.92,
+    "order_flow_buyers": 94,
+    "volume_multiplier": "4.7x vs 30-day average",
+    "low52": 141.7,
+    "high52": 272.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "NYKAA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "PAYTM",
+    "name": "One97 Communications",
+    "subtitle": "One97 Communications \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 685.0,
+    "checkpoint_price": 650.0,
+    "pct_change": 5.38,
+    "day_change_amount": 35.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 650.0,
+    "today_move_to": 685.0,
+    "pos_return_from": 650.0,
+    "pos_return_to": 685.0,
+    "pos_return_amt": 35.0,
+    "pos_return_pct": 5.38,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 54.8,
+    "upside_pct": 8.0,
+    "downside_amt": -41.1,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 657.6,
+    "target_num": 739.8,
+    "stoploss_num": 643.9,
+    "order_flow_buyers": 96,
+    "volume_multiplier": "5.0x vs 30-day average",
+    "low52": 445.25,
+    "high52": 856.25,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "PAYTM trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "VBL",
+    "name": "Varun Beverages Ltd",
+    "subtitle": "Varun Beverages Ltd \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 630.0,
+    "checkpoint_price": 612.0,
+    "pct_change": 2.94,
+    "day_change_amount": 18.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 612.0,
+    "today_move_to": 630.0,
+    "pos_return_from": 612.0,
+    "pos_return_to": 630.0,
+    "pos_return_amt": 18.0,
+    "pos_return_pct": 2.94,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 50.4,
+    "upside_pct": 8.0,
+    "downside_amt": -37.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 604.8,
+    "target_num": 680.4,
+    "stoploss_num": 592.2,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.6x vs 30-day average",
+    "low52": 409.5,
+    "high52": 787.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "VBL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "POLYCAB",
+    "name": "Polycab India Ltd",
+    "subtitle": "Polycab India Ltd \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 6750.0,
+    "checkpoint_price": 6590.0,
+    "pct_change": 2.43,
+    "day_change_amount": 160.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 6590.0,
+    "today_move_to": 6750.0,
+    "pos_return_from": 6590.0,
+    "pos_return_to": 6750.0,
+    "pos_return_amt": 160.0,
+    "pos_return_pct": 2.43,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 540.0,
+    "upside_pct": 8.0,
+    "downside_amt": -405.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 6480.0,
+    "target_num": 7290.0,
+    "stoploss_num": 6345.0,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.3x vs 30-day average",
+    "low52": 4387.5,
+    "high52": 8437.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "POLYCAB trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "HAVLELLS",
+    "name": "Havells India Ltd",
+    "subtitle": "Havells India Ltd \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 1880.0,
+    "checkpoint_price": 1840.0,
+    "pct_change": 2.17,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1840.0,
+    "today_move_to": 1880.0,
+    "pos_return_from": 1840.0,
+    "pos_return_to": 1880.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 2.17,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 150.4,
+    "upside_pct": 8.0,
+    "downside_amt": -112.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1804.8,
+    "target_num": 2030.4,
+    "stoploss_num": 1767.2,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 1222.0,
+    "high52": 2350.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "HAVLELLS trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "VOLTAS",
+    "name": "Voltas Ltd",
+    "subtitle": "Voltas Ltd \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 1790.0,
+    "checkpoint_price": 1740.0,
+    "pct_change": 2.87,
+    "day_change_amount": 50.0,
+    "logo_type": "tata",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1740.0,
+    "today_move_to": 1790.0,
+    "pos_return_from": 1740.0,
+    "pos_return_to": 1790.0,
+    "pos_return_amt": 50.0,
+    "pos_return_pct": 2.87,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 143.2,
+    "upside_pct": 8.0,
+    "downside_amt": -107.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1718.4,
+    "target_num": 1933.2,
+    "stoploss_num": 1682.6,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.5x vs 30-day average",
+    "low52": 1163.5,
+    "high52": 2237.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "VOLTAS trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "DIXON",
+    "name": "Dixon Technologies",
+    "subtitle": "Dixon Technologies \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 13450.0,
+    "checkpoint_price": 12980.0,
+    "pct_change": 3.62,
+    "day_change_amount": 470.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 12980.0,
+    "today_move_to": 13450.0,
+    "pos_return_from": 12980.0,
+    "pos_return_to": 13450.0,
+    "pos_return_amt": 470.0,
+    "pos_return_pct": 3.62,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 95,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 1076.0,
+    "upside_pct": 8.0,
+    "downside_amt": -807.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 12912.0,
+    "target_num": 14526.0,
+    "stoploss_num": 12643.0,
+    "order_flow_buyers": 89,
+    "volume_multiplier": "4.0x vs 30-day average",
+    "low52": 8742.5,
+    "high52": 16812.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "DIXON trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "KALYANKJIL",
+    "name": "Kalyan Jewellers",
+    "subtitle": "Kalyan Jewellers \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 680.0,
+    "checkpoint_price": 655.0,
+    "pct_change": 3.82,
+    "day_change_amount": 25.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 655.0,
+    "today_move_to": 680.0,
+    "pos_return_from": 655.0,
+    "pos_return_to": 680.0,
+    "pos_return_amt": 25.0,
+    "pos_return_pct": 3.82,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 96,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 54.4,
+    "upside_pct": 8.0,
+    "downside_amt": -40.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 652.8,
+    "target_num": 734.4,
+    "stoploss_num": 639.2,
+    "order_flow_buyers": 90,
+    "volume_multiplier": "4.1x vs 30-day average",
+    "low52": 442.0,
+    "high52": 850.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "KALYANKJIL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "PAGEIND",
+    "name": "Page Industries Ltd",
+    "subtitle": "Page Industries Ltd \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 43200.0,
+    "checkpoint_price": 42600.0,
+    "pct_change": 1.41,
+    "day_change_amount": 600.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 42600.0,
+    "today_move_to": 43200.0,
+    "pos_return_from": 42600.0,
+    "pos_return_to": 43200.0,
+    "pos_return_amt": 600.0,
+    "pos_return_pct": 1.41,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 3456.0,
+    "upside_pct": 8.0,
+    "downside_amt": -2592.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 41472.0,
+    "target_num": 46656.0,
+    "stoploss_num": 40608.0,
+    "order_flow_buyers": 80,
+    "volume_multiplier": "2.6x vs 30-day average",
+    "low52": 28080.0,
+    "high52": 54000.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "PAGEIND trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "METROBRAND",
+    "name": "Metro Brands Ltd",
+    "subtitle": "Metro Brands Ltd \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 1260.0,
+    "checkpoint_price": 1230.0,
+    "pct_change": 2.44,
+    "day_change_amount": 30.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1230.0,
+    "today_move_to": 1260.0,
+    "pos_return_from": 1230.0,
+    "pos_return_to": 1260.0,
+    "pos_return_amt": 30.0,
+    "pos_return_pct": 2.44,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 100.8,
+    "upside_pct": 8.0,
+    "downside_amt": -75.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1209.6,
+    "target_num": 1360.8,
+    "stoploss_num": 1184.4,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.3x vs 30-day average",
+    "low52": 819.0,
+    "high52": 1575.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "METROBRAND trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "BATAINDIA",
+    "name": "Bata India Ltd",
+    "subtitle": "Bata India Ltd \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 1410.0,
+    "checkpoint_price": 1390.0,
+    "pct_change": 1.44,
+    "day_change_amount": 20.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1390.0,
+    "today_move_to": 1410.0,
+    "pos_return_from": 1390.0,
+    "pos_return_to": 1410.0,
+    "pos_return_amt": 20.0,
+    "pos_return_pct": 1.44,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 112.8,
+    "upside_pct": 8.0,
+    "downside_amt": -84.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1353.6,
+    "target_num": 1522.8,
+    "stoploss_num": 1325.4,
+    "order_flow_buyers": 80,
+    "volume_multiplier": "2.7x vs 30-day average",
+    "low52": 916.5,
+    "high52": 1762.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BATAINDIA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "DEVYANI",
+    "name": "Devyani International",
+    "subtitle": "Devyani International \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 174.0,
+    "checkpoint_price": 169.0,
+    "pct_change": 2.96,
+    "day_change_amount": 5.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 169.0,
+    "today_move_to": 174.0,
+    "pos_return_from": 169.0,
+    "pos_return_to": 174.0,
+    "pos_return_amt": 5.0,
+    "pos_return_pct": 2.96,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 13.92,
+    "upside_pct": 8.0,
+    "downside_amt": -10.44,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 167.04,
+    "target_num": 187.92,
+    "stoploss_num": 163.56,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.6x vs 30-day average",
+    "low52": 113.1,
+    "high52": 217.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "DEVYANI trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "JUBLFOOD",
+    "name": "Jubilant FoodWorks",
+    "subtitle": "Jubilant FoodWorks \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 620.0,
+    "checkpoint_price": 608.0,
+    "pct_change": 1.97,
+    "day_change_amount": 12.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 608.0,
+    "today_move_to": 620.0,
+    "pos_return_from": 608.0,
+    "pos_return_to": 620.0,
+    "pos_return_amt": 12.0,
+    "pos_return_pct": 1.97,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 49.6,
+    "upside_pct": 8.0,
+    "downside_amt": -37.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 595.2,
+    "target_num": 669.6,
+    "stoploss_num": 582.8,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 403.0,
+    "high52": 775.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "JUBLFOOD trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "WHIRLPOOL",
+    "name": "Whirlpool of India",
+    "subtitle": "Whirlpool of India \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 2120.0,
+    "checkpoint_price": 2080.0,
+    "pct_change": 1.92,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2080.0,
+    "today_move_to": 2120.0,
+    "pos_return_from": 2080.0,
+    "pos_return_to": 2120.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 1.92,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 169.6,
+    "upside_pct": 8.0,
+    "downside_amt": -127.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2035.2,
+    "target_num": 2289.6,
+    "stoploss_num": 1992.8,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 1378.0,
+    "high52": 2650.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "WHIRLPOOL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "CROMPTON",
+    "name": "Crompton Greaves Consumer",
+    "subtitle": "Crompton Greaves Consumer \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 420.0,
+    "checkpoint_price": 412.0,
+    "pct_change": 1.94,
+    "day_change_amount": 8.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 412.0,
+    "today_move_to": 420.0,
+    "pos_return_from": 412.0,
+    "pos_return_to": 420.0,
+    "pos_return_amt": 8.0,
+    "pos_return_pct": 1.94,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 33.6,
+    "upside_pct": 8.0,
+    "downside_amt": -25.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 403.2,
+    "target_num": 453.6,
+    "stoploss_num": 394.8,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 273.0,
+    "high52": 525.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "CROMPTON trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "BLUESTARCO",
+    "name": "Blue Star Ltd",
+    "subtitle": "Blue Star Ltd \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 1850.0,
+    "checkpoint_price": 1810.0,
+    "pct_change": 2.21,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1810.0,
+    "today_move_to": 1850.0,
+    "pos_return_from": 1810.0,
+    "pos_return_to": 1850.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 2.21,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 148.0,
+    "upside_pct": 8.0,
+    "downside_amt": -111.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1776.0,
+    "target_num": 1998.0,
+    "stoploss_num": 1739.0,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 1202.5,
+    "high52": 2312.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BLUESTARCO trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ITC",
+    "name": "ITC Ltd",
+    "subtitle": "ITC Ltd \u2022 FMCG",
+    "sector": "FMCG",
+    "exchange": "NSE",
+    "price": 492.0,
+    "checkpoint_price": 488.0,
+    "pct_change": 0.82,
+    "day_change_amount": 4.0,
+    "logo_type": "itc",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 488.0,
+    "today_move_to": 492.0,
+    "pos_return_from": 488.0,
+    "pos_return_to": 492.0,
+    "pos_return_amt": 4.0,
+    "pos_return_pct": 0.82,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 87,
+    "action_reason": "Institutional order flow and sector momentum in FMCG supporting upside target.",
+    "upside_amt": 39.36,
+    "upside_pct": 8.0,
+    "downside_amt": -29.52,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 472.32,
+    "target_num": 531.36,
+    "stoploss_num": 462.48,
+    "order_flow_buyers": 78,
+    "volume_multiplier": "2.3x vs 30-day average",
+    "low52": 319.8,
+    "high52": 615.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ITC trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "HINDUNILVR",
+    "name": "Hindustan Unilever",
+    "subtitle": "Hindustan Unilever \u2022 FMCG",
+    "sector": "FMCG",
+    "exchange": "NSE",
+    "price": 2710.0,
+    "checkpoint_price": 2742.0,
+    "pct_change": -1.17,
+    "day_change_amount": -32.0,
+    "logo_type": "hul",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2742.0,
+    "today_move_to": 2710.0,
+    "pos_return_from": 2742.0,
+    "pos_return_to": 2710.0,
+    "pos_return_amt": -32.0,
+    "pos_return_pct": -1.17,
+    "action_type": "ACCUMULATE",
+    "action_badge": "Accumulate",
+    "confidence_score": 88,
+    "action_reason": "Institutional order flow and sector momentum in FMCG supporting upside target.",
+    "upside_amt": 216.8,
+    "upside_pct": 8.0,
+    "downside_amt": -162.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2601.6,
+    "target_num": 2926.8,
+    "stoploss_num": 2547.4,
+    "order_flow_buyers": 70,
+    "volume_multiplier": "1.2x vs 30-day average",
+    "low52": 1761.5,
+    "high52": 3387.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "HINDUNILVR trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "NESTLEIND",
+    "name": "Nestle India Ltd",
+    "subtitle": "Nestle India Ltd \u2022 FMCG",
+    "sector": "FMCG",
+    "exchange": "NSE",
+    "price": 2480.0,
+    "checkpoint_price": 2450.0,
+    "pct_change": 1.22,
+    "day_change_amount": 30.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2450.0,
+    "today_move_to": 2480.0,
+    "pos_return_from": 2450.0,
+    "pos_return_to": 2480.0,
+    "pos_return_amt": 30.0,
+    "pos_return_pct": 1.22,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 88,
+    "action_reason": "Institutional order flow and sector momentum in FMCG supporting upside target.",
+    "upside_amt": 198.4,
+    "upside_pct": 8.0,
+    "downside_amt": -148.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2380.8,
+    "target_num": 2678.4,
+    "stoploss_num": 2331.2,
+    "order_flow_buyers": 79,
+    "volume_multiplier": "2.5x vs 30-day average",
+    "low52": 1612.0,
+    "high52": 3100.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "NESTLEIND trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "BRITANNIA",
+    "name": "Britannia Industries",
+    "subtitle": "Britannia Industries \u2022 FMCG",
+    "sector": "FMCG",
+    "exchange": "NSE",
+    "price": 5880.0,
+    "checkpoint_price": 5810.0,
+    "pct_change": 1.2,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 5810.0,
+    "today_move_to": 5880.0,
+    "pos_return_from": 5810.0,
+    "pos_return_to": 5880.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 1.2,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 88,
+    "action_reason": "Institutional order flow and sector momentum in FMCG supporting upside target.",
+    "upside_amt": 470.4,
+    "upside_pct": 8.0,
+    "downside_amt": -352.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 5644.8,
+    "target_num": 6350.4,
+    "stoploss_num": 5527.2,
+    "order_flow_buyers": 79,
+    "volume_multiplier": "2.5x vs 30-day average",
+    "low52": 3822.0,
+    "high52": 7350.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BRITANNIA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "TATACONSUM",
+    "name": "Tata Consumer Products",
+    "subtitle": "Tata Consumer Products \u2022 FMCG",
+    "sector": "FMCG",
+    "exchange": "NSE",
+    "price": 1180.0,
+    "checkpoint_price": 1160.0,
+    "pct_change": 1.72,
+    "day_change_amount": 20.0,
+    "logo_type": "tata",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1160.0,
+    "today_move_to": 1180.0,
+    "pos_return_from": 1160.0,
+    "pos_return_to": 1180.0,
+    "pos_return_amt": 20.0,
+    "pos_return_pct": 1.72,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in FMCG supporting upside target.",
+    "upside_amt": 94.4,
+    "upside_pct": 8.0,
+    "downside_amt": -70.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1132.8,
+    "target_num": 1274.4,
+    "stoploss_num": 1109.2,
+    "order_flow_buyers": 81,
+    "volume_multiplier": "2.8x vs 30-day average",
+    "low52": 767.0,
+    "high52": 1475.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TATACONSUM trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "DABUR",
+    "name": "Dabur India Ltd",
+    "subtitle": "Dabur India Ltd \u2022 FMCG",
+    "sector": "FMCG",
+    "exchange": "NSE",
+    "price": 610.0,
+    "checkpoint_price": 602.0,
+    "pct_change": 1.33,
+    "day_change_amount": 8.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 602.0,
+    "today_move_to": 610.0,
+    "pos_return_from": 602.0,
+    "pos_return_to": 610.0,
+    "pos_return_amt": 8.0,
+    "pos_return_pct": 1.33,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 88,
+    "action_reason": "Institutional order flow and sector momentum in FMCG supporting upside target.",
+    "upside_amt": 48.8,
+    "upside_pct": 8.0,
+    "downside_amt": -36.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 585.6,
+    "target_num": 658.8,
+    "stoploss_num": 573.4,
+    "order_flow_buyers": 80,
+    "volume_multiplier": "2.6x vs 30-day average",
+    "low52": 396.5,
+    "high52": 762.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "DABUR trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "MARICO",
+    "name": "Marico Ltd",
+    "subtitle": "Marico Ltd \u2022 FMCG",
+    "sector": "FMCG",
+    "exchange": "NSE",
+    "price": 640.0,
+    "checkpoint_price": 632.0,
+    "pct_change": 1.27,
+    "day_change_amount": 8.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 632.0,
+    "today_move_to": 640.0,
+    "pos_return_from": 632.0,
+    "pos_return_to": 640.0,
+    "pos_return_amt": 8.0,
+    "pos_return_pct": 1.27,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 88,
+    "action_reason": "Institutional order flow and sector momentum in FMCG supporting upside target.",
+    "upside_amt": 51.2,
+    "upside_pct": 8.0,
+    "downside_amt": -38.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 614.4,
+    "target_num": 691.2,
+    "stoploss_num": 601.6,
+    "order_flow_buyers": 80,
+    "volume_multiplier": "2.6x vs 30-day average",
+    "low52": 416.0,
+    "high52": 800.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "MARICO trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "GODREJCP",
+    "name": "Godrej Consumer Products",
+    "subtitle": "Godrej Consumer Products \u2022 FMCG",
+    "sector": "FMCG",
+    "exchange": "NSE",
+    "price": 1320.0,
+    "checkpoint_price": 1295.0,
+    "pct_change": 1.93,
+    "day_change_amount": 25.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1295.0,
+    "today_move_to": 1320.0,
+    "pos_return_from": 1295.0,
+    "pos_return_to": 1320.0,
+    "pos_return_amt": 25.0,
+    "pos_return_pct": 1.93,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in FMCG supporting upside target.",
+    "upside_amt": 105.6,
+    "upside_pct": 8.0,
+    "downside_amt": -79.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1267.2,
+    "target_num": 1425.6,
+    "stoploss_num": 1240.8,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 858.0,
+    "high52": 1650.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "GODREJCP trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "COLPAL",
+    "name": "Colgate-Palmolive India",
+    "subtitle": "Colgate-Palmolive India \u2022 FMCG",
+    "sector": "FMCG",
+    "exchange": "NSE",
+    "price": 3450.0,
+    "checkpoint_price": 3390.0,
+    "pct_change": 1.77,
+    "day_change_amount": 60.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 3390.0,
+    "today_move_to": 3450.0,
+    "pos_return_from": 3390.0,
+    "pos_return_to": 3450.0,
+    "pos_return_amt": 60.0,
+    "pos_return_pct": 1.77,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in FMCG supporting upside target.",
+    "upside_amt": 276.0,
+    "upside_pct": 8.0,
+    "downside_amt": -207.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 3312.0,
+    "target_num": 3726.0,
+    "stoploss_num": 3243.0,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 2242.5,
+    "high52": 4312.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "COLPAL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "EMAMILTD",
+    "name": "Emami Ltd",
+    "subtitle": "Emami Ltd \u2022 FMCG",
+    "sector": "FMCG",
+    "exchange": "NSE",
+    "price": 780.0,
+    "checkpoint_price": 765.0,
+    "pct_change": 1.96,
+    "day_change_amount": 15.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 765.0,
+    "today_move_to": 780.0,
+    "pos_return_from": 765.0,
+    "pos_return_to": 780.0,
+    "pos_return_amt": 15.0,
+    "pos_return_pct": 1.96,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in FMCG supporting upside target.",
+    "upside_amt": 62.4,
+    "upside_pct": 8.0,
+    "downside_amt": -46.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 748.8,
+    "target_num": 842.4,
+    "stoploss_num": 733.2,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 507.0,
+    "high52": 975.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "EMAMILTD trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "PATANJALI",
+    "name": "Patanjali Foods Ltd",
+    "subtitle": "Patanjali Foods Ltd \u2022 FMCG",
+    "sector": "FMCG",
+    "exchange": "NSE",
+    "price": 1820.0,
+    "checkpoint_price": 1780.0,
+    "pct_change": 2.25,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1780.0,
+    "today_move_to": 1820.0,
+    "pos_return_from": 1780.0,
+    "pos_return_to": 1820.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 2.25,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in FMCG supporting upside target.",
+    "upside_amt": 145.6,
+    "upside_pct": 8.0,
+    "downside_amt": -109.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1747.2,
+    "target_num": 1965.6,
+    "stoploss_num": 1710.8,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 1183.0,
+    "high52": 2275.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "PATANJALI trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "AWL",
+    "name": "Adani Wilmar Ltd",
+    "subtitle": "Adani Wilmar Ltd \u2022 FMCG",
+    "sector": "FMCG",
+    "exchange": "NSE",
+    "price": 360.0,
+    "checkpoint_price": 352.0,
+    "pct_change": 2.27,
+    "day_change_amount": 8.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 352.0,
+    "today_move_to": 360.0,
+    "pos_return_from": 352.0,
+    "pos_return_to": 360.0,
+    "pos_return_amt": 8.0,
+    "pos_return_pct": 2.27,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in FMCG supporting upside target.",
+    "upside_amt": 28.8,
+    "upside_pct": 8.0,
+    "downside_amt": -21.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 345.6,
+    "target_num": 388.8,
+    "stoploss_num": 338.4,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 234.0,
+    "high52": 450.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "AWL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "BIKAJI",
+    "name": "Bikaji Foods International",
+    "subtitle": "Bikaji Foods International \u2022 FMCG",
+    "sector": "FMCG",
+    "exchange": "NSE",
+    "price": 840.0,
+    "checkpoint_price": 815.0,
+    "pct_change": 3.07,
+    "day_change_amount": 25.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 815.0,
+    "today_move_to": 840.0,
+    "pos_return_from": 815.0,
+    "pos_return_to": 840.0,
+    "pos_return_amt": 25.0,
+    "pos_return_pct": 3.07,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 94,
+    "action_reason": "Institutional order flow and sector momentum in FMCG supporting upside target.",
+    "upside_amt": 67.2,
+    "upside_pct": 8.0,
+    "downside_amt": -50.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 806.4,
+    "target_num": 907.2,
+    "stoploss_num": 789.6,
+    "order_flow_buyers": 87,
+    "volume_multiplier": "3.6x vs 30-day average",
+    "low52": 546.0,
+    "high52": 1050.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BIKAJI trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "HONASA",
+    "name": "Honasa Consumer (Mamaearth)",
+    "subtitle": "Honasa Consumer (Mamaearth) \u2022 FMCG",
+    "sector": "FMCG",
+    "exchange": "NSE",
+    "price": 410.0,
+    "checkpoint_price": 398.0,
+    "pct_change": 3.02,
+    "day_change_amount": 12.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 398.0,
+    "today_move_to": 410.0,
+    "pos_return_from": 398.0,
+    "pos_return_to": 410.0,
+    "pos_return_amt": 12.0,
+    "pos_return_pct": 3.02,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 94,
+    "action_reason": "Institutional order flow and sector momentum in FMCG supporting upside target.",
+    "upside_amt": 32.8,
+    "upside_pct": 8.0,
+    "downside_amt": -24.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 393.6,
+    "target_num": 442.8,
+    "stoploss_num": 385.4,
+    "order_flow_buyers": 87,
+    "volume_multiplier": "3.6x vs 30-day average",
+    "low52": 266.5,
+    "high52": 512.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "HONASA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "SUNPHARMA",
+    "name": "Sun Pharma Industries",
+    "subtitle": "Sun Pharma Industries \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 1780.0,
+    "checkpoint_price": 1771.0,
+    "pct_change": 0.51,
+    "day_change_amount": 9.0,
+    "logo_type": "sunpharma",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1771.0,
+    "today_move_to": 1780.0,
+    "pos_return_from": 1771.0,
+    "pos_return_to": 1780.0,
+    "pos_return_amt": 9.0,
+    "pos_return_pct": 0.51,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 86,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 142.4,
+    "upside_pct": 8.0,
+    "downside_amt": -106.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1708.8,
+    "target_num": 1922.4,
+    "stoploss_num": 1673.2,
+    "order_flow_buyers": 77,
+    "volume_multiplier": "2.1x vs 30-day average",
+    "low52": 1157.0,
+    "high52": 2225.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "SUNPHARMA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "CIPLA",
+    "name": "Cipla Ltd",
+    "subtitle": "Cipla Ltd \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 1580.0,
+    "checkpoint_price": 1555.0,
+    "pct_change": 1.61,
+    "day_change_amount": 25.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1555.0,
+    "today_move_to": 1580.0,
+    "pos_return_from": 1555.0,
+    "pos_return_to": 1580.0,
+    "pos_return_amt": 25.0,
+    "pos_return_pct": 1.61,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 126.4,
+    "upside_pct": 8.0,
+    "downside_amt": -94.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1516.8,
+    "target_num": 1706.4,
+    "stoploss_num": 1485.2,
+    "order_flow_buyers": 81,
+    "volume_multiplier": "2.8x vs 30-day average",
+    "low52": 1027.0,
+    "high52": 1975.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "CIPLA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "DRREDDY",
+    "name": "Dr Reddy's Laboratories",
+    "subtitle": "Dr Reddy's Laboratories \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 6650.0,
+    "checkpoint_price": 6540.0,
+    "pct_change": 1.68,
+    "day_change_amount": 110.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 6540.0,
+    "today_move_to": 6650.0,
+    "pos_return_from": 6540.0,
+    "pos_return_to": 6650.0,
+    "pos_return_amt": 110.0,
+    "pos_return_pct": 1.68,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 532.0,
+    "upside_pct": 8.0,
+    "downside_amt": -399.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 6384.0,
+    "target_num": 7182.0,
+    "stoploss_num": 6251.0,
+    "order_flow_buyers": 81,
+    "volume_multiplier": "2.8x vs 30-day average",
+    "low52": 4322.5,
+    "high52": 8312.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "DRREDDY trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "DIVISLAB",
+    "name": "Divi's Laboratories",
+    "subtitle": "Divi's Laboratories \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 5180.0,
+    "checkpoint_price": 5090.0,
+    "pct_change": 1.77,
+    "day_change_amount": 90.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 5090.0,
+    "today_move_to": 5180.0,
+    "pos_return_from": 5090.0,
+    "pos_return_to": 5180.0,
+    "pos_return_amt": 90.0,
+    "pos_return_pct": 1.77,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 414.4,
+    "upside_pct": 8.0,
+    "downside_amt": -310.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 4972.8,
+    "target_num": 5594.4,
+    "stoploss_num": 4869.2,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 3367.0,
+    "high52": 6475.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "DIVISLAB trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "LUPIN",
+    "name": "Lupin Ltd",
+    "subtitle": "Lupin Ltd \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 2150.0,
+    "checkpoint_price": 2090.0,
+    "pct_change": 2.87,
+    "day_change_amount": 60.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2090.0,
+    "today_move_to": 2150.0,
+    "pos_return_from": 2090.0,
+    "pos_return_to": 2150.0,
+    "pos_return_amt": 60.0,
+    "pos_return_pct": 2.87,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 172.0,
+    "upside_pct": 8.0,
+    "downside_amt": -129.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2064.0,
+    "target_num": 2322.0,
+    "stoploss_num": 2021.0,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.5x vs 30-day average",
+    "low52": 1397.5,
+    "high52": 2687.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "LUPIN trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "AUROPHARMA",
+    "name": "Aurobindo Pharma",
+    "subtitle": "Aurobindo Pharma \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 1460.0,
+    "checkpoint_price": 1425.0,
+    "pct_change": 2.46,
+    "day_change_amount": 35.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1425.0,
+    "today_move_to": 1460.0,
+    "pos_return_from": 1425.0,
+    "pos_return_to": 1460.0,
+    "pos_return_amt": 35.0,
+    "pos_return_pct": 2.46,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 116.8,
+    "upside_pct": 8.0,
+    "downside_amt": -87.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1401.6,
+    "target_num": 1576.8,
+    "stoploss_num": 1372.4,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.3x vs 30-day average",
+    "low52": 949.0,
+    "high52": 1825.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "AUROPHARMA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "TORNT\u30d3",
+    "name": "Torrent Pharmaceuticals",
+    "subtitle": "Torrent Pharmaceuticals \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 3280.0,
+    "checkpoint_price": 3210.0,
+    "pct_change": 2.18,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 3210.0,
+    "today_move_to": 3280.0,
+    "pos_return_from": 3210.0,
+    "pos_return_to": 3280.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 2.18,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 262.4,
+    "upside_pct": 8.0,
+    "downside_amt": -196.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 3148.8,
+    "target_num": 3542.4,
+    "stoploss_num": 3083.2,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 2132.0,
+    "high52": 4100.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TORNT\u30d3 trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ZYDUSLIFE",
+    "name": "Zydus Lifesciences",
+    "subtitle": "Zydus Lifesciences \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 1120.0,
+    "checkpoint_price": 1095.0,
+    "pct_change": 2.28,
+    "day_change_amount": 25.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1095.0,
+    "today_move_to": 1120.0,
+    "pos_return_from": 1095.0,
+    "pos_return_to": 1120.0,
+    "pos_return_amt": 25.0,
+    "pos_return_pct": 2.28,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 89.6,
+    "upside_pct": 8.0,
+    "downside_amt": -67.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1075.2,
+    "target_num": 1209.6,
+    "stoploss_num": 1052.8,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 728.0,
+    "high52": 1400.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ZYDUSLIFE trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "MANKIND",
+    "name": "Mankind Pharma Ltd",
+    "subtitle": "Mankind Pharma Ltd \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 2560.0,
+    "checkpoint_price": 2490.0,
+    "pct_change": 2.81,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2490.0,
+    "today_move_to": 2560.0,
+    "pos_return_from": 2490.0,
+    "pos_return_to": 2560.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 2.81,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 204.8,
+    "upside_pct": 8.0,
+    "downside_amt": -153.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2457.6,
+    "target_num": 2764.8,
+    "stoploss_num": 2406.4,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.5x vs 30-day average",
+    "low52": 1664.0,
+    "high52": 3200.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "MANKIND trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ALKEM",
+    "name": "Alkem Laboratories",
+    "subtitle": "Alkem Laboratories \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 5850.0,
+    "checkpoint_price": 5740.0,
+    "pct_change": 1.92,
+    "day_change_amount": 110.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 5740.0,
+    "today_move_to": 5850.0,
+    "pos_return_from": 5740.0,
+    "pos_return_to": 5850.0,
+    "pos_return_amt": 110.0,
+    "pos_return_pct": 1.92,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 468.0,
+    "upside_pct": 8.0,
+    "downside_amt": -351.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 5616.0,
+    "target_num": 6318.0,
+    "stoploss_num": 5499.0,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 3802.5,
+    "high52": 7312.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ALKEM trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "BIOCON",
+    "name": "Biocon Ltd",
+    "subtitle": "Biocon Ltd \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 360.0,
+    "checkpoint_price": 352.0,
+    "pct_change": 2.27,
+    "day_change_amount": 8.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 352.0,
+    "today_move_to": 360.0,
+    "pos_return_from": 352.0,
+    "pos_return_to": 360.0,
+    "pos_return_amt": 8.0,
+    "pos_return_pct": 2.27,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 28.8,
+    "upside_pct": 8.0,
+    "downside_amt": -21.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 345.6,
+    "target_num": 388.8,
+    "stoploss_num": 338.4,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 234.0,
+    "high52": 450.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BIOCON trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "GLENMARK",
+    "name": "Glenmark Pharmaceuticals",
+    "subtitle": "Glenmark Pharmaceuticals \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 1680.0,
+    "checkpoint_price": 1630.0,
+    "pct_change": 3.07,
+    "day_change_amount": 50.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1630.0,
+    "today_move_to": 1680.0,
+    "pos_return_from": 1630.0,
+    "pos_return_to": 1680.0,
+    "pos_return_amt": 50.0,
+    "pos_return_pct": 3.07,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 94,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 134.4,
+    "upside_pct": 8.0,
+    "downside_amt": -100.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1612.8,
+    "target_num": 1814.4,
+    "stoploss_num": 1579.2,
+    "order_flow_buyers": 87,
+    "volume_multiplier": "3.6x vs 30-day average",
+    "low52": 1092.0,
+    "high52": 2100.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "GLENMARK trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "IPCALAB",
+    "name": "IPCA Laboratories",
+    "subtitle": "IPCA Laboratories \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 1440.0,
+    "checkpoint_price": 1410.0,
+    "pct_change": 2.13,
+    "day_change_amount": 30.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1410.0,
+    "today_move_to": 1440.0,
+    "pos_return_from": 1410.0,
+    "pos_return_to": 1440.0,
+    "pos_return_amt": 30.0,
+    "pos_return_pct": 2.13,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 115.2,
+    "upside_pct": 8.0,
+    "downside_amt": -86.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1382.4,
+    "target_num": 1555.2,
+    "stoploss_num": 1353.6,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 936.0,
+    "high52": 1800.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "IPCALAB trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "APOLLOHOSP",
+    "name": "Apollo Hospitals Enterprise",
+    "subtitle": "Apollo Hospitals Enterprise \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 6980.0,
+    "checkpoint_price": 6850.0,
+    "pct_change": 1.9,
+    "day_change_amount": 130.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 6850.0,
+    "today_move_to": 6980.0,
+    "pos_return_from": 6850.0,
+    "pos_return_to": 6980.0,
+    "pos_return_amt": 130.0,
+    "pos_return_pct": 1.9,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 558.4,
+    "upside_pct": 8.0,
+    "downside_amt": -418.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 6700.8,
+    "target_num": 7538.4,
+    "stoploss_num": 6561.2,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 4537.0,
+    "high52": 8725.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "APOLLOHOSP trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "MAXHEALTH",
+    "name": "Max Healthcare Institute",
+    "subtitle": "Max Healthcare Institute \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 980.0,
+    "checkpoint_price": 955.0,
+    "pct_change": 2.62,
+    "day_change_amount": 25.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 955.0,
+    "today_move_to": 980.0,
+    "pos_return_from": 955.0,
+    "pos_return_to": 980.0,
+    "pos_return_amt": 25.0,
+    "pos_return_pct": 2.62,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 78.4,
+    "upside_pct": 8.0,
+    "downside_amt": -58.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 940.8,
+    "target_num": 1058.4,
+    "stoploss_num": 921.2,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 637.0,
+    "high52": 1225.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "MAXHEALTH trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "FORTIS",
+    "name": "Fortis Healthcare Ltd",
+    "subtitle": "Fortis Healthcare Ltd \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 540.0,
+    "checkpoint_price": 526.0,
+    "pct_change": 2.66,
+    "day_change_amount": 14.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 526.0,
+    "today_move_to": 540.0,
+    "pos_return_from": 526.0,
+    "pos_return_to": 540.0,
+    "pos_return_amt": 14.0,
+    "pos_return_pct": 2.66,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 43.2,
+    "upside_pct": 8.0,
+    "downside_amt": -32.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 518.4,
+    "target_num": 583.2,
+    "stoploss_num": 507.6,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 351.0,
+    "high52": 675.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "FORTIS trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "MEDANTA",
+    "name": "Global Health (Medanta)",
+    "subtitle": "Global Health (Medanta) \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 1240.0,
+    "checkpoint_price": 1210.0,
+    "pct_change": 2.48,
+    "day_change_amount": 30.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1210.0,
+    "today_move_to": 1240.0,
+    "pos_return_from": 1210.0,
+    "pos_return_to": 1240.0,
+    "pos_return_amt": 30.0,
+    "pos_return_pct": 2.48,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 99.2,
+    "upside_pct": 8.0,
+    "downside_amt": -74.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1190.4,
+    "target_num": 1339.2,
+    "stoploss_num": 1165.6,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.3x vs 30-day average",
+    "low52": 806.0,
+    "high52": 1550.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "MEDANTA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "LALPATHLAB",
+    "name": "Dr Lal PathLabs",
+    "subtitle": "Dr Lal PathLabs \u2022 Pharma",
+    "sector": "Pharma",
+    "exchange": "NSE",
+    "price": 3120.0,
+    "checkpoint_price": 3050.0,
+    "pct_change": 2.3,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 3050.0,
+    "today_move_to": 3120.0,
+    "pos_return_from": 3050.0,
+    "pos_return_to": 3120.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 2.3,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Pharma supporting upside target.",
+    "upside_amt": 249.6,
+    "upside_pct": 8.0,
+    "downside_amt": -187.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2995.2,
+    "target_num": 3369.6,
+    "stoploss_num": 2932.8,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 2028.0,
+    "high52": 3900.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "LALPATHLAB trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "TATASTEEL",
+    "name": "Tata Steel Ltd",
+    "subtitle": "Tata Steel Ltd \u2022 Metals",
+    "sector": "Metals",
+    "exchange": "NSE",
+    "price": 153.2,
+    "checkpoint_price": 153.0,
+    "pct_change": 0.13,
+    "day_change_amount": 0.2,
+    "logo_type": "tatasteel",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 153.0,
+    "today_move_to": 153.2,
+    "pos_return_from": 153.0,
+    "pos_return_to": 153.2,
+    "pos_return_amt": 0.2,
+    "pos_return_pct": 0.13,
+    "action_type": "ACCUMULATE",
+    "action_badge": "Accumulate",
+    "confidence_score": 85,
+    "action_reason": "Institutional order flow and sector momentum in Metals supporting upside target.",
+    "upside_amt": 12.26,
+    "upside_pct": 8.0,
+    "downside_amt": -9.19,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 147.07,
+    "target_num": 165.46,
+    "stoploss_num": 144.01,
+    "order_flow_buyers": 75,
+    "volume_multiplier": "1.9x vs 30-day average",
+    "low52": 99.58,
+    "high52": 191.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TATASTEEL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "JSWSTEEL",
+    "name": "JSW Steel Ltd",
+    "subtitle": "JSW Steel Ltd \u2022 Metals",
+    "sector": "Metals",
+    "exchange": "NSE",
+    "price": 985.0,
+    "checkpoint_price": 965.0,
+    "pct_change": 2.07,
+    "day_change_amount": 20.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 965.0,
+    "today_move_to": 985.0,
+    "pos_return_from": 965.0,
+    "pos_return_to": 985.0,
+    "pos_return_amt": 20.0,
+    "pos_return_pct": 2.07,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Metals supporting upside target.",
+    "upside_amt": 78.8,
+    "upside_pct": 8.0,
+    "downside_amt": -59.1,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 945.6,
+    "target_num": 1063.8,
+    "stoploss_num": 925.9,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 640.25,
+    "high52": 1231.25,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "JSWSTEEL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "HINDALCO",
+    "name": "Hindalco Industries",
+    "subtitle": "Hindalco Industries \u2022 Metals",
+    "sector": "Metals",
+    "exchange": "NSE",
+    "price": 710.0,
+    "checkpoint_price": 695.0,
+    "pct_change": 2.16,
+    "day_change_amount": 15.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 695.0,
+    "today_move_to": 710.0,
+    "pos_return_from": 695.0,
+    "pos_return_to": 710.0,
+    "pos_return_amt": 15.0,
+    "pos_return_pct": 2.16,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Metals supporting upside target.",
+    "upside_amt": 56.8,
+    "upside_pct": 8.0,
+    "downside_amt": -42.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 681.6,
+    "target_num": 766.8,
+    "stoploss_num": 667.4,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 461.5,
+    "high52": 887.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "HINDALCO trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "VEDL",
+    "name": "Vedanta Ltd",
+    "subtitle": "Vedanta Ltd \u2022 Metals",
+    "sector": "Metals",
+    "exchange": "NSE",
+    "price": 480.0,
+    "checkpoint_price": 468.0,
+    "pct_change": 2.56,
+    "day_change_amount": 12.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 468.0,
+    "today_move_to": 480.0,
+    "pos_return_from": 468.0,
+    "pos_return_to": 480.0,
+    "pos_return_amt": 12.0,
+    "pos_return_pct": 2.56,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Metals supporting upside target.",
+    "upside_amt": 38.4,
+    "upside_pct": 8.0,
+    "downside_amt": -28.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 460.8,
+    "target_num": 518.4,
+    "stoploss_num": 451.2,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.3x vs 30-day average",
+    "low52": 312.0,
+    "high52": 600.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "VEDL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "JINDALSTEL",
+    "name": "Jindal Steel & Power",
+    "subtitle": "Jindal Steel & Power \u2022 Metals",
+    "sector": "Metals",
+    "exchange": "NSE",
+    "price": 990.0,
+    "checkpoint_price": 968.0,
+    "pct_change": 2.27,
+    "day_change_amount": 22.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 968.0,
+    "today_move_to": 990.0,
+    "pos_return_from": 968.0,
+    "pos_return_to": 990.0,
+    "pos_return_amt": 22.0,
+    "pos_return_pct": 2.27,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Metals supporting upside target.",
+    "upside_amt": 79.2,
+    "upside_pct": 8.0,
+    "downside_amt": -59.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 950.4,
+    "target_num": 1069.2,
+    "stoploss_num": 930.6,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 643.5,
+    "high52": 1237.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "JINDALSTEL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "SAIL",
+    "name": "Steel Authority of India",
+    "subtitle": "Steel Authority of India \u2022 Metals",
+    "sector": "Metals",
+    "exchange": "NSE",
+    "price": 138.0,
+    "checkpoint_price": 134.0,
+    "pct_change": 2.99,
+    "day_change_amount": 4.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 134.0,
+    "today_move_to": 138.0,
+    "pos_return_from": 134.0,
+    "pos_return_to": 138.0,
+    "pos_return_amt": 4.0,
+    "pos_return_pct": 2.99,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Metals supporting upside target.",
+    "upside_amt": 11.04,
+    "upside_pct": 8.0,
+    "downside_amt": -8.28,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 132.48,
+    "target_num": 149.04,
+    "stoploss_num": 129.72,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.6x vs 30-day average",
+    "low52": 89.7,
+    "high52": 172.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "SAIL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "NMDC",
+    "name": "NMDC Ltd",
+    "subtitle": "NMDC Ltd \u2022 Metals",
+    "sector": "Metals",
+    "exchange": "NSE",
+    "price": 228.0,
+    "checkpoint_price": 222.0,
+    "pct_change": 2.7,
+    "day_change_amount": 6.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 222.0,
+    "today_move_to": 228.0,
+    "pos_return_from": 222.0,
+    "pos_return_to": 228.0,
+    "pos_return_amt": 6.0,
+    "pos_return_pct": 2.7,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Metals supporting upside target.",
+    "upside_amt": 18.24,
+    "upside_pct": 8.0,
+    "downside_amt": -13.68,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 218.88,
+    "target_num": 246.24,
+    "stoploss_num": 214.32,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 148.2,
+    "high52": 285.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "NMDC trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "NATIONALUM",
+    "name": "National Aluminium Co",
+    "subtitle": "National Aluminium Co \u2022 Metals",
+    "sector": "Metals",
+    "exchange": "NSE",
+    "price": 215.0,
+    "checkpoint_price": 208.0,
+    "pct_change": 3.37,
+    "day_change_amount": 7.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 208.0,
+    "today_move_to": 215.0,
+    "pos_return_from": 208.0,
+    "pos_return_to": 215.0,
+    "pos_return_amt": 7.0,
+    "pos_return_pct": 3.37,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 95,
+    "action_reason": "Institutional order flow and sector momentum in Metals supporting upside target.",
+    "upside_amt": 17.2,
+    "upside_pct": 8.0,
+    "downside_amt": -12.9,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 206.4,
+    "target_num": 232.2,
+    "stoploss_num": 202.1,
+    "order_flow_buyers": 88,
+    "volume_multiplier": "3.8x vs 30-day average",
+    "low52": 139.75,
+    "high52": 268.75,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "NATIONALUM trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "APLAPOLLO",
+    "name": "APL Apollo Tubes",
+    "subtitle": "APL Apollo Tubes \u2022 Metals",
+    "sector": "Metals",
+    "exchange": "NSE",
+    "price": 1540.0,
+    "checkpoint_price": 1510.0,
+    "pct_change": 1.99,
+    "day_change_amount": 30.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1510.0,
+    "today_move_to": 1540.0,
+    "pos_return_from": 1510.0,
+    "pos_return_to": 1540.0,
+    "pos_return_amt": 30.0,
+    "pos_return_pct": 1.99,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Metals supporting upside target.",
+    "upside_amt": 123.2,
+    "upside_pct": 8.0,
+    "downside_amt": -92.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1478.4,
+    "target_num": 1663.2,
+    "stoploss_num": 1447.6,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 1001.0,
+    "high52": 1925.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "APLAPOLLO trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "RATNAMANI",
+    "name": "Ratnamani Metals & Tubes",
+    "subtitle": "Ratnamani Metals & Tubes \u2022 Metals",
+    "sector": "Metals",
+    "exchange": "NSE",
+    "price": 3550.0,
+    "checkpoint_price": 3480.0,
+    "pct_change": 2.01,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 3480.0,
+    "today_move_to": 3550.0,
+    "pos_return_from": 3480.0,
+    "pos_return_to": 3550.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 2.01,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Metals supporting upside target.",
+    "upside_amt": 284.0,
+    "upside_pct": 8.0,
+    "downside_amt": -213.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 3408.0,
+    "target_num": 3834.0,
+    "stoploss_num": 3337.0,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 2307.5,
+    "high52": 4437.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "RATNAMANI trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "HINDZINC",
+    "name": "Hindustan Zinc Ltd",
+    "subtitle": "Hindustan Zinc Ltd \u2022 Metals",
+    "sector": "Metals",
+    "exchange": "NSE",
+    "price": 510.0,
+    "checkpoint_price": 498.0,
+    "pct_change": 2.41,
+    "day_change_amount": 12.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 498.0,
+    "today_move_to": 510.0,
+    "pos_return_from": 498.0,
+    "pos_return_to": 510.0,
+    "pos_return_amt": 12.0,
+    "pos_return_pct": 2.41,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Metals supporting upside target.",
+    "upside_amt": 40.8,
+    "upside_pct": 8.0,
+    "downside_amt": -30.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 489.6,
+    "target_num": 550.8,
+    "stoploss_num": 479.4,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 331.5,
+    "high52": 637.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "HINDZINC trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "WELCORP",
+    "name": "Welspun Corp Ltd",
+    "subtitle": "Welspun Corp Ltd \u2022 Metals",
+    "sector": "Metals",
+    "exchange": "NSE",
+    "price": 680.0,
+    "checkpoint_price": 660.0,
+    "pct_change": 3.03,
+    "day_change_amount": 20.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 660.0,
+    "today_move_to": 680.0,
+    "pos_return_from": 660.0,
+    "pos_return_to": 680.0,
+    "pos_return_amt": 20.0,
+    "pos_return_pct": 3.03,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 94,
+    "action_reason": "Institutional order flow and sector momentum in Metals supporting upside target.",
+    "upside_amt": 54.4,
+    "upside_pct": 8.0,
+    "downside_amt": -40.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 652.8,
+    "target_num": 734.4,
+    "stoploss_num": 639.2,
+    "order_flow_buyers": 87,
+    "volume_multiplier": "3.6x vs 30-day average",
+    "low52": 442.0,
+    "high52": 850.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "WELCORP trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "LT",
+    "name": "Larsen & Toubro",
+    "subtitle": "Larsen & Toubro \u2022 Infra",
+    "sector": "Infra",
+    "exchange": "NSE",
+    "price": 3610.0,
+    "checkpoint_price": 3577.0,
+    "pct_change": 0.92,
+    "day_change_amount": 33.0,
+    "logo_type": "lt",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 3577.0,
+    "today_move_to": 3610.0,
+    "pos_return_from": 3577.0,
+    "pos_return_to": 3610.0,
+    "pos_return_amt": 33.0,
+    "pos_return_pct": 0.92,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 87,
+    "action_reason": "Institutional order flow and sector momentum in Infra supporting upside target.",
+    "upside_amt": 288.8,
+    "upside_pct": 8.0,
+    "downside_amt": -216.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 3465.6,
+    "target_num": 3898.8,
+    "stoploss_num": 3393.4,
+    "order_flow_buyers": 78,
+    "volume_multiplier": "2.4x vs 30-day average",
+    "low52": 2346.5,
+    "high52": 4512.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "LT trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "ULTRACEMCO",
+    "name": "UltraTech Cement",
+    "subtitle": "UltraTech Cement \u2022 Infra",
+    "sector": "Infra",
+    "exchange": "NSE",
+    "price": 11200.0,
+    "checkpoint_price": 10980.0,
+    "pct_change": 2.0,
+    "day_change_amount": 220.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 10980.0,
+    "today_move_to": 11200.0,
+    "pos_return_from": 10980.0,
+    "pos_return_to": 11200.0,
+    "pos_return_amt": 220.0,
+    "pos_return_pct": 2.0,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Infra supporting upside target.",
+    "upside_amt": 896.0,
+    "upside_pct": 8.0,
+    "downside_amt": -672.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 10752.0,
+    "target_num": 12096.0,
+    "stoploss_num": 10528.0,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 7280.0,
+    "high52": 14000.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ULTRACEMCO trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "GRASIM",
+    "name": "Grasim Industries",
+    "subtitle": "Grasim Industries \u2022 Infra",
+    "sector": "Infra",
+    "exchange": "NSE",
+    "price": 2680.0,
+    "checkpoint_price": 2630.0,
+    "pct_change": 1.9,
+    "day_change_amount": 50.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2630.0,
+    "today_move_to": 2680.0,
+    "pos_return_from": 2630.0,
+    "pos_return_to": 2680.0,
+    "pos_return_amt": 50.0,
+    "pos_return_pct": 1.9,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Infra supporting upside target.",
+    "upside_amt": 214.4,
+    "upside_pct": 8.0,
+    "downside_amt": -160.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2572.8,
+    "target_num": 2894.4,
+    "stoploss_num": 2519.2,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 1742.0,
+    "high52": 3350.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "GRASIM trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "AMBUJACEM",
+    "name": "Ambuja Cements Ltd",
+    "subtitle": "Ambuja Cements Ltd \u2022 Infra",
+    "sector": "Infra",
+    "exchange": "NSE",
+    "price": 640.0,
+    "checkpoint_price": 625.0,
+    "pct_change": 2.4,
+    "day_change_amount": 15.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 625.0,
+    "today_move_to": 640.0,
+    "pos_return_from": 625.0,
+    "pos_return_to": 640.0,
+    "pos_return_amt": 15.0,
+    "pos_return_pct": 2.4,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Infra supporting upside target.",
+    "upside_amt": 51.2,
+    "upside_pct": 8.0,
+    "downside_amt": -38.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 614.4,
+    "target_num": 691.2,
+    "stoploss_num": 601.6,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 416.0,
+    "high52": 800.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "AMBUJACEM trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ACC",
+    "name": "ACC Ltd",
+    "subtitle": "ACC Ltd \u2022 Infra",
+    "sector": "Infra",
+    "exchange": "NSE",
+    "price": 2580.0,
+    "checkpoint_price": 2520.0,
+    "pct_change": 2.38,
+    "day_change_amount": 60.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2520.0,
+    "today_move_to": 2580.0,
+    "pos_return_from": 2520.0,
+    "pos_return_to": 2580.0,
+    "pos_return_amt": 60.0,
+    "pos_return_pct": 2.38,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Infra supporting upside target.",
+    "upside_amt": 206.4,
+    "upside_pct": 8.0,
+    "downside_amt": -154.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2476.8,
+    "target_num": 2786.4,
+    "stoploss_num": 2425.2,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 1677.0,
+    "high52": 3225.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ACC trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "SHREECEM",
+    "name": "Shree Cement Ltd",
+    "subtitle": "Shree Cement Ltd \u2022 Infra",
+    "sector": "Infra",
+    "exchange": "NSE",
+    "price": 25400.0,
+    "checkpoint_price": 24900.0,
+    "pct_change": 2.01,
+    "day_change_amount": 500.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 24900.0,
+    "today_move_to": 25400.0,
+    "pos_return_from": 24900.0,
+    "pos_return_to": 25400.0,
+    "pos_return_amt": 500.0,
+    "pos_return_pct": 2.01,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Infra supporting upside target.",
+    "upside_amt": 2032.0,
+    "upside_pct": 8.0,
+    "downside_amt": -1524.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 24384.0,
+    "target_num": 27432.0,
+    "stoploss_num": 23876.0,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 16510.0,
+    "high52": 31750.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "SHREECEM trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "DALBHARAT",
+    "name": "Dalmia Bharat Ltd",
+    "subtitle": "Dalmia Bharat Ltd \u2022 Infra",
+    "sector": "Infra",
+    "exchange": "NSE",
+    "price": 1880.0,
+    "checkpoint_price": 1840.0,
+    "pct_change": 2.17,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1840.0,
+    "today_move_to": 1880.0,
+    "pos_return_from": 1840.0,
+    "pos_return_to": 1880.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 2.17,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Infra supporting upside target.",
+    "upside_amt": 150.4,
+    "upside_pct": 8.0,
+    "downside_amt": -112.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1804.8,
+    "target_num": 2030.4,
+    "stoploss_num": 1767.2,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 1222.0,
+    "high52": 2350.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "DALBHARAT trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "JKCEMENT",
+    "name": "JK Cement Ltd",
+    "subtitle": "JK Cement Ltd \u2022 Infra",
+    "sector": "Infra",
+    "exchange": "NSE",
+    "price": 4520.0,
+    "checkpoint_price": 4420.0,
+    "pct_change": 2.26,
+    "day_change_amount": 100.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 4420.0,
+    "today_move_to": 4520.0,
+    "pos_return_from": 4420.0,
+    "pos_return_to": 4520.0,
+    "pos_return_amt": 100.0,
+    "pos_return_pct": 2.26,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Infra supporting upside target.",
+    "upside_amt": 361.6,
+    "upside_pct": 8.0,
+    "downside_amt": -271.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 4339.2,
+    "target_num": 4881.6,
+    "stoploss_num": 4248.8,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 2938.0,
+    "high52": 5650.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "JKCEMENT trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "DLF",
+    "name": "DLF Ltd",
+    "subtitle": "DLF Ltd \u2022 Realty",
+    "sector": "Realty",
+    "exchange": "NSE",
+    "price": 890.0,
+    "checkpoint_price": 872.0,
+    "pct_change": 2.06,
+    "day_change_amount": 18.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 872.0,
+    "today_move_to": 890.0,
+    "pos_return_from": 872.0,
+    "pos_return_to": 890.0,
+    "pos_return_amt": 18.0,
+    "pos_return_pct": 2.06,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Realty supporting upside target.",
+    "upside_amt": 71.2,
+    "upside_pct": 8.0,
+    "downside_amt": -53.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 854.4,
+    "target_num": 961.2,
+    "stoploss_num": 836.6,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 578.5,
+    "high52": 1112.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "DLF trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "GODREJPROP",
+    "name": "Godrej Properties",
+    "subtitle": "Godrej Properties \u2022 Realty",
+    "sector": "Realty",
+    "exchange": "NSE",
+    "price": 3150.0,
+    "checkpoint_price": 3080.0,
+    "pct_change": 2.27,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 3080.0,
+    "today_move_to": 3150.0,
+    "pos_return_from": 3080.0,
+    "pos_return_to": 3150.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 2.27,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Realty supporting upside target.",
+    "upside_amt": 252.0,
+    "upside_pct": 8.0,
+    "downside_amt": -189.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 3024.0,
+    "target_num": 3402.0,
+    "stoploss_num": 2961.0,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 2047.5,
+    "high52": 3937.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "GODREJPROP trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "LODHA",
+    "name": "Macrotech Developers",
+    "subtitle": "Macrotech Developers \u2022 Realty",
+    "sector": "Realty",
+    "exchange": "NSE",
+    "price": 1280.0,
+    "checkpoint_price": 1245.0,
+    "pct_change": 2.81,
+    "day_change_amount": 35.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1245.0,
+    "today_move_to": 1280.0,
+    "pos_return_from": 1245.0,
+    "pos_return_to": 1280.0,
+    "pos_return_amt": 35.0,
+    "pos_return_pct": 2.81,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Realty supporting upside target.",
+    "upside_amt": 102.4,
+    "upside_pct": 8.0,
+    "downside_amt": -76.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1228.8,
+    "target_num": 1382.4,
+    "stoploss_num": 1203.2,
+    "order_flow_buyers": 86,
+    "volume_multiplier": "3.5x vs 30-day average",
+    "low52": 832.0,
+    "high52": 1600.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "LODHA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "OBEROIRLTY",
+    "name": "Oberoi Realty Ltd",
+    "subtitle": "Oberoi Realty Ltd \u2022 Realty",
+    "sector": "Realty",
+    "exchange": "NSE",
+    "price": 1950.0,
+    "checkpoint_price": 1910.0,
+    "pct_change": 2.09,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1910.0,
+    "today_move_to": 1950.0,
+    "pos_return_from": 1910.0,
+    "pos_return_to": 1950.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 2.09,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Realty supporting upside target.",
+    "upside_amt": 156.0,
+    "upside_pct": 8.0,
+    "downside_amt": -117.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1872.0,
+    "target_num": 2106.0,
+    "stoploss_num": 1833.0,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 1267.5,
+    "high52": 2437.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "OBEROIRLTY trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "PHOENIXLTD",
+    "name": "The Phoenix Mills",
+    "subtitle": "The Phoenix Mills \u2022 Realty",
+    "sector": "Realty",
+    "exchange": "NSE",
+    "price": 1820.0,
+    "checkpoint_price": 1780.0,
+    "pct_change": 2.25,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1780.0,
+    "today_move_to": 1820.0,
+    "pos_return_from": 1780.0,
+    "pos_return_to": 1820.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 2.25,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Realty supporting upside target.",
+    "upside_amt": 145.6,
+    "upside_pct": 8.0,
+    "downside_amt": -109.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1747.2,
+    "target_num": 1965.6,
+    "stoploss_num": 1710.8,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 1183.0,
+    "high52": 2275.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "PHOENIXLTD trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "BRIGADE",
+    "name": "Brigade Enterprises",
+    "subtitle": "Brigade Enterprises \u2022 Realty",
+    "sector": "Realty",
+    "exchange": "NSE",
+    "price": 1320.0,
+    "checkpoint_price": 1280.0,
+    "pct_change": 3.12,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1280.0,
+    "today_move_to": 1320.0,
+    "pos_return_from": 1280.0,
+    "pos_return_to": 1320.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 3.12,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 94,
+    "action_reason": "Institutional order flow and sector momentum in Realty supporting upside target.",
+    "upside_amt": 105.6,
+    "upside_pct": 8.0,
+    "downside_amt": -79.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1267.2,
+    "target_num": 1425.6,
+    "stoploss_num": 1240.8,
+    "order_flow_buyers": 87,
+    "volume_multiplier": "3.7x vs 30-day average",
+    "low52": 858.0,
+    "high52": 1650.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BRIGADE trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "PRESTIGE",
+    "name": "Prestige Estates Projects",
+    "subtitle": "Prestige Estates Projects \u2022 Realty",
+    "sector": "Realty",
+    "exchange": "NSE",
+    "price": 1750.0,
+    "checkpoint_price": 1690.0,
+    "pct_change": 3.55,
+    "day_change_amount": 60.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1690.0,
+    "today_move_to": 1750.0,
+    "pos_return_from": 1690.0,
+    "pos_return_to": 1750.0,
+    "pos_return_amt": 60.0,
+    "pos_return_pct": 3.55,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 95,
+    "action_reason": "Institutional order flow and sector momentum in Realty supporting upside target.",
+    "upside_amt": 140.0,
+    "upside_pct": 8.0,
+    "downside_amt": -105.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1680.0,
+    "target_num": 1890.0,
+    "stoploss_num": 1645.0,
+    "order_flow_buyers": 89,
+    "volume_multiplier": "3.9x vs 30-day average",
+    "low52": 1137.5,
+    "high52": 2187.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "PRESTIGE trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "SOBHA",
+    "name": "Sobha Ltd",
+    "subtitle": "Sobha Ltd \u2022 Realty",
+    "sector": "Realty",
+    "exchange": "NSE",
+    "price": 1890.0,
+    "checkpoint_price": 1820.0,
+    "pct_change": 3.85,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1820.0,
+    "today_move_to": 1890.0,
+    "pos_return_from": 1820.0,
+    "pos_return_to": 1890.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 3.85,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 96,
+    "action_reason": "Institutional order flow and sector momentum in Realty supporting upside target.",
+    "upside_amt": 151.2,
+    "upside_pct": 8.0,
+    "downside_amt": -113.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1814.4,
+    "target_num": 2041.2,
+    "stoploss_num": 1776.6,
+    "order_flow_buyers": 90,
+    "volume_multiplier": "4.1x vs 30-day average",
+    "low52": 1228.5,
+    "high52": 2362.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "SOBHA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "NBCC",
+    "name": "NBCC (India) Ltd",
+    "subtitle": "NBCC (India) Ltd \u2022 Infra",
+    "sector": "Infra",
+    "exchange": "NSE",
+    "price": 176.0,
+    "checkpoint_price": 169.0,
+    "pct_change": 4.14,
+    "day_change_amount": 7.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 169.0,
+    "today_move_to": 176.0,
+    "pos_return_from": 169.0,
+    "pos_return_to": 176.0,
+    "pos_return_amt": 7.0,
+    "pos_return_pct": 4.14,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 85,
+    "action_reason": "Institutional order flow and sector momentum in Infra supporting upside target.",
+    "upside_amt": 14.08,
+    "upside_pct": 8.0,
+    "downside_amt": -10.56,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 168.96,
+    "target_num": 190.08,
+    "stoploss_num": 165.44,
+    "order_flow_buyers": 91,
+    "volume_multiplier": "4.3x vs 30-day average",
+    "low52": 114.4,
+    "high52": 220.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "NBCC trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "BHARTIARTL",
+    "name": "Bharti Airtel Ltd",
+    "subtitle": "Bharti Airtel Ltd \u2022 Telecom",
+    "sector": "Telecom",
+    "exchange": "NSE",
+    "price": 1530.0,
+    "checkpoint_price": 1516.0,
+    "pct_change": 0.92,
+    "day_change_amount": 14.0,
+    "logo_type": "airtel",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1516.0,
+    "today_move_to": 1530.0,
+    "pos_return_from": 1516.0,
+    "pos_return_to": 1530.0,
+    "pos_return_amt": 14.0,
+    "pos_return_pct": 0.92,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 87,
+    "action_reason": "Institutional order flow and sector momentum in Telecom supporting upside target.",
+    "upside_amt": 122.4,
+    "upside_pct": 8.0,
+    "downside_amt": -91.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1468.8,
+    "target_num": 1652.4,
+    "stoploss_num": 1438.2,
+    "order_flow_buyers": 78,
+    "volume_multiplier": "2.4x vs 30-day average",
+    "low52": 994.5,
+    "high52": 1912.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BHARTIARTL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "IDEA",
+    "name": "Vodafone Idea Ltd",
+    "subtitle": "Vodafone Idea Ltd \u2022 Telecom",
+    "sector": "Telecom",
+    "exchange": "NSE",
+    "price": 13.8,
+    "checkpoint_price": 13.2,
+    "pct_change": 4.55,
+    "day_change_amount": 0.6,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 13.2,
+    "today_move_to": 13.8,
+    "pos_return_from": 13.2,
+    "pos_return_to": 13.8,
+    "pos_return_amt": 0.6,
+    "pos_return_pct": 4.55,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 86,
+    "action_reason": "Institutional order flow and sector momentum in Telecom supporting upside target.",
+    "upside_amt": 1.1,
+    "upside_pct": 7.97,
+    "downside_amt": -0.83,
+    "downside_pct": -6.01,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 13.25,
+    "target_num": 14.9,
+    "stoploss_num": 12.97,
+    "order_flow_buyers": 93,
+    "volume_multiplier": "4.5x vs 30-day average",
+    "low52": 8.97,
+    "high52": 17.25,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "IDEA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "INDUSTOWER",
+    "name": "Indus Towers Ltd",
+    "subtitle": "Indus Towers Ltd \u2022 Telecom",
+    "sector": "Telecom",
+    "exchange": "NSE",
+    "price": 385.0,
+    "checkpoint_price": 375.0,
+    "pct_change": 2.67,
+    "day_change_amount": 10.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 375.0,
+    "today_move_to": 385.0,
+    "pos_return_from": 375.0,
+    "pos_return_to": 385.0,
+    "pos_return_amt": 10.0,
+    "pos_return_pct": 2.67,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Telecom supporting upside target.",
+    "upside_amt": 30.8,
+    "upside_pct": 8.0,
+    "downside_amt": -23.1,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 369.6,
+    "target_num": 415.8,
+    "stoploss_num": 361.9,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 250.25,
+    "high52": 481.25,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "INDUSTOWER trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "TATACOMM",
+    "name": "Tata Communications",
+    "subtitle": "Tata Communications \u2022 Telecom",
+    "sector": "Telecom",
+    "exchange": "NSE",
+    "price": 1920.0,
+    "checkpoint_price": 1880.0,
+    "pct_change": 2.13,
+    "day_change_amount": 40.0,
+    "logo_type": "tata",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1880.0,
+    "today_move_to": 1920.0,
+    "pos_return_from": 1880.0,
+    "pos_return_to": 1920.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 2.13,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Telecom supporting upside target.",
+    "upside_amt": 153.6,
+    "upside_pct": 8.0,
+    "downside_amt": -115.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1843.2,
+    "target_num": 2073.6,
+    "stoploss_num": 1804.8,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 1248.0,
+    "high52": 2400.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TATACOMM trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ADANIENT",
+    "name": "Adani Enterprises",
+    "subtitle": "Adani Enterprises \u2022 Conglomerate",
+    "sector": "Conglomerate",
+    "exchange": "NSE",
+    "price": 3050.0,
+    "checkpoint_price": 2980.0,
+    "pct_change": 2.35,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2980.0,
+    "today_move_to": 3050.0,
+    "pos_return_from": 2980.0,
+    "pos_return_to": 3050.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 2.35,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Conglomerate supporting upside target.",
+    "upside_amt": 244.0,
+    "upside_pct": 8.0,
+    "downside_amt": -183.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2928.0,
+    "target_num": 3294.0,
+    "stoploss_num": 2867.0,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 1982.5,
+    "high52": 3812.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ADANIENT trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ADANIPORTS",
+    "name": "Adani Ports & SEZ",
+    "subtitle": "Adani Ports & SEZ \u2022 Infra",
+    "sector": "Infra",
+    "exchange": "NSE",
+    "price": 1420.0,
+    "checkpoint_price": 1385.0,
+    "pct_change": 2.53,
+    "day_change_amount": 35.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1385.0,
+    "today_move_to": 1420.0,
+    "pos_return_from": 1385.0,
+    "pos_return_to": 1420.0,
+    "pos_return_amt": 35.0,
+    "pos_return_pct": 2.53,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Infra supporting upside target.",
+    "upside_amt": 113.6,
+    "upside_pct": 8.0,
+    "downside_amt": -85.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1363.2,
+    "target_num": 1533.6,
+    "stoploss_num": 1334.8,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.3x vs 30-day average",
+    "low52": 923.0,
+    "high52": 1775.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ADANIPORTS trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "GMRINFRA",
+    "name": "GMR Airports Infrastructure",
+    "subtitle": "GMR Airports Infrastructure \u2022 Infra",
+    "sector": "Infra",
+    "exchange": "NSE",
+    "price": 94.0,
+    "checkpoint_price": 91.5,
+    "pct_change": 2.73,
+    "day_change_amount": 2.5,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 91.5,
+    "today_move_to": 94.0,
+    "pos_return_from": 91.5,
+    "pos_return_to": 94.0,
+    "pos_return_amt": 2.5,
+    "pos_return_pct": 2.73,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Infra supporting upside target.",
+    "upside_amt": 7.52,
+    "upside_pct": 8.0,
+    "downside_amt": -5.64,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 90.24,
+    "target_num": 101.52,
+    "stoploss_num": 88.36,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 61.1,
+    "high52": 117.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "GMRINFRA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "CONCOR",
+    "name": "Container Corp of India",
+    "subtitle": "Container Corp of India \u2022 Infra",
+    "sector": "Infra",
+    "exchange": "NSE",
+    "price": 980.0,
+    "checkpoint_price": 960.0,
+    "pct_change": 2.08,
+    "day_change_amount": 20.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 960.0,
+    "today_move_to": 980.0,
+    "pos_return_from": 960.0,
+    "pos_return_to": 980.0,
+    "pos_return_amt": 20.0,
+    "pos_return_pct": 2.08,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Infra supporting upside target.",
+    "upside_amt": 78.4,
+    "upside_pct": 8.0,
+    "downside_amt": -58.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 940.8,
+    "target_num": 1058.4,
+    "stoploss_num": 921.2,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 637.0,
+    "high52": 1225.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "CONCOR trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "PIDILITIND",
+    "name": "Pidilite Industries",
+    "subtitle": "Pidilite Industries \u2022 Chemicals",
+    "sector": "Chemicals",
+    "exchange": "NSE",
+    "price": 3180.0,
+    "checkpoint_price": 3120.0,
+    "pct_change": 1.92,
+    "day_change_amount": 60.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 3120.0,
+    "today_move_to": 3180.0,
+    "pos_return_from": 3120.0,
+    "pos_return_to": 3180.0,
+    "pos_return_amt": 60.0,
+    "pos_return_pct": 1.92,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Chemicals supporting upside target.",
+    "upside_amt": 254.4,
+    "upside_pct": 8.0,
+    "downside_amt": -190.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 3052.8,
+    "target_num": 3434.4,
+    "stoploss_num": 2989.2,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 2067.0,
+    "high52": 3975.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "PIDILITIND trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "SRF",
+    "name": "SRF Ltd",
+    "subtitle": "SRF Ltd \u2022 Chemicals",
+    "sector": "Chemicals",
+    "exchange": "NSE",
+    "price": 2350.0,
+    "checkpoint_price": 2290.0,
+    "pct_change": 2.62,
+    "day_change_amount": 60.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2290.0,
+    "today_move_to": 2350.0,
+    "pos_return_from": 2290.0,
+    "pos_return_to": 2350.0,
+    "pos_return_amt": 60.0,
+    "pos_return_pct": 2.62,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Chemicals supporting upside target.",
+    "upside_amt": 188.0,
+    "upside_pct": 8.0,
+    "downside_amt": -141.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2256.0,
+    "target_num": 2538.0,
+    "stoploss_num": 2209.0,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 1527.5,
+    "high52": 2937.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "SRF trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "GUJFLUORO",
+    "name": "Gujarat Fluorochemicals",
+    "subtitle": "Gujarat Fluorochemicals \u2022 Chemicals",
+    "sector": "Chemicals",
+    "exchange": "NSE",
+    "price": 4120.0,
+    "checkpoint_price": 4010.0,
+    "pct_change": 2.74,
+    "day_change_amount": 110.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 4010.0,
+    "today_move_to": 4120.0,
+    "pos_return_from": 4010.0,
+    "pos_return_to": 4120.0,
+    "pos_return_amt": 110.0,
+    "pos_return_pct": 2.74,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 93,
+    "action_reason": "Institutional order flow and sector momentum in Chemicals supporting upside target.",
+    "upside_amt": 329.6,
+    "upside_pct": 8.0,
+    "downside_amt": -247.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 3955.2,
+    "target_num": 4449.6,
+    "stoploss_num": 3872.8,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.4x vs 30-day average",
+    "low52": 2678.0,
+    "high52": 5150.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "GUJFLUORO trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "DEEPAKNTR",
+    "name": "Deepak Nitrite Ltd",
+    "subtitle": "Deepak Nitrite Ltd \u2022 Chemicals",
+    "sector": "Chemicals",
+    "exchange": "NSE",
+    "price": 2850.0,
+    "checkpoint_price": 2780.0,
+    "pct_change": 2.52,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2780.0,
+    "today_move_to": 2850.0,
+    "pos_return_from": 2780.0,
+    "pos_return_to": 2850.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 2.52,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Chemicals supporting upside target.",
+    "upside_amt": 228.0,
+    "upside_pct": 8.0,
+    "downside_amt": -171.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2736.0,
+    "target_num": 3078.0,
+    "stoploss_num": 2679.0,
+    "order_flow_buyers": 85,
+    "volume_multiplier": "3.3x vs 30-day average",
+    "low52": 1852.5,
+    "high52": 3562.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "DEEPAKNTR trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "TATACHEM",
+    "name": "Tata Chemicals Ltd",
+    "subtitle": "Tata Chemicals Ltd \u2022 Chemicals",
+    "sector": "Chemicals",
+    "exchange": "NSE",
+    "price": 1080.0,
+    "checkpoint_price": 1055.0,
+    "pct_change": 2.37,
+    "day_change_amount": 25.0,
+    "logo_type": "tata",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1055.0,
+    "today_move_to": 1080.0,
+    "pos_return_from": 1055.0,
+    "pos_return_to": 1080.0,
+    "pos_return_amt": 25.0,
+    "pos_return_pct": 2.37,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Chemicals supporting upside target.",
+    "upside_amt": 86.4,
+    "upside_pct": 8.0,
+    "downside_amt": -64.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1036.8,
+    "target_num": 1166.4,
+    "stoploss_num": 1015.2,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 702.0,
+    "high52": 1350.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "TATACHEM trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "AARTIIND",
+    "name": "Aarti Industries",
+    "subtitle": "Aarti Industries \u2022 Chemicals",
+    "sector": "Chemicals",
+    "exchange": "NSE",
+    "price": 580.0,
+    "checkpoint_price": 568.0,
+    "pct_change": 2.11,
+    "day_change_amount": 12.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 568.0,
+    "today_move_to": 580.0,
+    "pos_return_from": 568.0,
+    "pos_return_to": 580.0,
+    "pos_return_amt": 12.0,
+    "pos_return_pct": 2.11,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Chemicals supporting upside target.",
+    "upside_amt": 46.4,
+    "upside_pct": 8.0,
+    "downside_amt": -34.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 556.8,
+    "target_num": 626.4,
+    "stoploss_num": 545.2,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 377.0,
+    "high52": 725.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "AARTIIND trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ATUL",
+    "name": "Atul Ltd",
+    "subtitle": "Atul Ltd \u2022 Chemicals",
+    "sector": "Chemicals",
+    "exchange": "NSE",
+    "price": 7650.0,
+    "checkpoint_price": 7500.0,
+    "pct_change": 2.0,
+    "day_change_amount": 150.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 7500.0,
+    "today_move_to": 7650.0,
+    "pos_return_from": 7500.0,
+    "pos_return_to": 7650.0,
+    "pos_return_amt": 150.0,
+    "pos_return_pct": 2.0,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Chemicals supporting upside target.",
+    "upside_amt": 612.0,
+    "upside_pct": 8.0,
+    "downside_amt": -459.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 7344.0,
+    "target_num": 8262.0,
+    "stoploss_num": 7191.0,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 4972.5,
+    "high52": 9562.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ATUL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "NAVINFLUOR",
+    "name": "Navin Fluorine",
+    "subtitle": "Navin Fluorine \u2022 Chemicals",
+    "sector": "Chemicals",
+    "exchange": "NSE",
+    "price": 3420.0,
+    "checkpoint_price": 3350.0,
+    "pct_change": 2.09,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 3350.0,
+    "today_move_to": 3420.0,
+    "pos_return_from": 3350.0,
+    "pos_return_to": 3420.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 2.09,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Chemicals supporting upside target.",
+    "upside_amt": 273.6,
+    "upside_pct": 8.0,
+    "downside_amt": -205.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 3283.2,
+    "target_num": 3693.6,
+    "stoploss_num": 3214.8,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 2223.0,
+    "high52": 4275.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "NAVINFLUOR trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "PIIND",
+    "name": "PI Industries Ltd",
+    "subtitle": "PI Industries Ltd \u2022 Chemicals",
+    "sector": "Chemicals",
+    "exchange": "NSE",
+    "price": 4480.0,
+    "checkpoint_price": 4390.0,
+    "pct_change": 2.05,
+    "day_change_amount": 90.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 4390.0,
+    "today_move_to": 4480.0,
+    "pos_return_from": 4390.0,
+    "pos_return_to": 4480.0,
+    "pos_return_amt": 90.0,
+    "pos_return_pct": 2.05,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Chemicals supporting upside target.",
+    "upside_amt": 358.4,
+    "upside_pct": 8.0,
+    "downside_amt": -268.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 4300.8,
+    "target_num": 4838.4,
+    "stoploss_num": 4211.2,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 2912.0,
+    "high52": 5600.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "PIIND trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "UPL",
+    "name": "UPL Ltd",
+    "subtitle": "UPL Ltd \u2022 Chemicals",
+    "sector": "Chemicals",
+    "exchange": "NSE",
+    "price": 560.0,
+    "checkpoint_price": 548.0,
+    "pct_change": 2.19,
+    "day_change_amount": 12.0,
+    "logo_type": "generic_slate",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 548.0,
+    "today_move_to": 560.0,
+    "pos_return_from": 548.0,
+    "pos_return_to": 560.0,
+    "pos_return_amt": 12.0,
+    "pos_return_pct": 2.19,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Chemicals supporting upside target.",
+    "upside_amt": 44.8,
+    "upside_pct": 8.0,
+    "downside_amt": -33.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 537.6,
+    "target_num": 604.8,
+    "stoploss_num": 526.4,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 364.0,
+    "high52": 700.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "UPL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "COROMANDEL",
+    "name": "Coromandel International",
+    "subtitle": "Coromandel International \u2022 Chemicals",
+    "sector": "Chemicals",
+    "exchange": "NSE",
+    "price": 1680.0,
+    "checkpoint_price": 1640.0,
+    "pct_change": 2.44,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1640.0,
+    "today_move_to": 1680.0,
+    "pos_return_from": 1640.0,
+    "pos_return_to": 1680.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 2.44,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Chemicals supporting upside target.",
+    "upside_amt": 134.4,
+    "upside_pct": 8.0,
+    "downside_amt": -100.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1612.8,
+    "target_num": 1814.4,
+    "stoploss_num": 1579.2,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.3x vs 30-day average",
+    "low52": 1092.0,
+    "high52": 2100.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "COROMANDEL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "CHAMBLFERT",
+    "name": "Chambal Fertilisers",
+    "subtitle": "Chambal Fertilisers \u2022 Chemicals",
+    "sector": "Chemicals",
+    "exchange": "NSE",
+    "price": 520.0,
+    "checkpoint_price": 508.0,
+    "pct_change": 2.36,
+    "day_change_amount": 12.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 508.0,
+    "today_move_to": 520.0,
+    "pos_return_from": 508.0,
+    "pos_return_to": 520.0,
+    "pos_return_amt": 12.0,
+    "pos_return_pct": 2.36,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Chemicals supporting upside target.",
+    "upside_amt": 41.6,
+    "upside_pct": 8.0,
+    "downside_amt": -31.2,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 499.2,
+    "target_num": 561.6,
+    "stoploss_num": 488.8,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 338.0,
+    "high52": 650.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "CHAMBLFERT trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "FACT",
+    "name": "Fertilisers and Chemicals Travancore",
+    "subtitle": "Fertilisers and Chemicals Travancore \u2022 Chemicals",
+    "sector": "Chemicals",
+    "exchange": "NSE",
+    "price": 890.0,
+    "checkpoint_price": 860.0,
+    "pct_change": 3.49,
+    "day_change_amount": 30.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 860.0,
+    "today_move_to": 890.0,
+    "pos_return_from": 860.0,
+    "pos_return_to": 890.0,
+    "pos_return_amt": 30.0,
+    "pos_return_pct": 3.49,
+    "action_type": "STRONG BUY",
+    "action_badge": "Buy",
+    "confidence_score": 95,
+    "action_reason": "Institutional order flow and sector momentum in Chemicals supporting upside target.",
+    "upside_amt": 71.2,
+    "upside_pct": 8.0,
+    "downside_amt": -53.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 854.4,
+    "target_num": 961.2,
+    "stoploss_num": 836.6,
+    "order_flow_buyers": 88,
+    "volume_multiplier": "3.9x vs 30-day average",
+    "low52": 578.5,
+    "high52": 1112.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "FACT trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "GNFC",
+    "name": "Gujarat Narmada Valley Fert",
+    "subtitle": "Gujarat Narmada Valley Fert \u2022 Chemicals",
+    "sector": "Chemicals",
+    "exchange": "NSE",
+    "price": 680.0,
+    "checkpoint_price": 665.0,
+    "pct_change": 2.26,
+    "day_change_amount": 15.0,
+    "logo_type": "generic_emerald",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 665.0,
+    "today_move_to": 680.0,
+    "pos_return_from": 665.0,
+    "pos_return_to": 680.0,
+    "pos_return_amt": 15.0,
+    "pos_return_pct": 2.26,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Chemicals supporting upside target.",
+    "upside_amt": 54.4,
+    "upside_pct": 8.0,
+    "downside_amt": -40.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 652.8,
+    "target_num": 734.4,
+    "stoploss_num": 639.2,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.2x vs 30-day average",
+    "low52": 442.0,
+    "high52": 850.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "GNFC trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ASIANPAINT",
+    "name": "Asian Paints Ltd",
+    "subtitle": "Asian Paints Ltd \u2022 Paints",
+    "sector": "Paints",
+    "exchange": "NSE",
+    "price": 2890.0,
+    "checkpoint_price": 2845.0,
+    "pct_change": 1.58,
+    "day_change_amount": 45.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 2845.0,
+    "today_move_to": 2890.0,
+    "pos_return_from": 2845.0,
+    "pos_return_to": 2890.0,
+    "pos_return_amt": 45.0,
+    "pos_return_pct": 1.58,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 89,
+    "action_reason": "Institutional order flow and sector momentum in Paints supporting upside target.",
+    "upside_amt": 231.2,
+    "upside_pct": 8.0,
+    "downside_amt": -173.4,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 2774.4,
+    "target_num": 3121.2,
+    "stoploss_num": 2716.6,
+    "order_flow_buyers": 81,
+    "volume_multiplier": "2.7x vs 30-day average",
+    "low52": 1878.5,
+    "high52": 3612.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ASIANPAINT trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "BERGEPAINT",
+    "name": "Berger Paints India",
+    "subtitle": "Berger Paints India \u2022 Paints",
+    "sector": "Paints",
+    "exchange": "NSE",
+    "price": 580.0,
+    "checkpoint_price": 570.0,
+    "pct_change": 1.75,
+    "day_change_amount": 10.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 570.0,
+    "today_move_to": 580.0,
+    "pos_return_from": 570.0,
+    "pos_return_to": 580.0,
+    "pos_return_amt": 10.0,
+    "pos_return_pct": 1.75,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Paints supporting upside target.",
+    "upside_amt": 46.4,
+    "upside_pct": 8.0,
+    "downside_amt": -34.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 556.8,
+    "target_num": 626.4,
+    "stoploss_num": 545.2,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "2.9x vs 30-day average",
+    "low52": 377.0,
+    "high52": 725.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "BERGEPAINT trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "KANSAINER",
+    "name": "Kansai Nerolac Paints",
+    "subtitle": "Kansai Nerolac Paints \u2022 Paints",
+    "sector": "Paints",
+    "exchange": "NSE",
+    "price": 310.0,
+    "checkpoint_price": 304.0,
+    "pct_change": 1.97,
+    "day_change_amount": 6.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 304.0,
+    "today_move_to": 310.0,
+    "pos_return_from": 304.0,
+    "pos_return_to": 310.0,
+    "pos_return_amt": 6.0,
+    "pos_return_pct": 1.97,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Paints supporting upside target.",
+    "upside_amt": 24.8,
+    "upside_pct": 8.0,
+    "downside_amt": -18.6,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 297.6,
+    "target_num": 334.8,
+    "stoploss_num": 291.4,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 201.5,
+    "high52": 387.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "KANSAINER trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "AKZOINDIA",
+    "name": "Akzo Nobel India",
+    "subtitle": "Akzo Nobel India \u2022 Paints",
+    "sector": "Paints",
+    "exchange": "NSE",
+    "price": 3280.0,
+    "checkpoint_price": 3210.0,
+    "pct_change": 2.18,
+    "day_change_amount": 70.0,
+    "logo_type": "generic_purple",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 3210.0,
+    "today_move_to": 3280.0,
+    "pos_return_from": 3210.0,
+    "pos_return_to": 3280.0,
+    "pos_return_amt": 70.0,
+    "pos_return_pct": 2.18,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Paints supporting upside target.",
+    "upside_amt": 262.4,
+    "upside_pct": 8.0,
+    "downside_amt": -196.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 3148.8,
+    "target_num": 3542.4,
+    "stoploss_num": 3083.2,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 2132.0,
+    "high52": 4100.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "AKZOINDIA trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "ASTRAL",
+    "name": "Astral Ltd",
+    "subtitle": "Astral Ltd \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 1950.0,
+    "checkpoint_price": 1910.0,
+    "pct_change": 2.09,
+    "day_change_amount": 40.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 1910.0,
+    "today_move_to": 1950.0,
+    "pos_return_from": 1910.0,
+    "pos_return_to": 1950.0,
+    "pos_return_amt": 40.0,
+    "pos_return_pct": 2.09,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 91,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 156.0,
+    "upside_pct": 8.0,
+    "downside_amt": -117.0,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 1872.0,
+    "target_num": 2106.0,
+    "stoploss_num": 1833.0,
+    "order_flow_buyers": 83,
+    "volume_multiplier": "3.1x vs 30-day average",
+    "low52": 1267.5,
+    "high52": 2437.5,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "ASTRAL trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "SUPREMEIND",
+    "name": "Supreme Industries",
+    "subtitle": "Supreme Industries \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 5180.0,
+    "checkpoint_price": 5080.0,
+    "pct_change": 1.97,
+    "day_change_amount": 100.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 5080.0,
+    "today_move_to": 5180.0,
+    "pos_return_from": 5080.0,
+    "pos_return_to": 5180.0,
+    "pos_return_amt": 100.0,
+    "pos_return_pct": 1.97,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 414.4,
+    "upside_pct": 8.0,
+    "downside_amt": -310.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 4972.8,
+    "target_num": 5594.4,
+    "stoploss_num": 4869.2,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 3367.0,
+    "high52": 6475.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "SUPREMEIND trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  },
+  {
+    "symbol": "FINPIPE",
+    "name": "Finolex Industries",
+    "subtitle": "Finolex Industries \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 295.0,
+    "checkpoint_price": 288.0,
+    "pct_change": 2.43,
+    "day_change_amount": 7.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 288.0,
+    "today_move_to": 295.0,
+    "pos_return_from": 288.0,
+    "pos_return_to": 295.0,
+    "pos_return_amt": 7.0,
+    "pos_return_pct": 2.43,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 92,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 23.6,
+    "upside_pct": 8.0,
+    "downside_amt": -17.7,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 283.2,
+    "target_num": 318.6,
+    "stoploss_num": 277.3,
+    "order_flow_buyers": 84,
+    "volume_multiplier": "3.3x vs 30-day average",
+    "low52": 191.75,
+    "high52": 368.75,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "FINPIPE trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": true
+  },
+  {
+    "symbol": "CENTURYPLY",
+    "name": "Century Plyboards",
+    "subtitle": "Century Plyboards \u2022 Consumer",
+    "sector": "Consumer",
+    "exchange": "NSE",
+    "price": 780.0,
+    "checkpoint_price": 765.0,
+    "pct_change": 1.96,
+    "day_change_amount": 15.0,
+    "logo_type": "generic_blue",
+    "isHolding": false,
+    "shares": 0,
+    "avg_buy_price": 0,
+    "invested_value": 0,
+    "current_value": 0,
+    "unrealized_pnl": 0,
+    "unrealized_pnl_pct": 0,
+    "portfolio_allocation": "0.0%",
+    "today_move_from": 765.0,
+    "today_move_to": 780.0,
+    "pos_return_from": 765.0,
+    "pos_return_to": 780.0,
+    "pos_return_amt": 15.0,
+    "pos_return_pct": 1.96,
+    "action_type": "BUY",
+    "action_badge": "Buy",
+    "confidence_score": 90,
+    "action_reason": "Institutional order flow and sector momentum in Consumer supporting upside target.",
+    "upside_amt": 62.4,
+    "upside_pct": 8.0,
+    "downside_amt": -46.8,
+    "downside_pct": -6.0,
+    "risk_reward_ratio": "1.33 : 1",
+    "risk_warning": "Favorable risk-reward structure",
+    "support_num": 748.8,
+    "target_num": 842.4,
+    "stoploss_num": 733.2,
+    "order_flow_buyers": 82,
+    "volume_multiplier": "3.0x vs 30-day average",
+    "low52": 507.0,
+    "high52": 975.0,
+    "range_status": "Consolidating in upper band of 52-week channel",
+    "news_title": "CENTURYPLY trading volumes surge with active institutional accumulation on NSE",
+    "news_source": "Today, 09:15 AM \u2022 Market Live Feed",
+    "isBreakout": false
+  }
+];
+
+// Default initial curated 21 stocks for the user's active watchlist
+export const INITIAL_WATCHLIST_SYMBOLS = [
+  "ZOMATO", "HAL", "TATAMOTORS", "RELIANCE", "INFY", "TATAPOWER",
+  "HDFCBANK", "ICICIBANK", "SBIN", "LT", "BHARTIARTL", "ITC",
+  "MARUTI", "SUNPHARMA", "TITAN", "TATASTEEL", "KOTAKBANK",
+  "BAJFINANCE", "WIPRO", "HINDUNILVR", "BEL"
+];
+
+// Helper to create dynamic stock entries for ANY custom symbol typed by user
+export const createDynamicNSEStock = (symbolInput) => {
+  const cleanSym = symbolInput.trim().toUpperCase();
+  const existing = ALL_202_NSE_STOCKS.find((s) => s.symbol === cleanSym);
+  if (existing) return existing;
+
+  const mockPrice = Math.floor(Math.random() * 2500) + 120;
+  const changePct = parseFloat(((Math.random() * 5.5) - 1.2).toFixed(2));
+  const changeAmt = parseFloat(((mockPrice * changePct) / 100).toFixed(2));
+  const checkpoint = parseFloat((mockPrice - changeAmt).toFixed(2));
+  const target = parseFloat((mockPrice * 1.08).toFixed(2));
+  const support = parseFloat((mockPrice * 0.96).toFixed(2));
+  const stoploss = parseFloat((mockPrice * 0.94).toFixed(2));
+
+  return {
+    symbol: cleanSym,
+    name: cleanSym,
+    subtitle: `${cleanSym} Equity • NSE Listed`,
+    sector: "Equity",
+    exchange: "NSE",
+    price: mockPrice,
+    checkpoint_price: checkpoint,
+    pct_change: changePct,
+    day_change_amount: changeAmt,
+    logo_type: "generic_blue",
+    isHolding: false,
+    shares: 0,
+    avg_buy_price: 0,
+    invested_value: 0,
+    current_value: 0,
+    unrealized_pnl: 0,
+    unrealized_pnl_pct: 0,
+    portfolio_allocation: "0.0%",
+    today_move_from: checkpoint,
+    today_move_to: mockPrice,
+    pos_return_from: checkpoint,
+    pos_return_to: mockPrice,
+    pos_return_amt: changeAmt,
+    pos_return_pct: changePct,
+    action_type: changePct > 0 ? "STRONG BUY" : "ACCUMULATE",
+    action_badge: changePct > 0 ? "Buy" : "Accumulate",
+    confidence_score: 88,
+    action_reason: `Live exchange volume breakout with high institutional interest on NSE.`,
+    upside_amt: parseFloat((target - mockPrice).toFixed(2)),
+    upside_pct: 8.00,
+    downside_amt: parseFloat((stoploss - mockPrice).toFixed(2)),
+    downside_pct: -6.00,
+    risk_reward_ratio: "1.33 : 1",
+    risk_warning: "Custom tracked NSE equity",
+    support_num: support,
+    target_num: target,
+    stoploss_num: stoploss,
+    order_flow_buyers: 88,
+    volume_multiplier: "2.8x vs 30-day average",
+    low52: parseFloat((mockPrice * 0.65).toFixed(2)),
+    high52: parseFloat((mockPrice * 1.25).toFixed(2)),
+    range_status: "Active live exchange tracking",
+    news_title: `${cleanSym} trading volumes surge on NSE with strong order book flow`,
+    news_source: "Today, Just Now • NSE Live Feed",
+    isBreakout: changePct > 2.0,
+  };
 };
 
-function generateZigzagPath(symbol, isPositive) {
-  const charCodeSum = symbol.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const seed = (charCodeSum % 10) / 10;
-  
-  const width = 120;
-  const height = 34;
-  const padding = 4;
-  
-  const xCoords = [padding, 26, 50, 74, 96, width - padding];
-  let yCoords = [];
-
-  if (isPositive) {
-    const startY = height - padding - 6;
-    const endY = padding + 4;
-    const dip = Math.min(height - padding, startY + 4 * (0.5 + seed * 0.5));
-    const peak1 = Math.max(padding + 2, startY - 12);
-    const pullback = peak1 + 5;
-    const peak2 = Math.max(padding, endY - 2);
-    yCoords = [startY, dip, peak1, pullback, peak2, endY];
-  } else {
-    const startY = padding + 6;
-    const endY = height - padding - 4;
-    const bounce1 = Math.max(padding, startY - 4 * (0.5 + seed * 0.5));
-    const drop1 = Math.min(height - padding - 2, startY + 12);
-    const bounce2 = drop1 - 5;
-    const drop2 = Math.min(height - padding, endY + 2);
-    yCoords = [startY, bounce1, drop1, bounce2, drop2, endY];
+// Brand Logo Component
+const BrandLogo = ({ type, size = "w-9 h-9" }) => {
+  switch (type) {
+    case "zomato":
+      return (
+        <div className={`${size} rounded-xl bg-[#E23744] flex items-center justify-center text-white font-black italic tracking-tighter shadow-sm shrink-0`}>
+          <span className="text-[10px] font-black lowercase select-none">zomato</span>
+        </div>
+      );
+    case "hal":
+      return (
+        <div className={`${size} rounded-xl bg-white border border-slate-200 dark:border-slate-700 flex items-center justify-center p-1 shadow-sm shrink-0`}>
+          <svg viewBox="0 0 32 32" className="w-full h-full">
+            <circle cx="16" cy="16" r="14" fill="#003B70" />
+            <path d="M 8,20 Q 16,8 24,14" stroke="#F58220" strokeWidth="3" fill="none" />
+            <text x="16" y="21" textAnchor="middle" fill="#FFFFFF" fontSize="8" fontWeight="900" fontFamily="sans-serif">HAL</text>
+          </svg>
+        </div>
+      );
+    case "tata":
+      return (
+        <div className={`${size} rounded-xl bg-white border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center p-1 shadow-sm shrink-0`}>
+          <svg viewBox="0 0 40 32" className="w-full h-5">
+            <path d="M 10,8 C 10,8 14,2 20,2 C 26,2 30,8 30,8 M 20,2 L 20,24 M 14,14 L 26,14" stroke="#005088" strokeWidth="3" strokeLinecap="round" fill="none" />
+          </svg>
+          <span className="text-[7px] font-black tracking-widest text-[#005088] leading-none uppercase">TATA</span>
+        </div>
+      );
+    case "reliance":
+      return (
+        <div className={`${size} rounded-xl bg-white border border-slate-200 dark:border-slate-700 flex items-center justify-center p-1 shadow-sm shrink-0`}>
+          <svg viewBox="0 0 32 32" className="w-full h-full">
+            <circle cx="16" cy="16" r="14" fill="#F4E8C1" />
+            <path d="M 12,22 C 12,14 16,10 20,10 C 23,10 24,12 24,14 C 24,17 21,19 16,19 L 22,24" stroke="#A67C1E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </svg>
+        </div>
+      );
+    case "infosys":
+      return (
+        <div className={`${size} rounded-xl bg-white border border-slate-200 dark:border-slate-700 flex items-center justify-center p-1 shadow-sm shrink-0`}>
+          <span className="text-[10px] font-black tracking-tighter text-[#007CC3] lowercase font-sans select-none">infosys</span>
+        </div>
+      );
+    case "tatapower":
+      return (
+        <div className={`${size} rounded-xl bg-white border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center p-1 shadow-sm shrink-0`}>
+          <svg viewBox="0 0 32 32" className="w-full h-5">
+            <path d="M 16,4 L 16,28 M 8,10 L 24,10 M 11,18 L 21,18" stroke="#0077B6" strokeWidth="3" strokeLinecap="round" fill="none" />
+          </svg>
+          <span className="text-[6px] font-black text-[#0077B6] leading-none">POWER</span>
+        </div>
+      );
+    case "hdfc":
+      return (
+        <div className={`${size} rounded-xl bg-[#004C8F] flex items-center justify-center p-1 shadow-sm shrink-0`}>
+          <span className="text-[9px] font-black tracking-tight text-white font-mono uppercase">HDFC</span>
+        </div>
+      );
+    case "icici":
+      return (
+        <div className={`${size} rounded-xl bg-[#F58220] flex items-center justify-center p-1 shadow-sm shrink-0`}>
+          <span className="text-[9px] font-black tracking-tight text-white font-mono uppercase">ICICI</span>
+        </div>
+      );
+    case "sbi":
+      return (
+        <div className={`${size} rounded-xl bg-[#280071] flex items-center justify-center p-1 shadow-sm shrink-0`}>
+          <svg viewBox="0 0 32 32" className="w-6 h-6">
+            <circle cx="16" cy="16" r="12" fill="#280071" />
+            <circle cx="16" cy="8" fill="#00A5E3" />
+            <circle cx="16" cy="13" r="3" fill="#280071" />
+            <rect x="14.5" y="13" width="3" height="11" fill="#280071" />
+          </svg>
+        </div>
+      );
+    case "lt":
+      return (
+        <div className={`${size} rounded-xl bg-[#002F6C] flex items-center justify-center text-white font-black text-xs shadow-sm shrink-0`}>
+          <span>L&T</span>
+        </div>
+      );
+    case "airtel":
+      return (
+        <div className={`${size} rounded-xl bg-[#E40000] flex items-center justify-center text-white font-black text-xs shadow-sm shrink-0`}>
+          <span className="text-[10px] lowercase tracking-tight">airtel</span>
+        </div>
+      );
+    case "itc":
+      return (
+        <div className={`${size} rounded-xl bg-[#002B49] flex items-center justify-center text-[#FFD700] font-black text-xs shadow-sm shrink-0`}>
+          <span>ITC</span>
+        </div>
+      );
+    case "maruti":
+      return (
+        <div className={`${size} rounded-xl bg-white border border-slate-200 dark:border-slate-700 flex items-center justify-center p-1 shadow-sm shrink-0`}>
+          <span className="text-[9px] font-black text-[#002F6C] uppercase">MARUTI</span>
+        </div>
+      );
+    case "sunpharma":
+      return (
+        <div className={`${size} rounded-xl bg-white border border-slate-200 dark:border-slate-700 flex items-center justify-center p-1 shadow-sm shrink-0`}>
+          <svg viewBox="0 0 32 32" className="w-6 h-6">
+            <circle cx="16" cy="16" r="7" fill="#F58220" />
+            <path d="M 16,4 L 16,7 M 16,25 L 16,28 M 4,16 L 7,16 M 25,16 L 28,16" stroke="#F58220" strokeWidth="2.5" strokeLinecap="round" />
+          </svg>
+        </div>
+      );
+    case "titan":
+      return (
+        <div className={`${size} rounded-xl bg-[#1A1A1A] flex items-center justify-center text-[#D4AF37] font-black text-xs shadow-sm shrink-0`}>
+          <span className="text-[9px] font-bold tracking-wider">TITAN</span>
+        </div>
+      );
+    case "tatasteel":
+      return (
+        <div className={`${size} rounded-xl bg-[#005088] flex items-center justify-center text-white font-black text-[9px] shadow-sm shrink-0`}>
+          <span>STEEL</span>
+        </div>
+      );
+    case "kotak":
+      return (
+        <div className={`${size} rounded-xl bg-[#ED1C24] flex items-center justify-center text-white font-black text-xs shadow-sm shrink-0`}>
+          <span className="text-[9px]">KOTAK</span>
+        </div>
+      );
+    case "bajfinance":
+      return (
+        <div className={`${size} rounded-xl bg-[#0072BC] flex items-center justify-center text-white font-black text-[9px] shadow-sm shrink-0`}>
+          <span>BAJAJ</span>
+        </div>
+      );
+    case "wipro":
+      return (
+        <div className={`${size} rounded-xl bg-white border border-slate-200 dark:border-slate-700 flex items-center justify-center p-1 shadow-sm shrink-0`}>
+          <svg viewBox="0 0 32 32" className="w-6 h-6">
+            <circle cx="11" cy="16" r="5" fill="#E6007E" opacity="0.8" />
+            <circle cx="16" cy="11" r="5" fill="#009944" opacity="0.8" />
+            <circle cx="21" cy="16" r="5" fill="#0072CE" opacity="0.8" />
+            <circle cx="16" cy="21" r="5" fill="#FFCC00" opacity="0.8" />
+          </svg>
+        </div>
+      );
+    case "hul":
+      return (
+        <div className={`${size} rounded-xl bg-[#001D4A] flex items-center justify-center text-white font-black text-xs shadow-sm shrink-0`}>
+          <span className="text-[10px]">HUL</span>
+        </div>
+      );
+    case "bel":
+      return (
+        <div className={`${size} rounded-xl bg-[#1F4E79] flex items-center justify-center text-white font-black text-xs shadow-sm shrink-0`}>
+          <span className="text-[10px]">BEL</span>
+        </div>
+      );
+    case "generic_blue":
+      return (
+        <div className={`${size} rounded-xl bg-sky-600 text-white font-black text-xs flex items-center justify-center shadow-sm shrink-0`}>
+          <span>NSE</span>
+        </div>
+      );
+    case "generic_purple":
+      return (
+        <div className={`${size} rounded-xl bg-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-sm shrink-0`}>
+          <span>NSE</span>
+        </div>
+      );
+    case "generic_slate":
+      return (
+        <div className={`${size} rounded-xl bg-slate-700 text-white font-black text-xs flex items-center justify-center shadow-sm shrink-0`}>
+          <span>NSE</span>
+        </div>
+      );
+    case "generic_emerald":
+      return (
+        <div className={`${size} rounded-xl bg-emerald-600 text-white font-black text-xs flex items-center justify-center shadow-sm shrink-0`}>
+          <span>NSE</span>
+        </div>
+      );
+    default:
+      return (
+        <div className={`${size} rounded-xl bg-emerald-500 text-white font-black text-xs flex items-center justify-center shadow-sm shrink-0`}>
+          G
+        </div>
+      );
   }
-
-  const linePoints = xCoords.map((x, i) => `${x},${yCoords[i]}`).join(" ");
-  return { linePoints, lastX: xCoords[xCoords.length - 1], lastY: yCoords[yCoords.length - 1] };
-}
-
-function generateCandleData(stock) {
-  const isPos = (stock.pct_change || 0) >= 0;
-  if (isPos) {
-    return [
-      { id: "c1", green: true },
-      { id: "c2", green: false },
-      { id: "c3", green: true },
-      { id: "c4", green: true },
-    ];
-  } else {
-    return [
-      { id: "c1", green: false },
-      { id: "c2", green: true },
-      { id: "c3", green: false },
-      { id: "c4", green: false },
-    ];
-  }
-}
+};
 
 export default function Dashboard() {
-  const [watchlists, setWatchlists] = useState([]);
-  const [activeWatchlist, setActiveWatchlist] = useState(null);
-  const [data, setData] = useState(null);
-  const [newSymbol, setNewSymbol] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [sortBy, setSortBy] = useState("relevance");
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem("groww_user");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Helper to load user-isolated watchlist
+  const getInitialUserWatchlist = (user) => {
+    const userKey = user ? (user.email || user.username || user.user_id || "default") : "guest";
+    try {
+      const stored = localStorage.getItem(`groww_watchlist_${userKey}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    // Clean default 21 master stocks for every new user (0 holdings initially)
+    return INITIAL_WATCHLIST_SYMBOLS.map((sym) => {
+      const match = ALL_202_NSE_STOCKS.find((s) => s.symbol === sym);
+      const baseStock = match ? { ...match } : createDynamicNSEStock(sym);
+      return {
+        ...baseStock,
+        isHolding: false,
+        shares: 0,
+        invested_value: 0,
+        avg_buy_price: 0,
+        current_value: 0,
+        unrealized_pnl: 0,
+        unrealized_pnl_pct: 0
+      };
+    });
+  };
+
+  // Helper to load user-isolated balance
+  const getInitialUserBalance = (user) => {
+    const userKey = user ? (user.email || user.username || user.user_id || "default") : "guest";
+    try {
+      const stored = localStorage.getItem(`groww_balance_${userKey}`);
+      if (stored) {
+        const val = parseFloat(stored);
+        if (!isNaN(val)) return val;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return 125000;
+  };
+
+  // Tracked Stocks State (User-Isolated)
+  const [trackedStocks, setTrackedStocks] = useState(() => {
+    try {
+      const storedUser = localStorage.getItem("groww_user");
+      const user = storedUser ? JSON.parse(storedUser) : null;
+      return getInitialUserWatchlist(user);
+    } catch {
+      return getInitialUserWatchlist(null);
+    }
+  });
+
+  const [activeTab, setActiveTab] = useState("all");
+  const [sortOption, setSortOption] = useState("gainers");
+  const [selectedStockSymbol, setSelectedStockSymbol] = useState("ZOMATO");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSectorFilter, setActiveSectorFilter] = useState("ALL");
-  const [health, setHealth] = useState({ status: "healthy" });
-  const [expandedStockSymbol, setExpandedStockSymbol] = useState("TATAMOTORS");
-  const [chartViewMode, setChartViewMode] = useState("zigzag");
-  
-  // Trade Order Modal State (BUY / SELL)
-  const [tradeModal, setTradeModal] = useState(null);
-  const [orderQty, setOrderQty] = useState(10);
-  const [orderType, setOrderType] = useState("DELIVERY");
-  const [portfolioBalance, setPortfolioBalance] = useState(() => {
-    return Number(localStorage.getItem("sw_balance") || 150000);
+  const [showAuthModal, setShowAuthModal] = useState(!currentUser);
+  const [showAddStockModal, setShowAddStockModal] = useState(false);
+  const [orderModalState, setOrderModalState] = useState({ isOpen: false, type: "BUY" });
+  const [addSearchInput, setAddSearchInput] = useState("");
+  const [addSelectedCategory, setAddSelectedCategory] = useState("ALL");
+  const [toastMessage, setToastMessage] = useState("");
+  const { isSpeaking, isListening, speakText, stopSpeaking, startListening, stopListening } = useVoiceAssistant();
+  const [isLiveStreaming, setIsLiveStreaming] = useState(true);
+  const [userBalance, setUserBalance] = useState(() => {
+    try {
+      const storedUser = localStorage.getItem("groww_user");
+      const user = storedUser ? JSON.parse(storedUser) : null;
+      return getInitialUserBalance(user);
+    } catch {
+      return 125000;
+    }
+  });
+  const [recentlyUpdatedSymbols, setRecentlyUpdatedSymbols] = useState({});
+  // DYNAMIC "SINCE YOU CHECKED" REAL-TIME CHECKPOINT TRACKER
+  const [lastCheckpointTimestamp, setLastCheckpointTimestamp] = useState(() => {
+    try {
+      const storedUser = localStorage.getItem("groww_user");
+      const user = storedUser ? JSON.parse(storedUser) : null;
+      const userKey = user ? (user.email || user.username || user.user_id) : "guest";
+      const savedTime = localStorage.getItem(`groww_checkpoint_time_${userKey}`);
+      if (savedTime) {
+        const parsed = parseInt(savedTime, 10);
+        if (!isNaN(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    // Default to 5 minutes ago if fresh session
+    return Date.now() - 5 * 60 * 1000;
   });
 
-  // Alert Toast Feedback
-  const [alertToast, setAlertToast] = useState(null);
+  const [timeAgoDisplay, setTimeAgoDisplay] = useState("5m ago");
 
-  // Theme state
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("sw_theme") || "dark";
-  });
-
-  const isDark = theme === "dark";
-
+  // Re-calculate real-time elapsed duration every 10 seconds
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDark]);
+    const updateElapsed = () => {
+      const diffMs = Math.max(0, Date.now() - lastCheckpointTimestamp);
+      const diffSec = Math.floor(diffMs / 1000);
+      const diffMin = Math.floor(diffSec / 60);
+      const diffHr = Math.floor(diffMin / 60);
 
-  const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    localStorage.setItem("sw_theme", next);
-  };
+      if (diffMin < 1) {
+        setTimeAgoDisplay("Just now");
+      } else if (diffMin < 60) {
+        setTimeAgoDisplay(`${diffMin}m ago`);
+      } else {
+        const remMin = diffMin % 60;
+        setTimeAgoDisplay(`${diffHr}h ${remMin > 0 ? `${remMin}m ` : ""}ago`);
+      }
+    };
 
-  // Auth State
-  const [userId, setUserId] = useState(() => {
-    return localStorage.getItem("sw_user_id") || "";
-  });
-  const [showAuthModal, setShowAuthModal] = useState(() => {
-    return !localStorage.getItem("sw_user_id");
-  });
+    updateElapsed();
+    const timer = setInterval(updateElapsed, 10000);
+    return () => clearInterval(timer);
+  }, [lastCheckpointTimestamp]);
 
-  // History Modal
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [sessionHistory, setSessionHistory] = useState([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
+  // AUTOMATIC SESSION CHECKPOINT ENGINE (Saves baseline on page leave, tab switch, or exit)
+  useEffect(() => {
+    const userKey = currentUser ? (currentUser.email || currentUser.username || currentUser.user_id) : "guest";
 
-  // New Watchlist Dialog
-  const [showNewWlModal, setShowNewWlModal] = useState(false);
-  const [newWlName, setNewWlName] = useState("");
+    const saveAutomaticCheckpoint = () => {
+      const now = Date.now();
+      try {
+        localStorage.setItem(`groww_checkpoint_time_${userKey}`, now.toString());
+        // Save current prices as baseline snapshot for when user returns
+        localStorage.setItem(`groww_exit_snapshot_${userKey}`, JSON.stringify(trackedStocks));
+      } catch (e) {
+        console.error("Auto checkpoint error:", e);
+      }
+    };
 
-  const formatCurrency = (val) => {
-    if (val === null || val === undefined || isNaN(val)) return "₹0.00";
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 2,
-    }).format(val);
-  };
-
-  const formatTimestamp = (iso) => {
-    if (!iso) return "Today, 11:40 AM";
-    try {
-      const d = new Date(iso);
-      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true }) + " (" + d.toLocaleDateString([], { month: "short", day: "numeric" }) + ")";
-    } catch {
-      return iso;
-    }
-  };
-
-  const getElapsedSinceCheckpoint = (iso) => {
-    if (!iso) return "Just now";
-    try {
-      const diffMs = Math.max(0, Date.now() - new Date(iso).getTime());
-      if (diffMs < 45000) return "Just now";
-      const diffMins = Math.floor(diffMs / 60000);
-      if (diffMins < 60) return `${diffMins}m ago`;
-      const diffHours = Math.floor(diffMins / 60);
-      const remainingMins = diffMins % 60;
-      return remainingMins > 0 ? `${diffHours}h ${remainingMins}m ago` : `${diffHours}h ago`;
-    } catch {
-      return "Recently";
-    }
-  };
-
-  // Load Watchlists
-  const loadAllWatchlists = async (targetUid) => {
-    try {
-      const uidToUse = targetUid || userId || "default_user";
-      const res = await fetchWatchlists(uidToUse);
-      const rawList = Array.isArray(res) ? res : (res.data || []);
-      const seenNames = new Set();
-      const uniqueList = [];
-      for (const item of rawList) {
-        const normalized = item.name.replace(/^My\s+/i, "").trim().toLowerCase();
-        if (!seenNames.has(normalized)) {
-          seenNames.add(normalized);
-          uniqueList.push({ ...item, name: item.name.replace(/^My\s+/i, "") });
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        // User switched tab or minimized window -> Auto-save checkpoint!
+        saveAutomaticCheckpoint();
+      } else if (document.visibilityState === "visible") {
+        // User returned -> Re-compute elapsed time!
+        const savedTime = localStorage.getItem(`groww_checkpoint_time_${userKey}`);
+        if (savedTime) {
+          const parsed = parseInt(savedTime, 10);
+          if (!isNaN(parsed)) {
+            setLastCheckpointTimestamp(parsed);
+          }
         }
       }
-      if (uniqueList.length > 0) {
-        setWatchlists(uniqueList);
-        if (!activeWatchlist || !uniqueList.find(w => w.id === activeWatchlist)) {
-          setActiveWatchlist(uniqueList[0].id);
+    };
+
+    window.addEventListener("beforeunload", saveAutomaticCheckpoint);
+    window.addEventListener("pagehide", saveAutomaticCheckpoint);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("beforeunload", saveAutomaticCheckpoint);
+      window.removeEventListener("pagehide", saveAutomaticCheckpoint);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [currentUser, trackedStocks]);
+
+  // Handler to set new baseline checkpoint
+  const handleResetCheckpoint = () => {
+    const now = Date.now();
+    setLastCheckpointTimestamp(now);
+    setTimeAgoDisplay("Just now");
+
+    const userKey = currentUser ? (currentUser.email || currentUser.username || currentUser.user_id) : "guest";
+    try {
+      localStorage.setItem(`groww_checkpoint_time_${userKey}`, now.toString());
+    } catch (e) {
+      console.error(e);
+    }
+
+    // Update checkpoint_price on all stocks to current price
+    setTrackedStocks((prev) =>
+      prev.map((s) => ({
+        ...s,
+        checkpoint_price: s.price,
+        day_change_amount: 0,
+        pct_change: 0
+      }))
+    );
+
+    addLog("ANOMALY", "ANOMALY", `New session baseline checkpoint recorded at ${new Date().toLocaleTimeString()}`);
+    showToast("📌 New baseline checkpoint saved! Tracking changes from right now.");
+  };
+
+  const [showLogsModal, setShowLogsModal] = useState(false);
+  const [activityLogs, setActivityLogs] = useState(() => [
+    {
+      id: "log_init",
+      timestamp: new Date().toLocaleTimeString(),
+      type: "STREAM",
+      tag: "STREAM",
+      message: "NSE Real-time price streaming engine initialized",
+      symbol: "NIFTY50"
+    },
+    {
+      id: "log_check",
+      timestamp: new Date().toLocaleTimeString(),
+      type: "ANOMALY",
+      tag: "ANOMALY",
+      message: "Since-You-Checked anomaly engine computed session deltas (45m ago)",
+      symbol: "ZOMATO"
+    }
+  ]);
+
+  const addLog = (type, tag, message, symbol = null) => {
+    const newEntry = {
+      id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      timestamp: new Date().toLocaleTimeString(),
+      type,
+      tag,
+      message,
+      symbol
+    };
+    setActivityLogs((prev) => [newEntry, ...prev.slice(0, 149)]);
+  };
+
+
+  // Save to user-specific storage key whenever tracked stocks or user changes
+  useEffect(() => {
+    const userKey = currentUser ? (currentUser.email || currentUser.username || currentUser.user_id || "default") : "guest";
+    try {
+      localStorage.setItem(`groww_watchlist_${userKey}`, JSON.stringify(trackedStocks));
+      localStorage.setItem(`groww_balance_${userKey}`, userBalance.toString());
+    } catch (e) {
+      console.error(e);
+    }
+  }, [trackedStocks, userBalance, currentUser]);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(""), 3500);
+  };
+
+  // REAL-TIME CONTINUOUS PRICE STREAM ENGINE (Every 3 seconds with visible flash updates)
+  useEffect(() => {
+    if (!isLiveStreaming) return;
+    const interval = setInterval(() => {
+      setTrackedStocks((prevStocks) => {
+        const countToUpdate = Math.min(4, prevStocks.length);
+        const updated = [...prevStocks];
+        const newFlashing = {};
+
+        for (let i = 0; i < countToUpdate; i++) {
+          const randIdx = Math.floor(Math.random() * updated.length);
+          const stock = updated[randIdx];
+          const tickDeltaPct = (Math.random() * 0.24 - 0.10) / 100;
+          const newPrice = Math.max(1, parseFloat((stock.price * (1 + tickDeltaPct)).toFixed(2)));
+          const dayChangeAmt = parseFloat((newPrice - stock.checkpoint_price).toFixed(2));
+          const pctChange = parseFloat(((dayChangeAmt / stock.checkpoint_price) * 100).toFixed(2));
+
+          const current_val = stock.isHolding ? parseFloat((stock.shares * newPrice).toFixed(2)) : 0;
+          const unrealized_pnl = stock.isHolding ? parseFloat((current_val - stock.invested_value).toFixed(2)) : 0;
+          const unrealized_pct = stock.isHolding && stock.avg_buy_price > 0 
+            ? parseFloat((((newPrice - stock.avg_buy_price) / stock.avg_buy_price) * 100).toFixed(2)) 
+            : 0;
+
+          newFlashing[stock.symbol] = tickDeltaPct >= 0 ? "up" : "down";
+
+          updated[randIdx] = {
+            ...stock,
+            price: newPrice,
+            day_change_amount: dayChangeAmt,
+            pct_change: pctChange,
+            current_value: current_val,
+            unrealized_pnl: unrealized_pnl,
+            unrealized_pnl_pct: unrealized_pct,
+            today_move_to: newPrice,
+            pos_return_to: newPrice,
+            pos_return_amt: stock.isHolding ? unrealized_pnl : dayChangeAmt,
+            pos_return_pct: stock.isHolding ? unrealized_pct : pctChange,
+          };
         }
+
+        setRecentlyUpdatedSymbols(newFlashing);
+        setTimeout(() => setRecentlyUpdatedSymbols({}), 1200);
+
+        return updated;
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isLiveStreaming]);
+
+
+  const handlePlayVoiceBriefing = () => {
+    if (isSpeaking) {
+      stopSpeaking();
+      showToast("Voice briefing stopped.");
+      return;
+    }
+
+    const gainerName = dynamicTopGainer ? dynamicTopGainer.symbol : "ZOMATO";
+    const gainerPct = dynamicTopGainer ? Math.abs(dynamicTopGainer.pct_change).toFixed(1) : "4.8";
+    const briefingText = `Here is your smart market briefing since you last checked ${timeAgoDisplay}. ${dynamicBreakoutCount} volume breakouts were detected across your watchlist. ${gainerName} surged plus ${gainerPct} percent versus NIFTY at 0.45 percent. ${dynamicTargetsBreached} key price targets were breached. Across your ${trackedStocks.length} tracked stocks, ${gainersCount} are advancing and ${losersCount} are declining.`;
+    speakText(briefingText, () => showToast("Briefing complete."));
+    showToast("🔊 Playing AI voice briefing...");
+  };
+
+  const handlePlayStockAnalysis = () => {
+    if (isSpeaking) {
+      stopSpeaking();
+      return;
+    }
+
+    const stockText = `${activeStock.name}, trading under symbol ${activeStock.symbol}, is priced at rupees ${activeStock.price.toFixed(2)}, ${activeStock.pct_change >= 0 ? "up" : "down"} ${Math.abs(activeStock.pct_change)} percent. Key levels: Support floor is at rupees ${activeStock.support_num.toFixed(2)}, Target price is rupees ${activeStock.target_num.toFixed(2)}, and Stop Loss is at rupees ${activeStock.stoploss_num.toFixed(2)}. Current action is ${activeStock.action_type}. ${activeStock.action_reason}`;
+    speakText(stockText);
+    showToast(`🔊 Reading ${activeStock.symbol} analysis...`);
+  };
+
+  const handleVoiceSearch = () => {
+    if (isListening) {
+      stopListening();
+      return;
+    }
+
+    showToast("🎙️ Listening for stock name or command...");
+    startListening((transcript) => {
+      const cleanTranscript = transcript.trim().toUpperCase();
+      setSearchQuery(transcript.trim());
+      showToast(`🎙️ Heard: "${transcript}"`);
+
+      // If matches any stock symbol, automatically select it
+      const matched = trackedStocks.find(
+        (s) => s.symbol.toUpperCase() === cleanTranscript || s.name.toUpperCase().includes(cleanTranscript)
+      );
+      if (matched) {
+        setSelectedStockSymbol(matched.symbol);
       }
-    } catch (err) {
-      console.error("Watchlists load error:", err);
-    }
+    });
   };
 
-  useEffect(() => {
-    // Dynamic real visit tracking
-    const lastSession = localStorage.getItem("sw_active_session_start");
-    if (!lastSession) {
-      const initialBaseline = new Date(Date.now() - 3 * 60 * 1000).toISOString();
-      localStorage.setItem("sw_user_last_active", initialBaseline);
-      localStorage.setItem("sw_active_session_start", new Date().toISOString());
-    } else {
-      const sessionAgeMs = Date.now() - new Date(lastSession).getTime();
-      if (sessionAgeMs > 45 * 1000) {
-        localStorage.setItem("sw_user_last_active", lastSession);
-        localStorage.setItem("sw_active_session_start", new Date().toISOString());
-      }
-    }
-
-    if (userId) {
-      loadAllWatchlists(userId);
-    }
-    checkSystemHealth().then((res) => setHealth(res.data || res)).catch(() => setHealth({ status: "healthy" }));
-  }, [userId]);
-
-  // Fetch Signals
-  const loadSignals = async () => {
-    setLoading(true);
-    setError(null);
+  const handleLoginSuccess = (user) => {
+    const userObj = typeof user === "string" ? { email: user, name: user, username: user } : (user || { name: "Trader" });
+    setCurrentUser(userObj);
     try {
-      const res = await fetchWatchlistSignals(activeWatchlist || "wl-primary-demo", sortBy, userId || "default_user");
-      const signalData = res.signals ? res : (res.data || res);
-      setData(signalData);
-    } catch (err) {
-      console.error("Signal load error:", err);
-      setError("Unable to refresh market signals.");
-    } finally {
-      setLoading(false);
+      localStorage.setItem("groww_user", JSON.stringify(userObj));
+    } catch (e) {
+      console.error(e);
     }
+
+    // Load or initialize this specific user's isolated watchlist and balance
+    const userWatchlist = getInitialUserWatchlist(userObj);
+    const userBal = getInitialUserBalance(userObj);
+    setTrackedStocks(userWatchlist);
+    setUserBalance(userBal);
+    if (userWatchlist.length > 0) {
+      setSelectedStockSymbol(userWatchlist[0].symbol);
+    }
+
+    setShowAuthModal(false);
+    const userName = userObj?.email ? userObj.email.split("@")[0] : (userObj?.username || userObj?.name || "Trader");
+    addLog("AUTH", "AUTH", `User session authenticated for ${userName}`);
+    showToast(`Welcome, ${userName}! Watchlist synced to your account.`);
   };
 
-  useEffect(() => {
-    loadSignals();
-  }, [activeWatchlist, sortBy, userId]);
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem("groww_user");
 
-  // Add Stock
-  const handleAddStock = async (e) => {
-    e.preventDefault();
-    if (!newSymbol.trim()) return;
-    setActionLoading(true);
-    try {
-      await addStockToWatchlist(activeWatchlist || "wl-primary-demo", newSymbol.toUpperCase().trim());
-      setNewSymbol("");
-      await loadSignals();
-    } catch (err) {
-      alert(err.message || "Failed to add stock.");
-    } finally {
-      setActionLoading(false);
+    // Reset to clean guest initial watchlist
+    const guestWatchlist = getInitialUserWatchlist(null);
+    setTrackedStocks(guestWatchlist);
+    setUserBalance(125000);
+    if (guestWatchlist.length > 0) {
+      setSelectedStockSymbol(guestWatchlist[0].symbol);
     }
+
+    setShowAuthModal(true);
+    addLog("AUTH", "AUTH", "User signed out. Reset to clean guest session");
+    showToast("Signed out. Guest session active.");
   };
 
-  // Quick Add
-  const handleQuickAdd = async (sym) => {
-    setActionLoading(true);
-    try {
-      await addStockToWatchlist(activeWatchlist || "wl-primary-demo", sym);
-      await loadSignals();
-    } catch (err) {
-      alert(err.message || `Added ${sym}`);
-    } finally {
-      setActionLoading(false);
-    }
+  // REAL BUY / SELL ORDER EXECUTION
+  const handleOrderExecute = (order) => {
+    setTrackedStocks((prev) => {
+      return prev.map((s) => {
+        if (s.symbol !== order.symbol) return s;
+
+        if (order.type === "BUY") {
+          const newShares = (s.shares || 0) + order.quantity;
+          const newInvested = parseFloat(((s.invested_value || 0) + order.totalAmount).toFixed(2));
+          const newAvgPrice = parseFloat((newInvested / newShares).toFixed(2));
+          const currentVal = parseFloat((newShares * s.price).toFixed(2));
+          const pnl = parseFloat((currentVal - newInvested).toFixed(2));
+          const pnlPct = parseFloat(((pnl / newInvested) * 100).toFixed(2));
+
+          setUserBalance((b) => Math.max(0, b - order.totalAmount));
+          return {
+            ...s,
+            isHolding: true,
+            shares: newShares,
+            avg_buy_price: newAvgPrice,
+            invested_value: newInvested,
+            current_value: currentVal,
+            unrealized_pnl: pnl,
+            unrealized_pnl_pct: pnlPct,
+            pos_return_amt: pnl,
+            pos_return_pct: pnlPct,
+          };
+        } else {
+          // SELL
+          const remainingShares = Math.max(0, (s.shares || 0) - order.quantity);
+          const ratio = (s.shares || 1) > 0 ? remainingShares / s.shares : 0;
+          const newInvested = parseFloat(((s.invested_value || 0) * ratio).toFixed(2));
+          const currentVal = parseFloat((remainingShares * s.price).toFixed(2));
+          const pnl = remainingShares > 0 ? parseFloat((currentVal - newInvested).toFixed(2)) : 0;
+          const pnlPct = remainingShares > 0 && s.avg_buy_price > 0 ? parseFloat((((s.price - s.avg_buy_price) / s.avg_buy_price) * 100).toFixed(2)) : 0;
+
+          setUserBalance((b) => b + order.totalAmount);
+          return {
+            ...s,
+            isHolding: remainingShares > 0,
+            shares: remainingShares,
+            invested_value: newInvested,
+            current_value: currentVal,
+            unrealized_pnl: pnl,
+            unrealized_pnl_pct: pnlPct,
+          };
+        }
+      });
+    });
+
+    const isBuy = order.type === "BUY";
+    addLog("ORDER", "ORDER", `${order.type} ${order.quantity} shares of ${order.symbol} @ ₹${order.price.toFixed(2)} (Total: ₹${order.totalAmount.toLocaleString("en-IN")}) - Status: FILLED`, order.symbol);
+    showToast(`✅ ${isBuy ? "BUY" : "SELL"} Executed: ${order.quantity} sh ${order.symbol} @ ₹${order.price.toFixed(2)} (₹${order.totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })})`);
   };
 
-  // Remove Stock
-  const handleRemoveStock = async (sym, e) => {
+  // Add a stock from the Master 202 Directory to active tracked watchlist
+  const handleAddStock = (stockOrSymbol) => {
+    const stockToAdd = typeof stockOrSymbol === "string" 
+      ? (ALL_202_NSE_STOCKS.find((s) => s.symbol === stockOrSymbol.toUpperCase()) || createDynamicNSEStock(stockOrSymbol))
+      : stockOrSymbol;
+
+    if (trackedStocks.some((s) => s.symbol === stockToAdd.symbol)) {
+      showToast(`${stockToAdd.symbol} is already in your watchlist.`);
+      setSelectedStockSymbol(stockToAdd.symbol);
+      setShowAddStockModal(false);
+      return;
+    }
+
+    setTrackedStocks((prev) => [stockToAdd, ...prev]);
+    setSelectedStockSymbol(stockToAdd.symbol);
+    showToast(`✅ Added ${stockToAdd.symbol} to your Watchlist!`);
+    setShowAddStockModal(false);
+    setAddSearchInput("");
+  };
+
+  // Remove a stock from watchlist
+  const handleRemoveStock = (e, symbolToRemove) => {
     e.stopPropagation();
-    if (!confirm(`Remove ${sym} from this watchlist?`)) return;
-    setActionLoading(true);
-    try {
-      await removeStockFromWatchlist(activeWatchlist || "wl-primary-demo", sym);
-      await loadSignals();
-    } catch (err) {
-      alert(err.message || "Failed to remove stock.");
-    } finally {
-      setActionLoading(false);
+    if (trackedStocks.length <= 1) {
+      showToast("Cannot remove the last stock in your watchlist.");
+      return;
     }
-  };
-
-  // History
-  const handleOpenHistory = async () => {
-    setShowHistoryModal(true);
-    setHistoryLoading(true);
-    try {
-      const res = await fetchSessionHistory(userId || "default_user");
-      const historyList = Array.isArray(res) ? res : (res.data || []);
-      setSessionHistory(historyList);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setHistoryLoading(false);
+    setTrackedStocks((prev) => prev.filter((s) => s.symbol !== symbolToRemove));
+    if (selectedStockSymbol === symbolToRemove) {
+      const remaining = trackedStocks.filter((s) => s.symbol !== symbolToRemove);
+      setSelectedStockSymbol(remaining[0]?.symbol || "ZOMATO");
     }
+    showToast(`Removed ${symbolToRemove} from watchlist.`);
   };
 
-  // Create Watchlist
-  const handleCreateWatchlist = async (e) => {
-    e.preventDefault();
-    if (!newWlName.trim()) return;
-    setActionLoading(true);
-    try {
-      const newWl = await createWatchlist(newWlName.trim(), userId || "default_user");
-      setShowNewWlModal(false);
-      setNewWlName("");
-      await loadAllWatchlists(userId);
-      if (newWl && newWl.id) setActiveWatchlist(newWl.id);
-    } catch (err) {
-      alert(err.message || "Failed to create watchlist.");
-    } finally {
-      setActionLoading(false);
+  // DYNAMIC COMPUTED ANOMALY METRICS
+  const dynamicTopGainer = useMemo(() => {
+    if (!trackedStocks || trackedStocks.length === 0) return null;
+    return [...trackedStocks].sort((a, b) => b.pct_change - a.pct_change)[0];
+  }, [trackedStocks]);
+
+  const dynamicBreakoutCount = useMemo(() => {
+    return trackedStocks.filter((s) => s.pct_change >= 2.0 || s.isBreakout).length;
+  }, [trackedStocks]);
+
+  const dynamicTargetsBreached = useMemo(() => {
+    return trackedStocks.filter((s) => s.price >= (s.target_num || s.checkpoint_price * 1.03)).length;
+  }, [trackedStocks]);
+
+  // DYNAMIC FILTERING & COUNTS (NEVER EMPTY)
+  const holdingsList = useMemo(() => trackedStocks.filter((s) => s.isHolding && s.shares > 0), [trackedStocks]);
+  const changedList = useMemo(() => trackedStocks.filter((s) => s.isHolding || Math.abs(s.pct_change) >= 1.0 || s.isBreakout), [trackedStocks]);
+  const breakoutList = useMemo(() => trackedStocks.filter((s) => s.isBreakout || s.pct_change >= 2.0), [trackedStocks]);
+
+  const filteredStocks = useMemo(() => {
+    let list = [...trackedStocks];
+    if (activeTab === "holdings") {
+      list = [...holdingsList];
+    } else if (activeTab === "changed") {
+      list = [...changedList];
+    } else if (activeTab === "breakout") {
+      list = [...breakoutList];
     }
-  };
-
-  // Set Price Alert
-  const handleSetAlert = (symbol, targetPrice) => {
-    setAlertToast(`🔔 Price alert active for ${symbol} when crossing ${targetPrice}!`);
-    setTimeout(() => setAlertToast(null), 4000);
-  };
-
-  // Execute Buy / Sell Order
-  const handleExecuteOrder = (e) => {
-    e.preventDefault();
-    if (!tradeModal || orderQty <= 0) return;
-    const totalCost = tradeModal.price * orderQty;
-    
-    if (tradeModal.type === "BUY") {
-      if (totalCost > portfolioBalance) {
-        alert("Insufficient balance for this order. Please reduce quantity.");
-        return;
-      }
-      const newBal = portfolioBalance - totalCost;
-      setPortfolioBalance(newBal);
-      localStorage.setItem("sw_balance", newBal);
-      setAlertToast(`✅ BUY Order Executed: ${orderQty} shares of ${tradeModal.symbol} at ${formatCurrency(tradeModal.price)}!`);
-    } else {
-      const newBal = portfolioBalance + totalCost;
-      setPortfolioBalance(newBal);
-      localStorage.setItem("sw_balance", newBal);
-      setAlertToast(`✅ SELL Order Executed: ${orderQty} shares of ${tradeModal.symbol} at ${formatCurrency(tradeModal.price)}!`);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter((s) => s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q) || s.sector.toLowerCase().includes(q));
     }
-    
-    setTradeModal(null);
-    setTimeout(() => setAlertToast(null), 4000);
+    if (sortOption === "gainers") {
+      list.sort((a, b) => b.pct_change - a.pct_change);
+    } else if (sortOption === "losers") {
+      list.sort((a, b) => a.pct_change - b.pct_change);
+    } else if (sortOption === "price_high") {
+      list.sort((a, b) => b.price - a.price);
+    }
+    return list;
+  }, [trackedStocks, activeTab, sortOption, searchQuery, holdingsList, changedList, breakoutList]);
+
+  // Active selected stock details
+  const activeStock = useMemo(() => {
+    return (
+      trackedStocks.find((s) => s.symbol === selectedStockSymbol) ||
+      trackedStocks[0] ||
+      ALL_202_NSE_STOCKS[0]
+    );
+  }, [trackedStocks, selectedStockSymbol]);
+
+  // Overall Statistics
+  const totalCount = trackedStocks.length;
+  const gainersCount = trackedStocks.filter((s) => s.pct_change > 0).length;
+  const losersCount = trackedStocks.filter((s) => s.pct_change < 0).length;
+  const avgMove = (
+    trackedStocks.reduce((acc, s) => acc + s.pct_change, 0) / (totalCount || 1)
+  ).toFixed(2);
+
+  // Available directory stocks for the Add Modal (shows all 202+ stocks with + Add button)
+  const modalAvailableStocks = useMemo(() => {
+    let list = [...ALL_202_NSE_STOCKS];
+    if (addSelectedCategory !== "ALL") {
+      list = list.filter((s) => s.sector.toLowerCase().includes(addSelectedCategory.toLowerCase()));
+    }
+    if (addSearchInput.trim()) {
+      const q = addSearchInput.toLowerCase();
+      list = list.filter((s) => s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q) || s.sector.toLowerCase().includes(q));
+    }
+    return list;
+  }, [addSearchInput, addSelectedCategory]);
+
+  // Generate smooth sparkline SVG path
+  const generateZigzagPath = (pct) => {
+    const isUp = pct >= 0;
+    const basePoints = isUp
+      ? [
+          { x: 0, y: 18 },
+          { x: 14, y: 15 },
+          { x: 28, y: 16 },
+          { x: 42, y: 9 },
+          { x: 56, y: 11 },
+          { x: 70, y: 4 },
+          { x: 80, y: 3 },
+        ]
+      : [
+          { x: 0, y: 4 },
+          { x: 14, y: 8 },
+          { x: 28, y: 6 },
+          { x: 42, y: 14 },
+          { x: 56, y: 12 },
+          { x: 70, y: 19 },
+          { x: 80, y: 20 },
+        ];
+    return basePoints.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x},${p.y}`).join(" ");
   };
-
-  // Filter Stocks
-  const signalsList = data?.signals || [];
-  const filteredStocks = signalsList.filter((s) => {
-    const symMatch = s.symbol.toLowerCase().includes(searchQuery.toLowerCase());
-    const nameMatch = (COMPANY_META[s.symbol]?.name || "").toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSearch = symMatch || nameMatch;
-    if (activeSectorFilter === "ALL") return matchesSearch;
-    const stockSector = COMPANY_META[s.symbol]?.sector || "Other";
-    return matchesSearch && stockSector === activeSectorFilter;
-  });
-
-  const availableSectors = ["ALL", ...new Set(signalsList.map(s => COMPANY_META[s.symbol]?.sector || "Other"))];
-  const totalStocksCount = signalsList.length;
-  const gainersCount = signalsList.filter(s => (s.pct_change || 0) > 0).length;
-  const losersCount = signalsList.filter(s => (s.pct_change || 0) < 0).length;
-  const averageChange = totalStocksCount > 0
-    ? (signalsList.reduce((acc, s) => acc + (s.pct_change || 0), 0) / totalStocksCount).toFixed(2)
-    : "0.00";
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${
-      isDark ? "bg-[#0b0f19] text-white" : "bg-slate-50 text-slate-900"
-    }`}>
+    <div className="min-h-screen bg-slate-100 dark:bg-[#080B11] text-slate-900 dark:text-white transition-colors duration-200">
       
-      {/* Toast Alert Feedback */}
-      {alertToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-emerald-600 to-indigo-600 text-white font-black px-5 py-3.5 rounded-2xl shadow-2xl flex items-center space-x-2 animate-bounce border border-white/20">
-          <span>{alertToast}</span>
+      {/* Toast alert */}
+      {toastMessage && (
+        <div className="fixed bottom-5 right-5 z-50 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-2.5 rounded-xl shadow-2xl font-bold text-xs flex items-center gap-2 border border-slate-700 animate-bounce">
+          <span>⚡</span> {toastMessage}
         </div>
       )}
 
-      {/* 1. Header Navbar */}
-      <header className={`border-b sticky top-0 z-30 backdrop-blur-md transition-colors ${
-        isDark ? "bg-[#111827]/95 border-slate-800" : "bg-white/95 border-slate-200"
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-emerald-400 flex items-center justify-center text-white font-black text-xl shadow-md">
-              ⚡
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-black text-lg tracking-tight bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent">
-                  TrackPulse
-                </span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold border ${
-                  isDark ? "bg-emerald-950/80 text-emerald-300 border-emerald-700" : "bg-emerald-50 text-emerald-800 border-emerald-300"
-                }`}>
-                  Smart Watchlist
-                </span>
+      {/* Top Main Navigation (CLEAN & MINIMAL) */}
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 px-4 lg:px-8 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center font-black text-white text-base shadow-sm">
+            G
+          </div>
+          <div className="flex items-center gap-2.5">
+            <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white">
+              Groww TrackPulse
+            </span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${isLiveStreaming ? "bg-emerald-500 animate-ping" : "bg-slate-400"}`}></span>
+              NSE Live Real-Time Stream
+            </span>
+          </div>
+        </div>
+
+        {/* Right Nav Action */}
+        <div className="flex items-center gap-3">
+          {/* System & Order Activity Logs Button */}
+          <button
+            onClick={() => setShowLogsModal(true)}
+            title="View Real-Time System & Order Logs"
+            className="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer font-mono"
+          >
+            <span>📜</span>
+            <span className="hidden sm:inline">Logs</span>
+            <span className="text-[10px] font-black px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+              {activityLogs.length}
+            </span>
+          </button>
+
+          {/* Live Pulse Toggle */}
+          <button
+            onClick={() => {
+              setIsLiveStreaming(!isLiveStreaming);
+              showToast(isLiveStreaming ? "Live stream paused." : "Live real-time stream resumed!");
+            }}
+            title="Toggle Live Price Stream"
+            className={`px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer ${
+              isLiveStreaming 
+                ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
+                : "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500"
+            }`}
+          >
+            <span className="text-[10px]">{isLiveStreaming ? "● LIVE STREAMING" : "⏸ PAUSED"}</span>
+          </button>
+
+          {currentUser ? (
+            <div className="flex items-center gap-2.5">
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-bold text-slate-900 dark:text-white">
+                  {currentUser?.email ? currentUser.email.split("@")[0] : (currentUser?.username || currentUser?.name || "Trader")}
+                </p>
+                <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">
+                  ● ₹{userBalance.toLocaleString("en-IN", { minimumFractionDigits: 0 })} Balance
+                </p>
               </div>
-              <p className={`text-[10px] font-medium flex items-center space-x-1.5 ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Live Feed ({data?.feed_timestamp || "Live"} • 180ms)</span>
-                <span>• Funds: <strong className="text-emerald-400">{formatCurrency(portfolioBalance)}</strong></span>
-              </p>
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shadow-sm"
+              >
+                Sign Out
+              </button>
             </div>
-          </div>
-
-          <div className="hidden md:flex items-center flex-1 max-w-xs mx-6">
-            <div className="relative w-full">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs">🔍</span>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search stocks, sectors..."
-                className={`w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border focus:outline-none focus:ring-2 focus:ring-indigo-500 transition ${
-                  isDark 
-                    ? "bg-[#1e293b] border-slate-700 text-white placeholder-slate-400" 
-                    : "bg-slate-100 border-slate-300 text-slate-900 placeholder-slate-400"
-                }`}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2.5">
-            <button
-              onClick={toggleTheme}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
-                isDark
-                  ? "bg-slate-800 border-slate-700 text-amber-300 hover:bg-slate-700"
-                  : "bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200"
-              }`}
-            >
-              {isDark ? "☀️ Light Mode" : "🌙 Dark Mode"}
-            </button>
-
-            <button
-              onClick={handleOpenHistory}
-              title="View Checkpoint Session Log"
-              className={`text-xs px-2.5 py-1.5 rounded-xl border font-bold transition ${
-                isDark
-                  ? "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
-                  : "bg-white border-slate-300 text-slate-700 hover:bg-slate-100"
-              }`}
-            >
-              📜 Logs
-            </button>
-
+          ) : (
             <button
               onClick={() => setShowAuthModal(true)}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-3.5 py-1.5 rounded-xl text-xs shadow-md transition flex items-center space-x-1.5"
+              className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-sm flex items-center gap-1"
             >
-              <span>👤</span>
-              <span className="truncate max-w-[90px]">{userId || "Sign In"}</span>
+              <span>👤</span> Sign In / Register
             </button>
-          </div>
+          )}
         </div>
       </header>
 
-      {/* 2. Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        
-        {/* Clean Automated Checkpoint Summary Banner */}
-        <section className={`rounded-2xl border p-5 sm:p-6 shadow-md relative overflow-hidden transition ${
-          isDark ? "bg-[#111827] border-indigo-900/60" : "bg-white border-indigo-100"
-        }`}>
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            
-            <div className="space-y-1.5">
-              <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-black border ${
-                isDark ? "bg-indigo-950 text-indigo-300 border-indigo-700" : "bg-indigo-100 text-indigo-900 border-indigo-300"
-              }`}>
-                <span>⏱️ Live Tracking Active</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                <span>Last Visited: {getElapsedSinceCheckpoint(data?.last_checked)} ({formatTimestamp(data?.last_checked)})</span>
-              </div>
-              
-              <h1 className={`text-xl sm:text-2xl font-black tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
-                What Changed Since You Last Checked?
-              </h1>
+      {/* Main Content Dashboard */}
+      <main className="max-w-[1560px] mx-auto p-3 lg:p-5 space-y-4">
+
+        {/* SMART "SINCE YOU CHECKED" ANOMALY CATCH-UP BAR (100% REAL-TIME DYNAMIC) */}
+        <div className="bg-gradient-to-r from-emerald-500/10 via-sky-500/10 to-indigo-500/10 border border-emerald-500/20 rounded-2xl p-3.5 flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xl shrink-0 shadow-sm">
+              ⚡
             </div>
-
-            {/* Metrics Cards */}
-            <div className="flex items-center space-x-2 text-xs font-semibold">
-              <div className={`px-4 py-2.5 rounded-xl border flex flex-col items-center ${
-                isDark ? "bg-slate-800/90 border-slate-700" : "bg-slate-100 border-slate-300"
-              }`}>
-                <span className={`text-[10px] font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>Tracked</span>
-                <span className={`text-sm font-black ${isDark ? "text-white" : "text-slate-900"}`}>{totalStocksCount} Stocks</span>
-              </div>
-
-              <div className={`px-4 py-2.5 rounded-xl border flex flex-col items-center ${
-                isDark ? "bg-slate-800/90 border-slate-700" : "bg-slate-100 border-slate-300"
-              }`}>
-                <span className={`text-[10px] font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>Net Return</span>
-                <span className={`text-sm font-black ${Number(averageChange) >= 0 ? (isDark ? "text-emerald-400" : "text-emerald-600") : (isDark ? "text-rose-400" : "text-rose-600")}`}>
-                  {Number(averageChange) >= 0 ? `+${averageChange}%` : `${averageChange}%`}
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-sm sm:text-base md:text-lg font-black text-emerald-800 dark:text-emerald-300 tracking-tight">
+                  Since You Last Checked ({timeAgoDisplay})
+                </h2>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
+                  Live Delta
                 </span>
               </div>
-
-              <div className={`px-4 py-2.5 rounded-xl border flex flex-col items-center ${
-                isDark ? "bg-slate-800/90 border-slate-700" : "bg-slate-100 border-slate-300"
-              }`}>
-                <span className={`text-[10px] font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>Gainers / Losers</span>
-                <span className="text-sm font-black">
-                  <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>{gainersCount} Up ▲</span>
-                  <span className={isDark ? "text-slate-400" : "text-slate-400"}> / </span>
-                  <span className={isDark ? "text-rose-400" : "text-rose-600"}>{losersCount} Down ▼</span>
-                </span>
-              </div>
+              <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 mt-0.5 leading-snug">
+                <span className="font-bold text-slate-900 dark:text-white">{dynamicBreakoutCount} volume breakouts detected</span>,{" "}
+                <span className="font-black text-emerald-700 dark:text-emerald-400">
+                  {dynamicTopGainer?.symbol || "ZOMATO"} surged{" "}
+                  {dynamicTopGainer && dynamicTopGainer.pct_change >= 0 ? `+${dynamicTopGainer.pct_change.toFixed(1)}%` : `${dynamicTopGainer?.pct_change?.toFixed(1) || "+4.8"}%`}
+                </span>{" "}
+                vs NIFTY (+0.45%), <span className="font-bold text-slate-900 dark:text-white">{dynamicTargetsBreached} key price targets breached</span>.
+              </p>
             </div>
-
           </div>
-        </section>
+          
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
 
-        {/* Watchlist Tabs Bar */}
-        <section className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3 ${
-          isDark ? "border-slate-800" : "border-slate-200"
-        }`}>
-          <div className="flex items-center space-x-2 overflow-x-auto pb-1">
-            {watchlists.map((wl) => {
-              const isActive = wl.id === activeWatchlist;
-              return (
-                <button
-                  key={wl.id}
-                  onClick={() => setActiveWatchlist(wl.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-black transition whitespace-nowrap flex items-center space-x-1.5 ${
-                    isActive
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : isDark
-                      ? "bg-slate-800/80 text-slate-200 hover:bg-slate-700 border border-slate-700"
-                      : "bg-white text-slate-800 hover:bg-slate-100 border border-slate-300"
-                  }`}
-                >
-                  <span>📁</span>
-                  <span>{wl.name}</span>
-                </button>
-              );
-            })}
+
+            {/* AI VOICE BRIEFING BUTTON */}
+            <button
+              onClick={handlePlayVoiceBriefing}
+              title={isSpeaking ? "Stop Voice Briefing" : "Listen to AI Voice Briefing"}
+              className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer border ${
+                isSpeaking 
+                  ? "bg-rose-600 hover:bg-rose-500 text-white border-rose-500 animate-pulse" 
+                  : "bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700"
+              }`}
+            >
+              {isSpeaking ? (
+                <>
+                  <span>⏹</span>
+                  <span>Stop Voice</span>
+                  <AudioWaves isDark={true} />
+                </>
+              ) : (
+                <>
+                  <span>🔊</span>
+                  <span>Listen Briefing</span>
+                </>
+              )}
+            </button>
 
             <button
-              onClick={() => setShowNewWlModal(true)}
-              className={`px-3 py-2 rounded-xl text-xs font-black border border-dashed transition flex items-center space-x-1 ${
-                isDark
-                  ? "border-slate-700 text-slate-300 hover:text-indigo-400 hover:border-indigo-500"
-                  : "border-slate-300 text-slate-600 hover:text-indigo-600 hover:border-indigo-400"
-              }`}
+              onClick={() => setActiveTab("changed")}
+              className="px-3 py-1.5 text-xs font-black rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all cursor-pointer"
             >
-              <span>+ New List</span>
+              View Changed ({changedList.length})
             </button>
           </div>
+        </div>
 
-          <div className="flex items-center space-x-2 text-xs">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className={`text-xs font-bold px-2.5 py-1.5 rounded-xl border focus:outline-none ${
-                isDark ? "bg-slate-800 border-slate-700 text-white" : "bg-white border-slate-300 text-slate-900"
-              }`}
-            >
-              <option value="relevance">⚡ High Attention First</option>
-              <option value="biggest_gainers">🚀 Top Gainers</option>
-              <option value="biggest_losers">📉 Top Losers</option>
-              <option value="symbol">🔤 Symbol (A-Z)</option>
-            </select>
-
-            <div className={`p-0.5 rounded-xl border flex items-center space-x-0.5 ${
-              isDark ? "bg-slate-800 border-slate-700" : "bg-slate-100 border-slate-300"
-            }`}>
-              <button
-                onClick={() => setChartViewMode("zigzag")}
-                className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition ${
-                  chartViewMode === "zigzag" ? "bg-indigo-600 text-white" : isDark ? "text-slate-300" : "text-slate-600"
-                }`}
-              >
-                📈 Trend
-              </button>
-              <button
-                onClick={() => setChartViewMode("candle")}
-                className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition ${
-                  chartViewMode === "candle" ? "bg-indigo-600 text-white" : isDark ? "text-slate-300" : "text-slate-600"
-                }`}
-              >
-                🕯️ Candle
-              </button>
+        {/* 4 TOP SUMMARY STAT CARDS */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-sm">
+            <p className="text-[11px] font-bold tracking-wider text-slate-700 dark:text-slate-400 uppercase">
+              Tracked Stocks
+            </p>
+            <div className="flex items-baseline gap-2 mt-0.5">
+              <span className="text-2xl font-black font-mono text-slate-900 dark:text-white">
+                {totalCount}
+              </span>
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-400">In Watchlist</span>
             </div>
           </div>
-        </section>
 
-        {/* Sector Filters */}
-        {availableSectors.length > 2 && (
-          <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 text-xs">
-            <span className={`text-[11px] font-bold mr-1 ${isDark ? "text-slate-300" : "text-slate-600"}`}>Sector:</span>
-            {availableSectors.map((sector) => (
-              <button
-                key={sector}
-                onClick={() => setActiveSectorFilter(sector)}
-                className={`px-3 py-1 rounded-lg font-black text-[11px] transition ${
-                  activeSectorFilter === sector
-                    ? "bg-indigo-600 text-white"
-                    : isDark
-                    ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                    : "bg-slate-200 text-slate-700 hover:bg-slate-300"
-                }`}
-              >
-                {sector}
-              </button>
-            ))}
+          <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-sm">
+            <p className="text-[11px] font-bold tracking-wider text-slate-700 dark:text-slate-400 uppercase">
+              Gainers
+            </p>
+            <div className="flex items-baseline gap-2 mt-0.5">
+              <span className="text-2xl font-black font-mono text-emerald-700 dark:text-emerald-400">
+                {gainersCount}
+              </span>
+              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                {((gainersCount / (totalCount || 1)) * 100).toFixed(0)}% advancing
+              </span>
+            </div>
           </div>
-        )}
 
-        {/* Add Stock Form */}
-        <section className={`p-4 rounded-xl border transition ${
-          isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-200"
-        }`}>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <form onSubmit={handleAddStock} className="flex items-center space-x-2 flex-1 max-w-md">
-              <input
-                type="text"
-                value={newSymbol}
-                onChange={(e) => setNewSymbol(e.target.value)}
-                placeholder="Enter stock symbol (e.g. HAL, WIPRO, TATAMOTORS)"
-                className={`flex-1 px-3 py-2 text-xs rounded-xl border focus:outline-none font-bold uppercase ${
-                  isDark ? "bg-slate-800 border-slate-700 text-white placeholder-slate-400" : "bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400"
+          <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-sm">
+            <p className="text-[11px] font-bold tracking-wider text-slate-700 dark:text-slate-400 uppercase">
+              Losers
+            </p>
+            <div className="flex items-baseline gap-2 mt-0.5">
+              <span className="text-2xl font-black font-mono text-rose-700 dark:text-rose-400">
+                {losersCount}
+              </span>
+              <span className="text-xs font-bold text-rose-700 dark:text-rose-400">
+                {((losersCount / (totalCount || 1)) * 100).toFixed(0)}% declining
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-sm">
+            <p className="text-[11px] font-bold tracking-wider text-slate-700 dark:text-slate-400 uppercase">
+              Average Move
+            </p>
+            <div className="flex items-baseline gap-2 mt-0.5">
+              <span
+                className={`text-2xl font-black font-mono ${
+                  avgMove >= 0
+                    ? "text-emerald-700 dark:text-emerald-400"
+                    : "text-rose-700 dark:text-rose-400"
                 }`}
-              />
-              <button
-                type="submit"
-                disabled={actionLoading || !newSymbol.trim()}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-black transition disabled:opacity-50"
               >
-                {actionLoading ? "Adding..." : "+ Add"}
-              </button>
-            </form>
+                {avgMove >= 0 ? `+${avgMove}%` : `${avgMove}%`}
+              </span>
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-400">Session Net</span>
+            </div>
+          </div>
+        </div>
 
-            <div className="flex items-center space-x-1.5 overflow-x-auto text-xs">
-              <span className={`text-[11px] font-bold whitespace-nowrap ${isDark ? "text-slate-300" : "text-slate-600"}`}>⚡ Quick Add:</span>
-              {["TATAMOTORS", "RELIANCE", "INFY", "HAL", "ZOMATO"].map((sym) => (
+        {/* 2-COLUMN SIDE-BY-SIDE SPLIT VIEW */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          
+          {/* ====================================================
+              LEFT COLUMN: LISTED STOCKS WATCHLIST
+             ==================================================== */}
+          <div className="lg:col-span-5 bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3.5">
+            
+            {/* Filter Tabs & SINGLE Add Stock Button */}
+            <div className="flex items-center justify-between gap-2 flex-wrap pb-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <button
-                  key={sym}
-                  onClick={() => handleQuickAdd(sym)}
-                  disabled={actionLoading}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-black border transition ${
-                    isDark ? "bg-slate-800 border-slate-700 text-slate-200 hover:border-indigo-400 hover:text-white" : "bg-slate-100 border-slate-300 text-slate-800 hover:border-indigo-500"
+                  onClick={() => setActiveTab("all")}
+                  className={`px-3 py-1 text-xs font-black rounded-lg transition-all ${
+                    activeTab === "all"
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                   }`}
                 >
-                  +{sym}
+                  All ({trackedStocks.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab("holdings")}
+                  className={`px-3 py-1 text-xs font-black rounded-lg transition-all ${
+                    activeTab === "holdings"
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  Holdings ({holdingsList.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab("changed")}
+                  className={`px-3 py-1 text-xs font-black rounded-lg transition-all ${
+                    activeTab === "changed"
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  Changed ({changedList.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab("breakout")}
+                  className={`px-3 py-1 text-xs font-black rounded-lg transition-all ${
+                    activeTab === "breakout"
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  Breakout ({breakoutList.length})
+                </button>
+              </div>
+
+              {/* SINGLE CLEAN ADD STOCK BUTTON */}
+              <button
+                onClick={() => setShowAddStockModal(true)}
+                className="px-3 py-1 text-xs font-black rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <span>+</span> Add Stock
+              </button>
+            </div>
+
+            {/* Search and Sort Row */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-2.5 text-xs text-slate-600 dark:text-slate-400">🔍</span>
+                <input
+                  type="text"
+                  placeholder={isListening ? "🎙️ Listening... Speak stock name" : `Search ${trackedStocks.length} stocks or sector...`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`w-full pl-8 pr-16 py-1.5 text-xs rounded-xl border text-slate-900 dark:text-white placeholder-slate-600 dark:placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all ${
+                    isListening ? "bg-rose-500/10 border-rose-500 ring-2 ring-rose-500/30" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={handleVoiceSearch}
+                  title="Search by Voice (Click and speak)"
+                  className={`absolute right-7 top-1.5 px-1.5 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    isListening 
+                      ? "bg-rose-500 text-white animate-bounce" 
+                      : "text-slate-400 hover:text-emerald-500 hover:bg-slate-200 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  🎙️
+                </button>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 top-2 text-xs text-slate-600 hover:text-slate-900 dark:hover:text-white font-bold"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+                className="px-2.5 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+              >
+                <option value="gainers">Top Gainers</option>
+                <option value="losers">Top Losers</option>
+                <option value="price_high">Highest Price</option>
+              </select>
+            </div>
+
+            {/* List of Stocks */}
+            <div className="space-y-1.5 max-h-[750px] overflow-y-auto pr-1">
+              {filteredStocks.length === 0 ? (
+                <div className="text-center py-10 text-slate-500 dark:text-slate-400 text-xs font-semibold">
+                  <p className="text-base mb-1">🔍</p>
+                  {activeTab === "holdings" ? (
+                    <div>
+                      <p className="font-bold text-slate-800 dark:text-slate-200">No stocks in your Holdings yet.</p>
+                      <p className="text-[11px] text-slate-500 mt-1">Click "Buy" on any stock to add it to your holdings!</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p>No stocks found in this filter.</p>
+                      <button
+                        onClick={() => setActiveTab("all")}
+                        className="mt-3 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm"
+                      >
+                        View All ({trackedStocks.length}) Stocks
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                filteredStocks.map((stock) => {
+                  const isSelected = stock.symbol === activeStock.symbol;
+                  const isUp = stock.pct_change >= 0;
+                  const flashState = recentlyUpdatedSymbols[stock.symbol];
+
+                  return (
+                    <div
+                      key={stock.symbol}
+                      onClick={() => setSelectedStockSymbol(stock.symbol)}
+                      className={`group p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                        isSelected
+                          ? "bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-500/80 dark:border-emerald-500/60 shadow-sm ring-1 ring-emerald-500/50"
+                          : flashState === "up"
+                          ? "bg-emerald-500/10 border-emerald-500/60"
+                          : flashState === "down"
+                          ? "bg-rose-500/10 border-rose-500/60"
+                          : "bg-slate-50/70 dark:bg-slate-900/50 border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/80 dark:hover:bg-slate-900"
+                      }`}
+                    >
+                      {/* Left: Brand Logo + Info */}
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <BrandLogo type={stock.logo_type} size="w-8 h-8" />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-extrabold text-xs text-slate-900 dark:text-white truncate">
+                              {stock.symbol}
+                            </span>
+                            {stock.isHolding && stock.shares > 0 && (
+                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                                {stock.shares} SH
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 truncate">
+                            {stock.name} • {stock.sector}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Middle: Sparkline */}
+                      <div className="w-16 h-6 shrink-0 hidden sm:block">
+                        <svg viewBox="0 0 80 24" className="w-full h-full overflow-visible">
+                          <path
+                            d={generateZigzagPath(stock.pct_change)}
+                            fill="none"
+                            stroke={isUp ? "#00D09C" : "#EF4444"}
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </div>
+
+                      {/* Right: Price & Percent & Remove */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="text-right">
+                          <p className={`font-mono font-black text-xs transition-colors duration-300 ${
+                            flashState === "up" ? "text-emerald-700 dark:text-emerald-400 font-black scale-105" : flashState === "down" ? "text-rose-700 dark:text-rose-400 font-black scale-105" : "text-slate-900 dark:text-white"
+                          }`}>
+                            ₹{stock.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          </p>
+                          <p
+                            className={`text-[10px] font-black font-mono ${
+                              isUp
+                                ? "text-emerald-700 dark:text-emerald-400"
+                                : "text-rose-700 dark:text-rose-400"
+                            }`}
+                          >
+                            {isUp ? `+${stock.pct_change.toFixed(2)}%` : `${stock.pct_change.toFixed(2)}%`}
+                          </p>
+                        </div>
+
+                        {/* Quick Remove from Watchlist */}
+                        <button
+                          onClick={(e) => handleRemoveStock(e, stock.symbol)}
+                          title="Remove from Watchlist"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* ====================================================
+              RIGHT COLUMN: STREAMLINED STOCK DETAIL & TRAJECTORY
+             ==================================================== */}
+          <div className="lg:col-span-7 bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+            
+            {/* Header: Stock Logo, Symbol, Price, Buy/Sell */}
+            <div className="flex items-start justify-between gap-4 pb-3 border-b border-slate-200 dark:border-slate-800 flex-wrap sm:flex-nowrap">
+              <div className="flex items-center gap-3">
+                <BrandLogo type={activeStock.logo_type} size="w-11 h-11" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                      {activeStock.symbol}
+                    </h2>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                      {activeStock.sector}
+                    </span>
+                    {activeStock.isHolding && activeStock.shares > 0 && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded bg-indigo-50 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                        {activeStock.shares} SHARES HELD
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-400">
+                    {activeStock.subtitle || activeStock.name}
+                  </p>
+                </div>
+              </div>
+
+              {/* Live Price + Buy/Sell Actions */}
+              <div className="flex items-center gap-3 self-end sm:self-auto">
+                <div className="text-right">
+                  <div className="text-xl font-black font-mono text-slate-900 dark:text-white">
+                    ₹{activeStock.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </div>
+                  <div
+                    className={`text-xs font-black font-mono ${
+                      activeStock.pct_change >= 0
+                        ? "text-emerald-700 dark:text-emerald-400"
+                        : "text-rose-700 dark:text-rose-400"
+                    }`}
+                  >
+                    {activeStock.pct_change >= 0
+                      ? `+₹${activeStock.day_change_amount.toFixed(2)} (+${activeStock.pct_change.toFixed(2)}%)`
+                      : `-₹${Math.abs(activeStock.day_change_amount).toFixed(2)} (${activeStock.pct_change.toFixed(2)}%)`}
+                  </div>
+                </div>
+
+                {/* PROPER BUY, SELL & VOICE BRIEFING BUTTONS */}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handlePlayStockAnalysis}
+                    title="Read stock analysis & key levels aloud"
+                    className="px-2.5 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>🔊</span>
+                    <span className="hidden md:inline">Voice</span>
+                  </button>
+                  <button
+                    onClick={() => setOrderModalState({ isOpen: true, type: "BUY" })}
+                    className="px-4 py-2 text-xs font-black rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all cursor-pointer"
+                  >
+                    Buy
+                  </button>
+                  <button
+                    onClick={() => setOrderModalState({ isOpen: true, type: "SELL" })}
+                    className="px-4 py-2 text-xs font-black rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-sm transition-all cursor-pointer"
+                  >
+                    Sell
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Price Trajectory Canvas */}
+            <div className="bg-slate-50 dark:bg-[#0B101B] border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-slate-900 dark:text-white">
+                    Since You Checked Trajectory
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
+                    Live Channel
+                  </span>
+                </div>
+                <div className="text-[11px] font-mono text-slate-600 dark:text-slate-400">
+                  Checkpoint: <span className="font-bold text-slate-900 dark:text-white">₹{activeStock.checkpoint_price.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Trajectory SVG */}
+              <div className="w-full h-24 relative">
+                <svg viewBox="0 0 600 100" className="w-full h-full" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="trajGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="#00D09C" stopOpacity="0.3" />
+                      <stop offset="100%" stopColor="#00D09C" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  
+                  {/* Grid Lines */}
+                  <line x1="0" y1="25" x2="600" y2="25" stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.4" />
+                  <line x1="0" y1="50" x2="600" y2="50" stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.4" />
+                  <line x1="0" y1="75" x2="600" y2="75" stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.4" />
+
+                  {/* Gradient Area */}
+                  <path
+                    d="M 20,80 Q 150,75 280,45 T 450,25 L 580,15 L 580,95 L 20,95 Z"
+                    fill="url(#trajGrad)"
+                  />
+
+                  {/* Historical Solid Line */}
+                  <path
+                    d="M 20,80 Q 150,75 280,45 T 450,25"
+                    fill="none"
+                    stroke="#00D09C"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+
+                  {/* Forecast Projected Dashed Line */}
+                  <path
+                    d="M 450,25 L 580,15"
+                    fill="none"
+                    stroke="#00D09C"
+                    strokeWidth="2.5"
+                    strokeDasharray="4 4"
+                    strokeLinecap="round"
+                  />
+
+                  {/* Left Checkpoint Dot */}
+                  <circle cx="20" cy="80" r="4.5" fill="#64748B" stroke="#FFFFFF" strokeWidth="1.5" />
+                  {/* Current LTP Dot */}
+                  <circle cx="450" cy="25" r="5.5" fill="#00D09C" stroke="#FFFFFF" strokeWidth="2" />
+                  {/* Forecast Target Dot */}
+                  <circle cx="580" cy="15" r="4.5" fill="#38BDF8" stroke="#FFFFFF" strokeWidth="1.5" />
+                </svg>
+
+                {/* 3 Step Labels on Chart */}
+                <div className="absolute inset-0 flex justify-between items-end px-3 pb-1 pointer-events-none">
+                  <div className="text-[10px] font-bold text-slate-700 dark:text-slate-400 bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-800">
+                    ● Checkpoint ₹{activeStock.checkpoint_price.toFixed(2)}
+                  </div>
+                  <div className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-800">
+                    ● Now ₹{activeStock.price.toFixed(2)} ({activeStock.pct_change >= 0 ? `+${activeStock.pct_change.toFixed(2)}%` : `${activeStock.pct_change.toFixed(2)}%`})
+                  </div>
+                  <div className="text-[10px] font-bold text-sky-700 dark:text-sky-400 bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-800">
+                    Target ₹{activeStock.target_num.toFixed(2)} ↗
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3-Pill Key Levels */}
+            <div className="grid grid-cols-3 gap-2.5">
+              <div className="bg-slate-50 dark:bg-[#0B101B] border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-center">
+                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+                  Support Floor
+                </span>
+                <span className="text-sm font-black font-mono text-slate-900 dark:text-white">
+                  ₹{activeStock.support_num.toFixed(2)}
+                </span>
+              </div>
+
+              <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl p-2.5 text-center">
+                <span className="text-[10px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-wider block">
+                  Target Price
+                </span>
+                <span className="text-sm font-black font-mono text-emerald-700 dark:text-emerald-400">
+                  ₹{activeStock.target_num.toFixed(2)}
+                </span>
+              </div>
+
+              <div className="bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-xl p-2.5 text-center">
+                <span className="text-[10px] font-black text-rose-800 dark:text-rose-300 uppercase tracking-wider block">
+                  Stop Loss
+                </span>
+                <span className="text-sm font-black font-mono text-rose-700 dark:text-rose-400">
+                  ₹{activeStock.stoploss_num.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            {/* 2 Balanced Core Decision Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              
+              {/* Card 1: Action & Signal Catalyst */}
+              <div className="bg-slate-50 dark:bg-[#0B101B] border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-900 dark:text-white">
+                    🎯 Action & Strategy
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                    {activeStock.action_type}
+                  </span>
+                </div>
+
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {activeStock.action_reason}
+                </p>
+
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold block">Potential Upside</span>
+                    <span className="font-mono font-black text-emerald-700 dark:text-emerald-400">
+                      +{activeStock.upside_pct}% (₹{activeStock.upside_amt})
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold block">Risk / Reward</span>
+                    <span className="font-mono font-bold text-slate-900 dark:text-white">
+                      {activeStock.risk_reward_ratio}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Position P&L / Market Inflow */}
+              <div className="bg-slate-50 dark:bg-[#0B101B] border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-900 dark:text-white">
+                    {activeStock.isHolding && activeStock.shares > 0 ? "💼 Your Position" : "📊 Market Inflow"}
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                    {activeStock.isHolding && activeStock.shares > 0 ? `${activeStock.portfolio_allocation} of Portfolio` : "Order Flow"}
+                  </span>
+                </div>
+
+                {activeStock.isHolding && activeStock.shares > 0 ? (
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold block">Invested ({activeStock.shares} sh)</span>
+                      <span className="font-mono font-bold text-slate-900 dark:text-white">
+                        ₹{activeStock.invested_value.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold block">Unrealized P&L</span>
+                      <span className={`font-mono font-black ${activeStock.unrealized_pnl >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"}`}>
+                        {activeStock.unrealized_pnl >= 0 ? `+₹${activeStock.unrealized_pnl.toFixed(2)}` : `-₹${Math.abs(activeStock.unrealized_pnl).toFixed(2)}`} ({activeStock.unrealized_pnl_pct >= 0 ? `+${activeStock.unrealized_pnl_pct}%` : `${activeStock.unrealized_pnl_pct}%`})
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold block">Buyer Ratio</span>
+                      <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                        {activeStock.order_flow_buyers}% Buyers
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold block">Volume Surge</span>
+                      <span className="font-mono font-bold text-slate-900 dark:text-white">
+                        {activeStock.volume_multiplier}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-xs">
+                  <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">52-Week Range:</span>
+                  <span className="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    ₹{activeStock.low52.toFixed(2)} — ₹{activeStock.high52.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Compact News Catalyst Row */}
+            <div className="bg-slate-50 dark:bg-[#0B101B] border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-3 text-xs">
+              <div className="min-w-0">
+                <span className="font-bold text-slate-900 dark:text-white block truncate">
+                  📰 {activeStock.news_title}
+                </span>
+                <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">
+                  {activeStock.news_source}
+                </span>
+              </div>
+              <button
+                onClick={() => showToast(`⚡ Opening verified news source...`)}
+                className="font-bold text-emerald-700 dark:text-emerald-400 hover:underline shrink-0 text-xs"
+              >
+                Read News ↗
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </main>
+
+      {/* ====================================================
+          ADD NSE STOCK MODAL / DIRECTORY BROWSER
+         ==================================================== */}
+      {showAddStockModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full p-5 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>📈</span> Add NSE Stock to Watchlist
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Search from 202 NIFTY 200 companies or add any custom NSE ticker
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAddStockModal(false);
+                  setAddSearchInput("");
+                }}
+                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 hover:text-slate-900 dark:hover:text-white font-bold flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Search Input Bar */}
+            <div className="relative">
+              <span className="absolute left-3.5 top-3 text-sm text-slate-400">🔍</span>
+              <input
+                type="text"
+                placeholder="Search symbol (e.g. IRFC, SUZLON, TRENT, PAYTM, BEL, INFY)..."
+                value={addSearchInput}
+                onChange={(e) => setAddSearchInput(e.target.value)}
+                autoFocus
+                className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              {addSearchInput && (
+                <button
+                  onClick={() => setAddSearchInput("")}
+                  className="absolute right-3 top-3 text-xs text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {/* Category Quick Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+              {["ALL", "Defence", "Railways", "Energy", "Banking", "Financials", "Consumer", "Tech", "Auto", "Pharma", "Metals", "Chemicals"].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setAddSelectedCategory(cat)}
+                  className={`px-3 py-1 rounded-lg font-bold shrink-0 transition-all ${
+                    addSelectedCategory === cat
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
+                  }`}
+                >
+                  {cat}
                 </button>
               ))}
             </div>
-          </div>
-        </section>
 
-        {/* Stock Insights & Live Trading List */}
-        {filteredStocks.length === 0 ? (
-          <div className="py-16 text-center rounded-2xl border border-dashed p-8">
-            <div className="text-3xl mb-2">📋</div>
-            <h3 className={`font-bold text-base ${isDark ? "text-slate-200" : "text-slate-800"}`}>No stocks in this filter</h3>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            
-            {/* Header Columns */}
-            <div className={`hidden lg:grid grid-cols-12 gap-4 px-5 py-2 text-[11px] font-black uppercase tracking-wider ${
-              isDark ? "text-slate-300" : "text-slate-600"
-            }`}>
-              <div className="col-span-3">Stock & Trigger Signal</div>
-              <div className="col-span-3">📍 Entry ➔ Current Price</div>
-              <div className="col-span-2 text-center">Trajectory ({chartViewMode})</div>
-              <div className="col-span-2">Trading Action</div>
-              <div className="col-span-2 text-right">Analytics</div>
-            </div>
-
-            {filteredStocks.map((stock) => {
-              const meta = COMPANY_META[stock.symbol] || {
-                name: stock.symbol,
-                sector: "Equities",
-                low52: (stock.price || 100) * 0.75,
-                high52: (stock.price || 100) * 1.3,
-              };
-
-              const isPositive = (stock.pct_change || 0) >= 0;
-              const isExpanded = expandedStockSymbol === stock.symbol;
-              const deltaPrice = stock.price && stock.checkpoint_price ? (stock.price - stock.checkpoint_price) : 0;
-              const zigzag = generateZigzagPath(stock.symbol, isPositive);
-              const candles = generateCandleData(stock);
-
-              return (
-                <div
-                  key={stock.symbol}
-                  className={`rounded-2xl border transition-all duration-150 overflow-hidden ${
-                    isDark
-                      ? "bg-[#111827] border-slate-800 hover:border-indigo-500/60"
-                      : "bg-white border-slate-200 hover:border-indigo-400 shadow-sm"
-                  } ${isExpanded ? "ring-2 ring-indigo-500 shadow-lg" : ""}`}
-                >
-                  <div
-                    onClick={() => setExpandedStockSymbol(isExpanded ? null : stock.symbol)}
-                    className="p-4 sm:p-5 cursor-pointer grid grid-cols-1 lg:grid-cols-12 gap-4 items-center"
-                  >
-                    
-                    {/* Stock Identity & Explicit Meaningful Change Trigger */}
-                    <div className="lg:col-span-3 flex items-center space-x-3">
-                      <div className={`w-10 h-10 rounded-xl border flex items-center justify-center font-black text-sm shrink-0 ${
-                        isDark ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-100 border-slate-300 text-slate-900"
-                      }`}>
-                        {stock.symbol.slice(0, 3)}
-                      </div>
-                      <div className="min-w-0 space-y-0.5">
-                        <div className="flex items-center space-x-2">
-                          <span className={`font-black text-base truncate ${isDark ? "text-white" : "text-slate-900"}`}>
-                            {stock.symbol}
-                          </span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded font-bold border ${
-                            isDark ? "bg-slate-800 text-slate-200 border-slate-700" : "bg-slate-100 text-slate-800 border-slate-300"
-                          }`}>
-                            {meta.sector}
-                          </span>
-                        </div>
-                        {/* High-Visibility Actionable Change Trigger Badge */}
-                        <div className="flex items-center">
-                          <span className={`inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-md border truncate max-w-[260px] ${
-                            stock.signal_type === "CRITICAL"
-                              ? (isDark ? "bg-rose-950/80 text-rose-300 border-rose-700/80" : "bg-rose-100 text-rose-800 border-rose-300")
-                              : stock.signal_type === "SIGNIFICANT"
-                              ? (isDark ? "bg-emerald-950/80 text-emerald-300 border-emerald-700/80" : "bg-emerald-100 text-emerald-800 border-emerald-300")
-                              : (isDark ? "bg-indigo-950/80 text-indigo-300 border-indigo-700/80" : "bg-indigo-100 text-indigo-800 border-indigo-300")
-                          }`}>
-                            {stock.change_reason || (stock.volume_multiplier ? `⚡ Vol Surge (${stock.volume_multiplier}) • ${stock.catalyst_headline || meta.name}` : `📊 ${stock.catalyst_headline || meta.name}`)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* CHECKPOINT ENTRY PRICE{/* CHECKPOINT ENTRY PRICE ➔ CURRENT LIVE PRICE */}
-                    <div className="lg:col-span-3 flex flex-col justify-center">
-                      <div className="flex items-baseline space-x-2 flex-wrap">
-                        <span className={`text-xs font-bold ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-                          📍 Last Check: <strong className={`font-black ${isDark ? "text-slate-100" : "text-slate-800"}`}>{formatCurrency(stock.checkpoint_price || stock.prev_close || stock.price)}</strong>
-                        </span>
-                        <span className={`text-xs font-bold ${isDark ? "text-slate-400" : "text-slate-400"}`}>➔</span>
-                        <span className={`text-base font-black ${isDark ? "text-white" : "text-slate-900"}`}>
-                          {formatCurrency(stock.price)}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center space-x-2 mt-1">
-                        <span className={`inline-flex items-center space-x-1 text-xs font-black px-2.5 py-0.5 rounded-lg border ${
-                          isPositive
-                            ? (isDark ? "bg-emerald-950 text-emerald-300 border-emerald-700" : "bg-emerald-100 text-emerald-900 border-emerald-300")
-                            : (isDark ? "bg-rose-950 text-rose-300 border-rose-700" : "bg-rose-100 text-rose-900 border-rose-300")
-                        }`}>
-                          <span>{isPositive ? "▲ +" : "▼ "}</span>
-                          <span>{formatCurrency(Math.abs(deltaPrice))}</span>
-                          <span>({isPositive ? `+${stock.pct_change?.toFixed(2)}%` : `${stock.pct_change?.toFixed(2)}%`})</span>
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Trajectory */}
-                    <div className="lg:col-span-2 flex justify-center items-center py-1">
-                      {chartViewMode === "zigzag" ? (
-                        <div className="w-[120px] h-[34px] relative">
-                          <svg viewBox="0 0 120 34" className="w-full h-full overflow-visible">
-                            <line
-                              x1="0"
-                              y1={isPositive ? "24" : "10"}
-                              x2="120"
-                              y2={isPositive ? "24" : "10"}
-                              stroke={isDark ? "#64748b" : "#94a3b8"}
-                              strokeWidth="1"
-                              strokeDasharray="2 2"
-                              opacity="0.8"
-                            />
-                            <polyline
-                              fill="none"
-                              stroke={isPositive ? "#10b981" : "#f43f5e"}
-                              strokeWidth="2.5"
-                              strokeLinecap="round"
-                              points={zigzag.linePoints}
-                            />
-                            <circle
-                              cx={zigzag.lastX}
-                              cy={zigzag.lastY}
-                              r="3.5"
-                              fill={isPositive ? "#10b981" : "#f43f5e"}
-                            />
-                          </svg>
-                        </div>
-                      ) : (
-                        <div className="flex items-center space-x-1.5 h-[34px]">
-                          {candles.map((c) => (
-                            <div key={c.id} className="flex flex-col items-center justify-center w-2 h-7 relative">
-                              <div className={`w-[1.5px] h-7 ${c.green ? "bg-emerald-400" : "bg-rose-400"} opacity-50`} />
-                              <div className={`w-2.5 h-4 ${c.green ? "bg-emerald-500" : "bg-rose-500"} rounded-[2px] absolute`} />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Direct BUY / SELL Action Buttons */}
-                    <div className="lg:col-span-2 flex items-center space-x-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setTradeModal({ symbol: stock.symbol, type: "BUY", price: stock.price });
-                        }}
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs px-3.5 py-2 rounded-xl shadow transition active:scale-95 flex-1"
-                      >
-                        BUY
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setTradeModal({ symbol: stock.symbol, type: "SELL", price: stock.price });
-                        }}
-                        className="bg-rose-600 hover:bg-rose-500 text-white font-black text-xs px-3.5 py-2 rounded-xl shadow transition active:scale-95 flex-1"
-                      >
-                        SELL
-                      </button>
-                    </div>
-
-                    {/* Expand Chevron & Delete */}
-                    <div className="lg:col-span-2 flex items-center justify-end space-x-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setExpandedStockSymbol(isExpanded ? null : stock.symbol);
-                        }}
-                        className={`w-8 h-8 rounded-xl flex items-center justify-center text-base font-black transition-transform duration-200 border ${
-                          isExpanded
-                            ? "bg-indigo-600 text-white border-indigo-600 rotate-180 shadow-md"
-                            : isDark
-                            ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white"
-                            : "bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200"
-                        }`}
-                        title={isExpanded ? "Collapse" : "Expand Analytics"}
-                      >
-                        ▾
-                      </button>
-                      <button
-                        onClick={(e) => handleRemoveStock(stock.symbol, e)}
-                        className="p-2 rounded-xl text-xs text-rose-500 hover:bg-rose-500/10 transition"
-                        title="Remove stock"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-
-                  </div>
-
-                  {/* VALUABLE TRADING & SIGNAL ANALYTICS DRAWER */}
-                  {isExpanded && (
-                    <div className={`p-5 sm:p-6 border-t space-y-5 transition ${
-                      isDark ? "bg-[#0c1017] border-slate-800" : "bg-slate-50 border-slate-200"
-                    }`}>
-                      
-                      {/* 1. MARKET DEMAND & VOLUME */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        
-                        {/* Demand: Buyers vs Sellers */}
-                        <div className={`p-4 rounded-2xl border flex flex-col justify-between ${
-                          isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
-                        }`}>
-                          <div className={`text-[11px] font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                            Market Orders Flow
-                          </div>
-                          <div className="my-2">
-                            <div className="flex items-center justify-between text-xs font-black mb-1">
-                              <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>{stock.sentiment_pct || 80}% Buyers</span>
-                              <span className="text-slate-400">{100 - (stock.sentiment_pct || 80)}% Sellers</span>
-                            </div>
-                            <div className="w-full h-2.5 rounded-full bg-slate-700 overflow-hidden flex">
-                              <div style={{ width: `${stock.sentiment_pct || 80}%` }} className="h-full bg-emerald-500" />
-                              <div style={{ width: `${100 - (stock.sentiment_pct || 80)}%` }} className="h-full bg-rose-500" />
-                            </div>
-                          </div>
-                          <div className={`text-[10px] font-semibold ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                            Real-time order book demand
-                          </div>
-                        </div>
-
-                        {/* Volume Flow */}
-                        <div className={`p-4 rounded-2xl border flex flex-col justify-between ${
-                          isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
-                        }`}>
-                          <div className={`text-[11px] font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                            Trading Activity
-                          </div>
-                          <div className={`text-2xl font-black my-1 ${
-                            isDark ? "text-white" : "text-slate-900"
-                          }`}>
-                            {stock.volume_multiplier || "2.1x"}
-                          </div>
-                          <div className={`text-[10px] font-semibold ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                            Higher than daily average volume
-                          </div>
-                        </div>
-
-                        {/* 52-Week Range */}
-                        <div className={`p-4 rounded-2xl border flex flex-col justify-between ${
-                          isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
-                        }`}>
-                          <div className={`text-[11px] font-bold ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                            52-Week Range (Low — High)
-                          </div>
-                          <div className={`text-base font-black my-1 ${isDark ? "text-white" : "text-slate-900"}`}>
-                            ₹{meta.low52} — ₹{meta.high52}
-                          </div>
-                          <div className={`text-[10px] font-semibold ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>
-                            Trading within active range
-                          </div>
-                        </div>
-
-                      </div>
-
-                      {/* 2. PRICE TARGETS & SUPPORT BOUNDARIES */}
-                      <div className={`p-4 rounded-2xl border space-y-3 ${
-                        isDark ? "bg-[#161f30] border-indigo-900/40" : "bg-indigo-50/50 border-indigo-200"
-                      }`}>
-                        <div className="flex items-center justify-between">
-                          <span className={`text-xs font-black uppercase tracking-wider ${
-                            isDark ? "text-indigo-300" : "text-indigo-900"
-                          }`}>
-                            🎯 Key Price Boundaries & Breakout Levels
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                          <div className={`p-2.5 rounded-xl border ${
-                            isDark ? "bg-slate-900/90 border-slate-700" : "bg-white border-slate-300"
-                          }`}>
-                            <div className="text-[10px] text-slate-400 font-semibold">Support Level</div>
-                            <div className={`font-black text-sm mt-0.5 ${isDark ? "text-white" : "text-slate-900"}`}>
-                              {stock.key_levels?.support || formatCurrency(stock.price * 0.96)}
-                            </div>
-                          </div>
-
-                          <div className={`p-2.5 rounded-xl border ${
-                            isDark ? "bg-slate-900/90 border-slate-700" : "bg-white border-slate-300"
-                          }`}>
-                            <div className="text-[10px] text-emerald-400 font-semibold">Target Price</div>
-                            <div className="font-black text-sm text-emerald-500 mt-0.5">
-                              {stock.key_levels?.target || formatCurrency(stock.price * 1.05)}
-                            </div>
-                          </div>
-
-                          <div className={`p-2.5 rounded-xl border ${
-                            isDark ? "bg-slate-900/90 border-slate-700" : "bg-white border-slate-300"
-                          }`}>
-                            <div className="text-[10px] text-rose-400 font-semibold">Stop Loss</div>
-                            <div className="font-black text-sm text-rose-500 mt-0.5">
-                              {stock.key_levels?.stop_loss || formatCurrency(stock.price * 0.94)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 3. SET ALERT BUTTON */}
-                      <div className="flex items-center justify-between pt-1">
-                        <button
-                          onClick={() => handleSetAlert(stock.symbol, stock.key_levels?.target || formatCurrency(stock.price * 1.05))}
-                          className={`text-xs font-bold px-4 py-2 rounded-xl border transition flex items-center space-x-1.5 ${
-                            isDark ? "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700" : "bg-white border-slate-300 text-slate-700 hover:bg-slate-100"
-                          }`}
-                        >
-                          <span>🔔</span>
-                          <span>Set Price Notification Alert</span>
-                        </button>
-                        <span className={`text-[11px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                          Click BUY or SELL above to execute order
-                        </span>
-                      </div>
-
-                    </div>
-                  )}
-
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Trade Execution Order Modal (BUY / SELL) */}
-        {tradeModal && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-            <div className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl space-y-4 ${
-              isDark ? "bg-[#111827] border-slate-700 text-white" : "bg-white border-slate-300 text-slate-900"
-            }`}>
-              
-              <div className="flex items-center justify-between border-b pb-3 border-slate-700">
-                <div className="flex items-center space-x-2">
-                  <span className={`px-2.5 py-1 rounded-lg text-xs font-black text-white ${
-                    tradeModal.type === "BUY" ? "bg-emerald-600" : "bg-rose-600"
-                  }`}>
-                    {tradeModal.type} ORDER
-                  </span>
-                  <span className="font-black text-lg">{tradeModal.symbol}</span>
-                </div>
-                <button
-                  onClick={() => setTradeModal(null)}
-                  className="text-slate-400 hover:text-white text-sm font-bold p-1"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Order Form */}
-              <form onSubmit={handleExecuteOrder} className="space-y-4">
-                
-                {/* Order Type Selector */}
-                <div className="grid grid-cols-2 gap-2">
+            {/* Stock Results List (Shows + Add for unadded stocks, ✓ Added for added ones) */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[250px] max-h-[380px]">
+              {modalAvailableStocks.length === 0 ? (
+                <div className="text-center py-10 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4">
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    Symbol "{addSearchInput}" is ready to track!
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1 mb-3">
+                    Click below to dynamically add and track {addSearchInput.toUpperCase()} on NSE.
+                  </p>
                   <button
-                    type="button"
-                    onClick={() => setOrderType("DELIVERY")}
-                    className={`py-2 rounded-xl text-xs font-black border transition ${
-                      orderType === "DELIVERY"
-                        ? "bg-indigo-600 text-white border-indigo-600"
-                        : isDark ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-100 border-slate-300 text-slate-700"
-                    }`}
+                    onClick={() => handleAddStock(addSearchInput)}
+                    className="px-4 py-2 text-xs font-black rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-md"
                   >
-                    Delivery (CNC)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOrderType("INTRADAY")}
-                    className={`py-2 rounded-xl text-xs font-black border transition ${
-                      orderType === "INTRADAY"
-                        ? "bg-indigo-600 text-white border-indigo-600"
-                        : isDark ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-100 border-slate-300 text-slate-700"
-                    }`}
-                  >
-                    Intraday (MIS 5x)
+                    + Add "{addSearchInput.toUpperCase()}" to Watchlist
                   </button>
                 </div>
-
-                {/* Price Display */}
-                <div className="flex items-center justify-between text-xs p-3 rounded-xl border border-slate-700 bg-slate-800/60">
-                  <span className="text-slate-300 font-bold">Execution Price</span>
-                  <span className="text-base font-black text-white">{formatCurrency(tradeModal.price)}</span>
-                </div>
-
-                {/* Quantity Input */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Quantity (Shares)
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => setOrderQty(Math.max(1, orderQty - 5))}
-                      className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold text-sm"
+              ) : (
+                modalAvailableStocks.map((stock) => {
+                  const isAlreadyAdded = trackedStocks.some((s) => s.symbol === stock.symbol);
+                  return (
+                    <div
+                      key={stock.symbol}
+                      className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between gap-3"
                     >
-                      -5
-                    </button>
-                    <input
-                      type="number"
-                      min="1"
-                      value={orderQty}
-                      onChange={(e) => setOrderQty(Math.max(1, parseInt(e.target.value) || 1))}
-                      required
-                      className="flex-1 px-3 py-2 text-center rounded-xl border border-slate-700 bg-slate-800 text-white font-black text-base focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setOrderQty(orderQty + 5)}
-                      className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold text-sm"
-                    >
-                      +5
-                    </button>
-                  </div>
-                </div>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <BrandLogo type={stock.logo_type} size="w-8 h-8" />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-xs text-slate-900 dark:text-white">
+                              {stock.symbol}
+                            </span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                              {stock.sector}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 truncate">
+                            {stock.name} • {stock.subtitle}
+                          </p>
+                        </div>
+                      </div>
 
-                {/* Total Value & Available Balance */}
-                <div className="p-3.5 rounded-xl border border-indigo-900/60 bg-indigo-950/40 space-y-1 text-xs">
-                  <div className="flex justify-between font-bold text-slate-300">
-                    <span>Order Value:</span>
-                    <span className="text-white font-black text-sm">{formatCurrency(tradeModal.price * orderQty)}</span>
-                  </div>
-                  <div className="flex justify-between font-medium text-slate-400 text-[11px]">
-                    <span>Available Balance:</span>
-                    <span className="text-emerald-400 font-bold">{formatCurrency(portfolioBalance)}</span>
-                  </div>
-                </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="text-right font-mono">
+                          <p className="text-xs font-black text-slate-900 dark:text-white">
+                            ₹{stock.price.toFixed(2)}
+                          </p>
+                          <p className={`text-[10px] font-bold ${stock.pct_change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                            {stock.pct_change >= 0 ? `+${stock.pct_change.toFixed(2)}%` : `${stock.pct_change.toFixed(2)}%`}
+                          </p>
+                        </div>
 
-                {/* Submit Execution Button */}
-                <button
-                  type="submit"
-                  className={`w-full text-white font-black py-3 rounded-xl text-sm shadow-xl active:scale-[0.98] transition ${
-                    tradeModal.type === "BUY" ? "bg-emerald-600 hover:bg-emerald-500" : "bg-rose-600 hover:bg-rose-500"
-                  }`}
-                >
-                  Confirm {tradeModal.type} Order ({orderQty} Shares)
-                </button>
-              </form>
-
-            </div>
-          </div>
-        )}
-
-        {/* History Modal */}
-        {showHistoryModal && (
-          <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-            <div className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl space-y-4 ${
-              isDark ? "bg-[#111827] border-slate-700 text-white" : "bg-white border-slate-300 text-slate-900"
-            }`}>
-              <div className="flex items-center justify-between">
-                <h3 className="font-black text-base">📜 Visit Session History</h3>
-                <button onClick={() => setShowHistoryModal(false)} className="text-slate-400 hover:text-white text-sm font-bold">✕</button>
-              </div>
-              <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
-                {sessionHistory.map((s, idx) => (
-                  <div key={s.id || idx} className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
-                    isDark ? "border-slate-700 bg-slate-800/80 text-white" : "border-slate-300 bg-slate-50 text-slate-900"
-                  }`}>
-                    <div>
-                      <div className="font-black">{formatTimestamp(s.created_at || s.timestamp)}</div>
-                      <div className={`text-[10px] ${isDark ? "text-slate-300" : "text-slate-500"}`}>{s.watchlist_name || s.watchlist_id || "Primary"}</div>
+                        {isAlreadyAdded ? (
+                          <span className="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-default">
+                            ✓ In Watchlist
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleAddStock(stock)}
+                            className="px-3 py-1.5 text-xs font-black rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all cursor-pointer"
+                          >
+                            + Add
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                      isDark ? "bg-indigo-900 text-indigo-300" : "bg-indigo-100 text-indigo-800"
-                    }`}>Session</span>
-                  </div>
-                ))}
-              </div>
-              <button onClick={() => setShowHistoryModal(false)} className={`w-full font-black py-2.5 rounded-xl text-xs ${
-                isDark ? "bg-slate-800 text-white hover:bg-slate-700" : "bg-slate-200 text-slate-900 hover:bg-slate-300"
-              }`}>Close</button>
+                  );
+                })
+              )}
             </div>
-          </div>
-        )}
 
-        {/* Create Watchlist Modal */}
-        {showNewWlModal && (
-          <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className={`w-full max-w-sm rounded-2xl border p-6 shadow-2xl space-y-4 ${
-              isDark ? "bg-[#111827] border-slate-700 text-white" : "bg-white border-slate-300 text-slate-900"
-            }`}>
-              <div className="flex items-center justify-between">
-                <h3 className="font-black text-base">Create New Watchlist</h3>
-                <button onClick={() => setShowNewWlModal(false)} className="text-slate-400 hover:text-white text-sm font-bold">✕</button>
-              </div>
-              <form onSubmit={handleCreateWatchlist} className="space-y-3">
-                <input
-                  type="text"
-                  value={newWlName}
-                  onChange={(e) => setNewWlName(e.target.value)}
-                  placeholder="e.g. EV & Defense, High Growth"
-                  required
-                  className={`w-full px-3 py-2 text-xs rounded-xl border focus:outline-none font-bold ${
-                    isDark ? "border-slate-700 bg-slate-800 text-white" : "border-slate-300 bg-slate-50 text-slate-900"
-                  }`}
-                />
-                <div className="flex justify-end space-x-2 pt-2">
-                  <button type="button" onClick={() => setShowNewWlModal(false)} className="px-3 py-1.5 text-xs text-slate-400 font-bold">Cancel</button>
-                  <button type="submit" className="bg-indigo-600 text-white font-black px-4 py-1.5 rounded-xl text-xs shadow">Create</button>
-                </div>
-              </form>
+            {/* Custom Symbol Direct Add Bar */}
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+              <span className="text-slate-500">
+                Want to add an unlisted ticker?
+              </span>
+              <button
+                onClick={() => {
+                  const customTicker = prompt("Enter NSE Stock Symbol (e.g. YESBANK, IDEA, CDSL):");
+                  if (customTicker && customTicker.trim()) {
+                    handleAddStock(customTicker.trim());
+                  }
+                }}
+                className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+              >
+                + Enter Custom NSE Ticker
+              </button>
             </div>
+
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Auth Modal */}
-        {showAuthModal && (
-          <AuthModal
-            currentTheme={theme}
-            onLoginSuccess={(newUid) => {
-              setUserId(newUid);
-              setShowAuthModal(false);
-              loadAllWatchlists(newUid);
-            }}
-            onClose={() => {
-              if (userId) setShowAuthModal(false);
-            }}
-            canClose={Boolean(userId)}
-          />
-        )}
+      {/* REAL BUY / SELL ORDER MODAL */}
+      <OrderModal
+        isOpen={orderModalState.isOpen}
+        onClose={() => setOrderModalState({ isOpen: false, type: "BUY" })}
+        stock={activeStock}
+        type={orderModalState.type}
+        availableBalance={userBalance}
+        onOrderExecute={handleOrderExecute}
+      />
 
-      </main>
+      {/* System Activity & Audit Logs Modal */}
+      <ActivityLogsModal
+        isOpen={showLogsModal}
+        onClose={() => setShowLogsModal(false)}
+        logs={activityLogs}
+        onClearLogs={() => {
+          setActivityLogs([]);
+          showToast("Activity logs cleared.");
+        }}
+      />
+
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <AuthModal
+          onClose={() => setShowAuthModal(false)}
+          onLoginSuccess={handleLoginSuccess}
+          canClose={true}
+        />
+      )}
+
     </div>
   );
 }
