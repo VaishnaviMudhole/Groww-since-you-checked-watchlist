@@ -1,20 +1,20 @@
 # ⚡ Since You Checked — Intelligent Stock Watchlist Engine
 > **Groww Capstone Project Submission | Vaishnavi M**  
-> *End-to-End Real-Time Anomaly Scoring & Cross-Device Session Tracking*
+> *End-to-End Real-Time Anomaly Scoring, Automatic Session Checkpoints & Cross-Device Persistence*
 
 ---
 
-## 📌 Project Overview
+## 📌 Executive Product Pitch (100-Word Summary)
 Standard stock watchlists are noisy, alphabetical, or sorted by raw % gainers—flooding investors with penny-stock volatility and missing true market developments. **"Since You Checked"** transforms the watchlist into an actionable intelligence feed. Built with an end-to-end FastAPI backend and Supabase PostgreSQL database, it dynamically calculates statistical anomalies ($Z$-score volatility normalization, 20-day volume surges, and NIFTY 50 alpha) that occurred specifically since the user's last session checkpoint. With robust edge-case resilience (low-liquidity warnings, graceful error handling) and seamless cross-device persistence, it delivers high-conviction insights in plain English—directly connected to a 1-click Groww trading sheet.
 
 ---
 
 ## 📸 Visual Walkthrough & Product Interface
 
-### 1. Executive Briefing, Market Status Bar & Real-Time Anomaly Alert
-The dashboard automatically detects statistical breakouts ($Z$-score volatility, volume surges $> 2\times$, decoupled alpha) and provides plain-English summaries with 1-click Groww trading integration.
+### 1. Executive Intelligence Bar & Dynamic Anomaly Catch-Up
+The dashboard automatically detects statistical breakouts ($Z$-score volatility, volume surges $> 2\times$, decoupled alpha) and provides plain-English summaries with real-time dynamic elapsed timers.
 
-| Executive Briefing & Market Bar | Real-Time Push Anomaly Alert |
+| Executive Briefing & Live Delta | Real-Time Push Anomaly Alert |
 | :---: | :---: |
 | ![Dashboard Overview](screenshots/01_dashboard_executive_briefing.png) | ![Real-Time Alert](screenshots/02_realtime_anomaly_alert.png) |
 
@@ -30,7 +30,7 @@ Each stock card provides exact quantitative decomposition (Price Move vs Normal 
 ---
 
 ### 3. Smart Filtering, Sector Slicing & Plain-English Sorting
-Investors can filter by sector (Tech, Banking, Auto, Defense, FMCG) and sort across statistical dimensions (Highest Priority, Moving on Its Own / Alpha, Volume Surges, Top Gainers/Losers).
+Investors can filter by sector (Tech, Banking, Auto, Defence, FMCG) and sort across statistical dimensions (Highest Priority, Moving on Its Own / Alpha, Volume Surges, Top Gainers/Losers).
 
 | Banking Sector Filtered View | Multi-Factor Sorting Modes |
 | :---: | :---: |
@@ -47,15 +47,36 @@ Session timestamps and watchlists are persisted directly to Supabase PostgreSQL,
 
 ---
 
-## 🏗️ Architecture & Real Backend Persistence
-The system is built **strictly end-to-end** with zero mocked client-side persistence:
+## 🚀 Key Features & Engineering Highlights
+
+1. **⏱️ Automatic Lifecycle Checkpointing (Zero-Effort Persistence):**
+   - Automatically captures baseline prices and timestamps whenever the user closes the tab or switches windows via `visibilitychange`, `beforeunload`, and `pagehide` browser events.
+   - On return, instantly displays the exact delta and volume anomalies that occurred during the user's absence.
+
+2. **🎙️ AI Voice Intelligence (Text-to-Speech & Speech-to-Text):**
+   - **`🔊 Listen Briefing`**: Real-time voice readout of the *"Since You Last Checked"* market delta and volume spikes via Web Speech API.
+   - **`🎙️ Voice Search`**: Hands-free search allowing traders to speak ticker names to filter and select stocks.
+   - **`🔊 Voice Analysis`**: Audio readout of key support, target, and stop-loss levels on stock detail cards.
+
+3. **📜 Real-Time System & Order Activity Logs:**
+   - In-app live audit trail tracking orders (`FILLED`), anomaly triggers, price streaming ticks, and user authentication events.
+
+4. **🔴 Solid Red Sell & Emerald Buy Order Execution:**
+   - High-contrast 1-click order simulation modal supporting Intraday MIS and Delivery CNC modes with real-time portfolio margin calculation.
+
+5. **🏛️ 202+ NSE Master Directory:**
+   - Curated master catalog of 202+ NSE listed companies with dynamic custom ticker entry.
+
+---
+
+## 🏗️ Architecture & End-to-End Persistence
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │               Frontend: React (Vite, SPA)                   │
 │  - Categorized Sectors  - Live/Closed Hours Precision Badge │
 │  - 1-Click Groww Order Sheet  - Cross-Device Sync Modal     │
-│  - Interactive "Click to See Why" Formula Attribution       │
+│  - AI Voice Module (TTS/STT)  - System Activity Logs Modal  │
 └──────────────────────────────┬──────────────────────────────┘
                                │ REST API (JSON)
 ┌──────────────────────────────▼──────────────────────────────┐
@@ -76,15 +97,8 @@ The system is built **strictly end-to-end** with zero mocked client-side persist
 
 ---
 
-## 📱 Cross-Device Persistence Flow
-To prove data follows the investor rather than remaining trapped in browser local state:
-1. Every watchlist, added stock, and session checkpoint is associated with a **`user_id`** column in Supabase PostgreSQL.
-2. The frontend provides a **`👤 Cloud User (Sync)`** modal with a **1-Click Shareable Link** (`?user=<user_id>`).
-3. Opening this URL on another computer, mobile browser, or Incognito window immediately loads that user's exact Supabase watchlists and session checkpoints.
-
----
-
 ## 📖 Definition of "Meaningful Change" & Mathematical Defense
+
 ### Why Raw % Gain is Flawed
 A $+2\%$ gain on a low-beta defensive stock like **ITC** ($\sigma = 0.75\%$) represents a massive $+2.67\sigma$ statistical breakout. The same $+2\%$ on a high-beta stock ($\sigma = 3.0\%$) is merely random daily noise. Sorting purely by raw percentage misleads retail investors.
 
@@ -99,7 +113,7 @@ $$\text{Priority Score} = 40 \times \min\left(1.0, \frac{|\Delta P|}{\sigma_{20}
 
 ---
 
-## 🛡️ Reliability & Edge-Case Handling (Standout Feature)
+## 🛡️ Reliability & Edge-Case Handling
 
 ![Edge Case Resilience: PENNYTEST & BROKENSTOCK](screenshots/11_edge_cases_pennytest_brokenstock.png)
 
@@ -126,48 +140,30 @@ $$\text{Priority Score} = 40 \times \min\left(1.0, \frac{|\Delta P|}{\sigma_{20}
 
 ---
 
-## 🛡️ Core Design Principles Followed
+## 🛡️ Alignment with Groww's 5 Core Values
 
-1. **Clarity Over Noise:** 1-line plain-English explanations (e.g., *"Volume surge 2.3x normal"*) and 1-click executive briefings eliminate financial jargon for retail users.
-2. **Resilience Over False Precision:** Zero silent failures; microcaps and broken feeds are handled transparently.
-3. **Transparent Math Over Black Boxes:** Every score decomposes into an auditable 3-factor breakdown (40% P · 35% V · 25% α).
-4. **Frictionless Interaction:** Zero browser popup dialogs; in-page trade sheets and checkpointing.
-5. **Data Continuity:** Cloud database persistence built on Supabase PostgreSQL indexed by `user_id`.
+1. **Customer First:** Plain-English insights and 1-click voice audio catch-up replace confusing raw data tables.
+2. **Reliability, Always:** Zero silent crashes; broken feeds and illiquid stocks are gracefully isolated with warnings.
+3. **Being Transparent:** Auditable mathematical formula attribution (40% P · 35% V · 25% α) and clear checkpoint numbers.
+4. **Keeping It Simple:** High-contrast 2-column layout, consolidated "+ Add Stock" modal, tactile buttons, and no confusing sub-menus.
+5. **Thinking Long-Term:** Scalable PostgreSQL schema with B-Tree indexes, modular FastAPI endpoints, and extensible React architecture.
 
 ---
 
-## 🛠️ Local Setup & Verification Instructions
+## 🛠️ Local Setup Instructions
 
 ### 1. Backend Setup
 ```bash
-cd watchlist-backend
-pip install fastapi uvicorn sqlalchemy psycopg2-binary pydantic python-dotenv yfinance
-# Start Backend
+cd backend
+pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
-*Backend health check:* `http://127.0.0.1:8000/health`
+*Health Check:* `http://127.0.0.1:8000/health`
 
 ### 2. Frontend Setup
 ```bash
-cd watchlist-frontend
+cd frontend
 npm install
 npm run dev
 ```
 *Frontend URL:* `http://localhost:5173`
-
-### 3. Run Automated Tests
-```bash
-cd watchlist-backend
-python test_engine.py
-```
-
----
-
-## 🧪 Demo Checklist for Evaluators
-- [x] **Add/Remove Stocks:** Add `TATAMOTORS`, `HAL`, or click quick sector pills.
-- [x] **Low Liquidity Edge Case:** Add `+ PENNYTEST` $\rightarrow$ Notice yellow warning badge.
-- [x] **Unhappy Path Fetch Failure:** Add `+ BROKENSTOCK` $\rightarrow$ Notice graceful in-page error card.
-- [x] **Cross-Device Sync:** Click `👤 User: [name]` $\rightarrow$ Copy link $\rightarrow$ Open in Incognito window to see your data sync.
-- [x] **Groww Trade Simulation:** Click `⚡ Trade` $\rightarrow$ Place simulated in-page order.
-- [x] **Scoring Transparency:** Click `▼ Click to See Why` on any card $\rightarrow$ View exact 3-factor breakdown & visual trajectory sparkline.
-- [x] **Session Checkpoint:** Click `✓ Got It, Mark Checked` $\rightarrow$ Click `📜 Checkpoints` to see cloud audit history.
