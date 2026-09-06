@@ -167,16 +167,17 @@ export default function Dashboard() {
   };
 
   const getElapsedSinceCheckpoint = (iso) => {
-    if (!iso) return "2h 16m ago";
+    if (!iso) return "Just now";
     try {
-      const diffMs = Date.now() - new Date(iso).getTime();
-      if (diffMs < 60000) return "Just now";
+      const diffMs = Math.max(0, Date.now() - new Date(iso).getTime());
+      if (diffMs < 45000) return "Just now";
       const diffMins = Math.floor(diffMs / 60000);
       if (diffMins < 60) return `${diffMins}m ago`;
       const diffHours = Math.floor(diffMins / 60);
-      return `${diffHours}h ${diffMins % 60}m ago`;
+      const remainingMins = diffMins % 60;
+      return remainingMins > 0 ? `${diffHours}h ${remainingMins}m ago` : `${diffHours}h ago`;
     } catch {
-      return "2h ago";
+      return "Recently";
     }
   };
 
@@ -208,6 +209,22 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    // Track actual user session visit time
+    const lastSession = localStorage.getItem("sw_active_session_start");
+    if (!lastSession) {
+      // First ever visit
+      const initialBaseline = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      localStorage.setItem("sw_user_last_active", initialBaseline);
+      localStorage.setItem("sw_active_session_start", new Date().toISOString());
+    } else {
+      // Returning user - record the previous session as the last visit checkpoint
+      const sessionAgeMs = Date.now() - new Date(lastSession).getTime();
+      if (sessionAgeMs > 60 * 1000) {
+        localStorage.setItem("sw_user_last_active", lastSession);
+        localStorage.setItem("sw_active_session_start", new Date().toISOString());
+      }
+    }
+
     if (userId) {
       loadAllWatchlists(userId);
     }

@@ -256,11 +256,21 @@ export async function fetchWatchlistSignals(watchlistId, sortBy = "relevance", u
     }
   } catch (err) {}
   
-  const customCheckpoint = localStorage.getItem(`sw_checkpoint_${watchlistId}`);
+  // Real dynamic session timestamp resolver
+  let sessionCheckpoint = localStorage.getItem(`sw_checkpoint_${watchlistId}`);
+  if (!sessionCheckpoint) {
+    sessionCheckpoint = localStorage.getItem("sw_user_last_active");
+  }
+  if (!sessionCheckpoint) {
+    // Default initial visit: 5 minutes ago so baseline is immediate and realistic
+    sessionCheckpoint = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    localStorage.setItem("sw_user_last_active", sessionCheckpoint);
+  }
+
   const result = {
     ...DEFAULT_FALLBACK_SIGNALS,
     watchlist_id: watchlistId,
-    last_checked: customCheckpoint || DEFAULT_FALLBACK_SIGNALS.last_checked,
+    last_checked: sessionCheckpoint,
   };
 
   if (sortBy === "biggest_gainers") {
