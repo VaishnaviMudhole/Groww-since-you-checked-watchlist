@@ -741,9 +741,6 @@ export default function Dashboard() {
                           <span>{formatCurrency(Math.abs(deltaPrice))}</span>
                           <span>({isPositive ? `+${stock.pct_change?.toFixed(2)}%` : `${stock.pct_change?.toFixed(2)}%`})</span>
                         </span>
-                        <span className={`text-[10px] font-semibold hidden sm:inline ${isDark ? "text-slate-300" : "text-slate-500"}`}>
-                          since last visit
-                        </span>
                       </div>
                     </div>
 
