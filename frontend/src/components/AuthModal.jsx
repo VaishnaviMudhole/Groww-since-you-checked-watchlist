@@ -36,6 +36,12 @@ export default function AuthModal({
     if (onClose) onClose();
   };
 
+  const handlePinChange = (e) => {
+    // Strictly allow only digits and stop at exactly 4 numbers
+    const cleanPin = e.target.value.replace(/\D/g, "").slice(0, 4);
+    setPin(cleanPin);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -45,8 +51,8 @@ export default function AuthModal({
       setError("Please enter your Mobile Number or Email ID");
       return;
     }
-    if (!pin || pin.length < 3) {
-      setError("PIN / Password must be at least 3 characters");
+    if (!pin || pin.length < 4) {
+      setError("Please enter a valid 4-digit PIN");
       return;
     }
 
@@ -78,8 +84,8 @@ export default function AuthModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className={`w-full max-w-md rounded-2xl border shadow-2xl p-7 relative transition-all animate-in fade-in zoom-in-95 duration-200 ${
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+      <div className={`w-full max-w-sm sm:max-w-md rounded-2xl border shadow-2xl p-5 sm:p-7 relative transition-all animate-in fade-in zoom-in-95 duration-200 ${
         isDark ? "bg-[#111827] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"
       }`}>
         
@@ -88,7 +94,7 @@ export default function AuthModal({
           type="button"
           onClick={onClose}
           aria-label="Close modal"
-          className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center font-black text-sm border transition-all cursor-pointer shadow-sm ${
+          className={`absolute top-3.5 right-3.5 sm:top-4 sm:right-4 w-8 h-8 rounded-full flex items-center justify-center font-black text-sm border transition-all cursor-pointer shadow-sm ${
             isDark 
               ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700" 
               : "bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-200"
@@ -98,11 +104,11 @@ export default function AuthModal({
         </button>
 
         {/* Brand Header */}
-        <div className="text-center space-y-1.5 mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-black text-xl mx-auto shadow-lg shadow-emerald-500/20">
+        <div className="text-center space-y-1.5 mb-5 sm:mb-6">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-black text-lg sm:text-xl mx-auto shadow-lg shadow-emerald-500/20">
             ⚡
           </div>
-          <h2 className={`text-xl font-black tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
+          <h2 className={`text-lg sm:text-xl font-black tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
             {isSignUp ? "Create Groww Account" : "Sign In to Watchlist"}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
@@ -111,13 +117,13 @@ export default function AuthModal({
         </div>
 
         {/* Large, Tactile, Clickable Tabs */}
-        <div className={`grid grid-cols-2 gap-1.5 p-1.5 rounded-xl mb-5 border ${
+        <div className={`grid grid-cols-2 gap-1.5 p-1.5 rounded-xl mb-4 sm:mb-5 border ${
           isDark ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"
         }`}>
           <button
             type="button"
             onClick={() => { setIsSignUp(false); setError(null); }}
-            className={`py-2.5 px-4 text-sm font-black rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`py-2.5 px-3 sm:px-4 text-xs sm:text-sm font-black rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer ${
               !isSignUp 
                 ? "bg-emerald-600 text-white shadow-md scale-[1.02]" 
                 : isDark 
@@ -132,7 +138,7 @@ export default function AuthModal({
           <button
             type="button"
             onClick={() => { setIsSignUp(true); setError(null); }}
-            className={`py-2.5 px-4 text-sm font-black rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`py-2.5 px-3 sm:px-4 text-xs sm:text-sm font-black rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer ${
               isSignUp 
                 ? "bg-emerald-600 text-white shadow-md scale-[1.02]" 
                 : isDark 
@@ -147,14 +153,14 @@ export default function AuthModal({
 
         {/* Error Notification */}
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-bold flex items-center gap-2">
+          <div className="mb-3.5 p-2.5 sm:p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-bold flex items-center gap-2">
             <span>⚠️</span>
             <span>{error}</span>
           </div>
         )}
 
         {/* Auth Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
           <div>
             <label className={`block text-xs font-black uppercase tracking-wider mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
               Mobile Number or Email
@@ -165,7 +171,7 @@ export default function AuthModal({
               onChange={(e) => setIdentifier(e.target.value)}
               placeholder="e.g. 9876543210 or trader@groww.in"
               autoFocus
-              className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold border transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 ${
+              className={`w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 ${
                 isDark 
                   ? "bg-slate-900 border-slate-700 text-white placeholder-slate-500" 
                   : "bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400"
@@ -174,16 +180,24 @@ export default function AuthModal({
           </div>
 
           <div>
-            <label className={`block text-xs font-black uppercase tracking-wider mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-              {isSignUp ? "Create 4-Digit PIN / Password" : "4-Digit PIN / Password"}
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className={`block text-xs font-black uppercase tracking-wider ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                {isSignUp ? "Set 4-Digit PIN" : "Enter 4-Digit PIN"}
+              </label>
+              <span className="text-[10px] font-mono font-bold text-slate-400">
+                {pin.length}/4 digits
+              </span>
+            </div>
             <div className="relative">
               <input
                 type={showPin ? "text" : "password"}
                 value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                placeholder="Enter 4-digit PIN (e.g. 1234)"
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold border transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 pr-14 ${
+                onChange={handlePinChange}
+                maxLength={4}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="•••• (4 digits)"
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-mono tracking-widest font-bold border transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 pr-14 ${
                   isDark 
                     ? "bg-slate-900 border-slate-700 text-white placeholder-slate-500" 
                     : "bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400"
@@ -204,7 +218,7 @@ export default function AuthModal({
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white font-black py-3 rounded-xl text-xs shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50 mt-2 cursor-pointer"
+            className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white font-black py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50 mt-2 cursor-pointer"
           >
             {loading ? "Verifying Credentials..." : isSignUp ? "Create Account & Sign In" : "Sign In to Watchlist"}
           </button>

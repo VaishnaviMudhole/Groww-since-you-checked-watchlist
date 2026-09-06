@@ -75,7 +75,7 @@ export default function ActivityLogsModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className={`w-full max-w-2xl rounded-2xl border shadow-2xl flex flex-col max-h-[88vh] transition-all animate-in fade-in zoom-in-95 duration-200 ${
+      <div className={`w-[95vw] max-w-2xl rounded-2xl border shadow-2xl flex flex-col max-h-[90vh] transition-all animate-in fade-in zoom-in-95 duration-200 ${
         isDark ? "bg-[#111827] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"
       }`}>
         
