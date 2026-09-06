@@ -10510,11 +10510,11 @@ export const createDynamicNSEStock = (symbolInput) => {
     return {
       symbol: cleanSym,
       name: cleanSym + " (Exchange Offline)",
-      subtitle: cleanSym + " ? Deliberate Mock Outage",
-      sector: "?? Feed Offline",
+      subtitle: cleanSym + " • Deliberate Mock Outage",
+      sector: "Feed Offline",
       exchange: "NSE",
       price: 0.00,
-      checkpoint_price: 0.00,
+      checkpoint_price: 100.00,
       pct_change: 0.00,
       day_change_amount: 0.00,
       logo_type: "generic_blue",
@@ -10533,15 +10533,15 @@ export const createDynamicNSEStock = (symbolInput) => {
       pos_return_amt: 0.00,
       pos_return_pct: 0.00,
       action_type: "OFFLINE",
-      action_badge: "?? Feed Offline",
+      action_badge: "🛑 Feed Offline",
       confidence_score: 0,
-      action_reason: "?? Deliberate mock failure ? Exchange API timeout. Isolated error boundary active without crashing UI.",
+      action_reason: "Deliberate mock failure — Exchange API timeout. Isolated error boundary active without crashing UI.",
       upside_amt: 0.00,
       upside_pct: 0.00,
       downside_amt: 0.00,
       downside_pct: 0.00,
       risk_reward_ratio: "N/A",
-      risk_warning: "?? Exchange Feed Offline / Delisted Symbol",
+      risk_warning: "Exchange Feed Offline / Delisted Symbol",
       support_num: 0.00,
       target_num: 0.00,
       stoploss_num: 0.00,
@@ -10549,9 +10549,9 @@ export const createDynamicNSEStock = (symbolInput) => {
       volume_multiplier: "0.0x (No Feed)",
       low52: 0.00,
       high52: 0.00,
-      range_status: "?? Live Feed Unavailable",
+      range_status: "Live Feed Unavailable",
       news_title: "Exchange API connection timeout for this symbol",
-      news_source: "Today, Just Now ? Error Boundary Log",
+      news_source: "Today, Just Now • Error Boundary Log",
       isBreakout: false,
       isIlliquid: false,
       isError: true,
@@ -10571,8 +10571,8 @@ export const createDynamicNSEStock = (symbolInput) => {
   return {
     symbol: cleanSym,
     name: isPenny ? cleanSym + " (Microcap)" : cleanSym,
-    subtitle: isPenny ? cleanSym + " Microcap ? Low Turnover" : cleanSym + " Equity ? NSE Listed",
-    sector: isPenny ? "Microcap (< ?2 Cr)" : "Equity",
+    subtitle: isPenny ? cleanSym + " • Low Turnover Microcap" : cleanSym + " • NSE Equity",
+    sector: isPenny ? "Microcap (< ₹2 Cr)" : "Equity",
     exchange: "NSE",
     price: mockPrice,
     checkpoint_price: checkpoint,
@@ -10594,17 +10594,17 @@ export const createDynamicNSEStock = (symbolInput) => {
     pos_return_amt: changeAmt,
     pos_return_pct: changePct,
     action_type: isPenny ? "LOW LIQUIDITY" : (changePct > 0 ? "STRONG BUY" : "ACCUMULATE"),
-    action_badge: isPenny ? "?? Low Liquidity" : (changePct > 0 ? "Buy" : "Accumulate"),
+    action_badge: isPenny ? "⚠️ Low Liquidity" : (changePct > 0 ? "Buy" : "Accumulate"),
     confidence_score: isPenny ? 25 : 88,
     action_reason: isPenny 
-      ? "?? Low liquidity warning ? daily turnover is below ?2 Crore. Anomaly scoring suppressed to avoid false alarms." 
+      ? "Low liquidity warning — daily turnover is below ₹2 Crore. Anomaly scoring suppressed to avoid false alarms." 
       : "Live exchange volume breakout with high institutional interest on NSE.",
     upside_amt: parseFloat((target - mockPrice).toFixed(2)),
     upside_pct: 8.00,
     downside_amt: parseFloat((stoploss - mockPrice).toFixed(2)),
     downside_pct: -6.00,
     risk_reward_ratio: "1.33 : 1",
-    risk_warning: isPenny ? "?? High Bid-Ask Spread and Illiquidity Risk" : "Custom tracked NSE equity",
+    risk_warning: isPenny ? "High Bid-Ask Spread and Illiquidity Risk" : "Custom tracked NSE equity",
     support_num: support,
     target_num: target,
     stoploss_num: stoploss,
@@ -10612,9 +10612,9 @@ export const createDynamicNSEStock = (symbolInput) => {
     volume_multiplier: isPenny ? "0.4x (Illiquid Volume)" : "2.8x vs 30-day average",
     low52: parseFloat((mockPrice * 0.65).toFixed(2)),
     high52: parseFloat((mockPrice * 1.25).toFixed(2)),
-    range_status: isPenny ? "?? Low Turnover (< ?2 Cr)" : "Active live exchange tracking",
+    range_status: isPenny ? "Low Turnover (< ₹2 Cr)" : "Active live exchange tracking",
     news_title: isPenny ? cleanSym + " shows low trading liquidity on exchange" : cleanSym + " trading volumes surge on NSE with strong order book flow",
-    news_source: "Today, Just Now ? NSE Live Feed",
+    news_source: "Today, Just Now • NSE Live Feed",
     isBreakout: !isPenny && changePct > 2.0,
     isIlliquid: isPenny,
     isError: false,
@@ -11089,8 +11089,11 @@ export default function Dashboard() {
         for (let i = 0; i < countToUpdate; i++) {
           const randIdx = Math.floor(Math.random() * updated.length);
           const stock = updated[randIdx];
+          if (!stock || stock.isError || stock.symbol.includes("BROKEN") || !stock.checkpoint_price || stock.checkpoint_price <= 0) {
+            continue;
+          }
           const tickDeltaPct = (Math.random() * 0.24 - 0.10) / 100;
-          const newPrice = Math.max(1, parseFloat((stock.price * (1 + tickDeltaPct)).toFixed(2)));
+          const newPrice = Math.max(0.1, parseFloat((stock.price * (1 + tickDeltaPct)).toFixed(2)));
           const dayChangeAmt = parseFloat((newPrice - stock.checkpoint_price).toFixed(2));
           const pctChange = parseFloat(((dayChangeAmt / stock.checkpoint_price) * 100).toFixed(2));
 
@@ -11817,10 +11820,11 @@ export default function Dashboard() {
                       <div className="w-16 h-6 shrink-0 hidden sm:block">
                         <svg viewBox="0 0 80 24" className="w-full h-full overflow-visible">
                           <path
-                            d={generateZigzagPath(stock.pct_change)}
+                            d={isOffline ? "M 0,12 L 80,12" : generateZigzagPath(stock.pct_change)}
                             fill="none"
-                            stroke={isUp ? "#00D09C" : "#EF4444"}
+                            stroke={isOffline ? "#94A3B8" : isPenny ? "#F59E0B" : isUp ? "#00D09C" : "#EF4444"}
                             strokeWidth="2"
+                            strokeDasharray={isOffline ? "3 3" : "none"}
                             strokeLinecap="round"
                             strokeLinejoin="round"
                           />
@@ -11831,18 +11835,22 @@ export default function Dashboard() {
                       <div className="flex items-center gap-2 shrink-0">
                         <div className="text-right">
                           <p className={`font-mono font-black text-xs transition-colors duration-300 ${
-                            flashState === "up" ? "text-emerald-700 dark:text-emerald-400 font-black scale-105" : flashState === "down" ? "text-rose-700 dark:text-rose-400 font-black scale-105" : "text-slate-900 dark:text-white"
+                            isOffline 
+                              ? "text-rose-600 dark:text-rose-400"
+                              : flashState === "up" ? "text-emerald-700 dark:text-emerald-400 font-black scale-105" : flashState === "down" ? "text-rose-700 dark:text-rose-400 font-black scale-105" : "text-slate-900 dark:text-white"
                           }`}>
-                            ₹{(stock?.price ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                            {isOffline ? "Offline" : `₹${(stock?.price ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`}
                           </p>
                           <p
                             className={`text-[10px] font-black font-mono ${
-                              isUp
+                              isOffline 
+                                ? "text-slate-400 dark:text-slate-500"
+                                : isUp
                                 ? "text-emerald-700 dark:text-emerald-400"
                                 : "text-rose-700 dark:text-rose-400"
                             }`}
                           >
-                            {isUp ? `+${(stock?.pct_change ?? 0).toFixed(2)}%` : `${(stock?.pct_change ?? 0).toFixed(2)}%`}
+                            {isOffline ? "No Feed" : (isUp ? `+${(stock?.pct_change ?? 0).toFixed(2)}%` : `${(stock?.pct_change ?? 0).toFixed(2)}%`)}
                           </p>
                         </div>
 
