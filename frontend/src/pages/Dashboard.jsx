@@ -6,47 +6,7 @@ import OrderModal from "../components/OrderModal";
 
 // Master Directory of all 202+ NSE Listed Stocks across NIFTY 200
 export const ALL_202_NSE_STOCKS = [
-  // =========================================================================
-  // EDGE CASE RESILIENCE CONTROLS (Evaluated by Groww Engineering Rubric)
-  // =========================================================================
-  {
-    symbol: "PENNYTEST",
-    name: "Penny Cap Micro Enterprises",
-    subtitle: "Microcap Illiquid Security (Simulated Turnover < ₹2 Cr)",
-    sector: "Microcap Edge Case",
-    price: 1.45,
-    checkpoint_price: 1.40,
-    day_change_amount: 0.05,
-    pct_change: 3.57,
-    support_num: 1.20,
-    target_num: 1.80,
-    stoploss_num: 1.10,
-    action_type: "CAUTION / AVOID",
-    action_reason: "Daily turnover is below ₹2 Cr threshold. High bid-ask spread risk for retail traders.",
-    logo_type: "NSE",
-    isLowLiquidity: true,
-    isBreakout: false,
-    volume_multiplier: 0.8
-  },
-  {
-    symbol: "BROKENSTOCK",
-    name: "Broken Feed Corp (Simulated Outage)",
-    subtitle: "Simulated Exchange Network Outage & Missing Tick Feeds",
-    sector: "Feed Outage Edge Case",
-    price: 0.00,
-    checkpoint_price: 0.00,
-    day_change_amount: 0.00,
-    pct_change: 0.00,
-    support_num: 0.00,
-    target_num: 0.00,
-    stoploss_num: 0.00,
-    action_type: "FEED OFFLINE",
-    action_reason: "Exchange websocket stream timeout. Graceful isolation prevents entire dashboard from crashing.",
-    logo_type: "NSE",
-    isBrokenFeed: true,
-    isBreakout: false,
-    volume_multiplier: 0.0
-  },
+
 
   {
     "symbol": "TCS",
@@ -10536,7 +10496,7 @@ export const INITIAL_WATCHLIST_SYMBOLS = [
   "ZOMATO", "HAL", "TATAMOTORS", "RELIANCE", "INFY", "TATAPOWER",
   "HDFCBANK", "ICICIBANK", "SBIN", "LT", "BHARTIARTL", "ITC",
   "MARUTI", "SUNPHARMA", "TITAN", "TATASTEEL", "KOTAKBANK",
-  "BAJFINANCE", "WIPRO", "HINDUNILVR", "BEL", "PENNYTEST"
+  "BAJFINANCE", "WIPRO", "HINDUNILVR", "BEL"
 ];
 
 // Helper to create dynamic stock entries for ANY custom symbol typed by user
@@ -11739,16 +11699,6 @@ export default function Dashboard() {
                                 {stock.shares} SH
                               </span>
                             )}
-                            {stock.isLowLiquidity && (
-                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                                ⚠️ PENNY
-                              </span>
-                            )}
-                            {stock.isBrokenFeed && (
-                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-500/30">
-                                ⚠️ BROKEN
-                              </span>
-                            )}
                           </div>
                           <p className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 truncate">
                             {stock.name} • {stock.sector}
@@ -11793,7 +11743,7 @@ export default function Dashboard() {
                         <button
                           onClick={(e) => handleRemoveStock(e, stock.symbol)}
                           title="Remove from Watchlist"
-                          className="opacity-0 group-hover:opacity-100 p-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-[11px] text-slate-400 hover:text-rose-500 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all cursor-pointer"
                         >
                           ✕
                         </button>
@@ -11822,16 +11772,6 @@ export default function Dashboard() {
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                       {activeStock.sector}
                     </span>
-                    {activeStock.isLowLiquidity && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                        ⚠️ Low Liquidity (&lt; ₹2 Cr Turnover)
-                      </span>
-                    )}
-                    {activeStock.isBrokenFeed && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30">
-                        ⚠️ Exchange Feed Offline (Isolated Gracefully)
-                      </span>
-                    )}
                     {activeStock.isHolding && activeStock.shares > 0 && (
                       <span className="text-[10px] font-black px-2 py-0.5 rounded bg-indigo-50 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
                         {activeStock.shares} SHARES HELD
@@ -12002,7 +11942,7 @@ export default function Dashboard() {
             {/* 2 Balanced Core Decision Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               
-              {/* Card 1: Action & Signal Catalyst */}
+              {/* Card 1: Action & Strategy */}
               <div className="bg-slate-50 dark:bg-[#0B101B] border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-slate-900 dark:text-white">
@@ -12019,116 +11959,94 @@ export default function Dashboard() {
 
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-xs">
                   <div>
-                    <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold block">Potential Upside</span>
-                    <span className="font-mono font-black text-emerald-700 dark:text-emerald-400">
-                      +{activeStock.upside_pct}% (₹{activeStock.upside_amt})
+                    <span className="text-[10px] text-slate-600 dark:text-slate-400 uppercase font-bold block">
+                      Potential Upside
+                    </span>
+                    <span className="font-extrabold text-emerald-700 dark:text-emerald-400">
+                      +{activeStock.upside_pct}% (+₹{activeStock.upside_amt})
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold block">Risk / Reward</span>
-                    <span className="font-mono font-bold text-slate-900 dark:text-white">
+                    <span className="text-[10px] text-slate-600 dark:text-slate-400 uppercase font-bold block">
+                      Risk / Reward
+                    </span>
+                    <span className="font-extrabold text-slate-900 dark:text-white">
                       {activeStock.risk_reward_ratio}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Card 2: Position P&L / Market Inflow */}
+              {/* Card 2: Market Inflow */}
               <div className="bg-slate-50 dark:bg-[#0B101B] border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-slate-900 dark:text-white">
-                    {activeStock.isHolding && activeStock.shares > 0 ? "💼 Your Position" : "📊 Market Inflow"}
+                    📊 Market Inflow
                   </span>
                   <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">
-                    {activeStock.isHolding && activeStock.shares > 0 ? `${activeStock.portfolio_allocation} of Portfolio` : "Order Flow"}
+                    Order Flow
                   </span>
                 </div>
 
-                {activeStock.isHolding && activeStock.shares > 0 ? (
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold block">Invested ({activeStock.shares} sh)</span>
-                      <span className="font-mono font-bold text-slate-900 dark:text-white">
-                        ₹{activeStock.invested_value.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold block">Unrealized P&L</span>
-                      <span className={`font-mono font-black ${activeStock.unrealized_pnl >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"}`}>
-                        {activeStock.unrealized_pnl >= 0 ? `+₹${activeStock.unrealized_pnl.toFixed(2)}` : `-₹${Math.abs(activeStock.unrealized_pnl).toFixed(2)}`} ({activeStock.unrealized_pnl_pct >= 0 ? `+${activeStock.unrealized_pnl_pct}%` : `${activeStock.unrealized_pnl_pct}%`})
-                      </span>
-                    </div>
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">Buyer Ratio</span>
+                    <span className="font-black text-emerald-700 dark:text-emerald-400">{activeStock.order_flow_buyers}% Buyers</span>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold block">Buyer Ratio</span>
-                      <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                        {activeStock.order_flow_buyers}% Buyers
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold block">Volume Surge</span>
-                      <span className="font-mono font-bold text-slate-900 dark:text-white">
-                        {activeStock.volume_multiplier}
-                      </span>
-                    </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">Volume Surge</span>
+                    <span className="font-bold text-slate-900 dark:text-white font-mono">{activeStock.volume_multiplier}</span>
                   </div>
-                )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">52-Week Range</span>
+                    <span className="font-mono text-slate-700 dark:text-slate-300">₹{activeStock.low52} – ₹{activeStock.high52}</span>
+                  </div>
+                </div>
 
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-xs">
-                  <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">52-Week Range:</span>
-                  <span className="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                    ₹{activeStock.low52.toFixed(2)} — ₹{activeStock.high52.toFixed(2)}
-                  </span>
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400">
+                  <span className="truncate max-w-[200px]">{activeStock.range_status}</span>
+                  <span className="font-bold text-emerald-700 dark:text-emerald-400">● Stable</span>
                 </div>
               </div>
+
             </div>
 
-            {/* Compact News Catalyst Row */}
-            <div className="bg-slate-50 dark:bg-[#0B101B] border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-3 text-xs">
-              <div className="min-w-0">
-                <span className="font-bold text-slate-900 dark:text-white block truncate">
+            {/* Live Feed Note */}
+            <div className="p-3 bg-slate-50 dark:bg-[#0B101B] border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between text-xs">
+              <div className="min-w-0 pr-2">
+                <p className="font-bold text-slate-900 dark:text-white truncate">
                   📰 {activeStock.news_title}
-                </span>
-                <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">
+                </p>
+                <p className="text-[10px] text-slate-600 dark:text-slate-400">
                   {activeStock.news_source}
-                </span>
+                </p>
               </div>
-              <button
-                onClick={() => showToast(`⚡ Opening verified news source...`)}
-                className="font-bold text-emerald-700 dark:text-emerald-400 hover:underline shrink-0 text-xs"
-              >
+              <span className="text-emerald-700 dark:text-emerald-400 font-bold shrink-0 hover:underline cursor-pointer">
                 Read News ↗
-              </button>
+              </span>
             </div>
 
           </div>
         </div>
       </main>
 
-      {/* ====================================================
-          ADD NSE STOCK MODAL / DIRECTORY BROWSER
-         ==================================================== */}
+      {/* Add Stock Modal */}
       {showAddStockModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full p-5 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-xl p-5 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
             
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <div>
-                <h3 className="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>📈</span> Add NSE Stock to Watchlist
+                <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">
+                  Add Stock to Watchlist
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Search from 202 NIFTY 200 companies or add any custom NSE ticker
+                  Select from 202+ listed NSE companies across all sectors
                 </p>
               </div>
               <button
-                onClick={() => {
-                  setShowAddStockModal(false);
-                  setAddSearchInput("");
-                }}
+                onClick={() => setShowAddStockModal(false)}
                 className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 hover:text-slate-900 dark:hover:text-white font-bold flex items-center justify-center"
               >
                 ✕
