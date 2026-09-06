@@ -10826,7 +10826,27 @@ export default function Dashboard() {
       const stored = localStorage.getItem(`groww_watchlist_${userKey}`);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((s) => {
+            const clean = typeof s === "string" ? { symbol: s } : s;
+            const sym = (clean.symbol || "ZOMATO").toUpperCase();
+            const fallback = ALL_202_NSE_STOCKS.find((x) => x.symbol === sym) || createDynamicNSEStock(sym);
+            return {
+              ...fallback,
+              ...clean,
+              price: typeof clean.price === "number" ? clean.price : fallback.price,
+              checkpoint_price: typeof clean.checkpoint_price === "number" ? clean.checkpoint_price : fallback.checkpoint_price,
+              pct_change: typeof clean.pct_change === "number" ? clean.pct_change : fallback.pct_change,
+              day_change_amount: typeof clean.day_change_amount === "number" ? clean.day_change_amount : fallback.day_change_amount,
+              support_num: typeof clean.support_num === "number" ? clean.support_num : fallback.support_num,
+              target_num: typeof clean.target_num === "number" ? clean.target_num : fallback.target_num,
+              stoploss_num: typeof clean.stoploss_num === "number" ? clean.stoploss_num : fallback.stoploss_num,
+              low52: typeof clean.low52 === "number" ? clean.low52 : fallback.low52,
+              high52: typeof clean.high52 === "number" ? clean.high52 : fallback.high52,
+              order_flow_buyers: typeof clean.order_flow_buyers === "number" ? clean.order_flow_buyers : fallback.order_flow_buyers,
+            };
+          });
+        }
       }
     } catch (e) {
       console.error(e);
@@ -11128,7 +11148,7 @@ export default function Dashboard() {
       return;
     }
 
-    const stockText = `${activeStock.name}, trading under symbol ${activeStock.symbol}, is priced at rupees ${activeStock.price.toFixed(2)}, ${activeStock.pct_change >= 0 ? "up" : "down"} ${Math.abs(activeStock.pct_change)} percent. Key levels: Support floor is at rupees ${activeStock.support_num.toFixed(2)}, Target price is rupees ${activeStock.target_num.toFixed(2)}, and Stop Loss is at rupees ${activeStock.stoploss_num.toFixed(2)}. Current action is ${activeStock.action_type}. ${activeStock.action_reason}`;
+    const stockText = `${activeStock.name}, trading under symbol ${activeStock.symbol}, is priced at rupees ${activeStock.price.toFixed(2)}, ${activeStock.pct_change >= 0 ? "up" : "down"} ${Math.abs(activeStock.pct_change)} percent. Key levels: Support floor is at rupees ${(activeStock?.support_num ?? 0).toFixed(2)}, Target price is rupees ${(activeStock?.target_num ?? 0).toFixed(2)}, and Stop Loss is at rupees ${(activeStock?.stoploss_num ?? 0).toFixed(2)}. Current action is ${activeStock.action_type}. ${activeStock.action_reason}`;
     speakText(stockText);
     showToast(`🔊 Reading ${activeStock.symbol} analysis...`);
   };
@@ -11811,7 +11831,7 @@ export default function Dashboard() {
                           <p className={`font-mono font-black text-xs transition-colors duration-300 ${
                             flashState === "up" ? "text-emerald-700 dark:text-emerald-400 font-black scale-105" : flashState === "down" ? "text-rose-700 dark:text-rose-400 font-black scale-105" : "text-slate-900 dark:text-white"
                           }`}>
-                            ₹{stock.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                            ₹{(stock?.price ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                           </p>
                           <p
                             className={`text-[10px] font-black font-mono ${
@@ -11820,7 +11840,7 @@ export default function Dashboard() {
                                 : "text-rose-700 dark:text-rose-400"
                             }`}
                           >
-                            {isUp ? `+${stock.pct_change.toFixed(2)}%` : `${stock.pct_change.toFixed(2)}%`}
+                            {isUp ? `+${(stock?.pct_change ?? 0).toFixed(2)}%` : `${(stock?.pct_change ?? 0).toFixed(2)}%`}
                           </p>
                         </div>
 
@@ -11892,7 +11912,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-3 self-end sm:self-auto">
                 <div className="text-right">
                   <div className="text-xl font-black font-mono text-slate-900 dark:text-white">
-                    ₹{activeStock.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    ₹{(activeStock?.price ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                   </div>
                   <div
                     className={`text-xs font-black font-mono ${
@@ -11902,8 +11922,8 @@ export default function Dashboard() {
                     }`}
                   >
                     {activeStock.pct_change >= 0
-                      ? `+₹${activeStock.day_change_amount.toFixed(2)} (+${activeStock.pct_change.toFixed(2)}%)`
-                      : `-₹${Math.abs(activeStock.day_change_amount).toFixed(2)} (${activeStock.pct_change.toFixed(2)}%)`}
+                      ? `+₹${(activeStock?.day_change_amount ?? 0).toFixed(2)} (+${(activeStock?.pct_change ?? 0).toFixed(2)}%)`
+                      : `-₹${Math.abs(activeStock?.day_change_amount ?? 0).toFixed(2)} (${(activeStock?.pct_change ?? 0).toFixed(2)}%)`}
                   </div>
                 </div>
 
@@ -11946,7 +11966,7 @@ export default function Dashboard() {
                   </span>
                 </div>
                 <div className="text-[11px] font-mono text-slate-600 dark:text-slate-400">
-                  Checkpoint: <span className="font-bold text-slate-900 dark:text-white">₹{activeStock.checkpoint_price.toFixed(2)}</span>
+                  Checkpoint: <span className="font-bold text-slate-900 dark:text-white">₹{(activeStock?.checkpoint_price ?? 0).toFixed(2)}</span>
                 </div>
               </div>
 
@@ -12001,13 +12021,13 @@ export default function Dashboard() {
                 {/* 3 Step Labels on Chart */}
                 <div className="absolute inset-0 flex justify-between items-end px-3 pb-1 pointer-events-none">
                   <div className="text-[10px] font-bold text-slate-700 dark:text-slate-400 bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-800">
-                    ● Checkpoint ₹{activeStock.checkpoint_price.toFixed(2)}
+                    ● Checkpoint ₹{(activeStock?.checkpoint_price ?? 0).toFixed(2)}
                   </div>
                   <div className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-800">
-                    ● Now ₹{activeStock.price.toFixed(2)} ({activeStock.pct_change >= 0 ? `+${activeStock.pct_change.toFixed(2)}%` : `${activeStock.pct_change.toFixed(2)}%`})
+                    ● Now ₹{activeStock.price.toFixed(2)} ({activeStock.pct_change >= 0 ? `+${(activeStock?.pct_change ?? 0).toFixed(2)}%` : `${(activeStock?.pct_change ?? 0).toFixed(2)}%`})
                   </div>
                   <div className="text-[10px] font-bold text-sky-700 dark:text-sky-400 bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-800">
-                    Target ₹{activeStock.target_num.toFixed(2)} ↗
+                    Target ₹{(activeStock?.target_num ?? 0).toFixed(2)} ↗
                   </div>
                 </div>
               </div>
@@ -12020,7 +12040,7 @@ export default function Dashboard() {
                   Support Floor
                 </span>
                 <span className="text-sm font-black font-mono text-slate-900 dark:text-white">
-                  ₹{activeStock.support_num.toFixed(2)}
+                  ₹{(activeStock?.support_num ?? 0).toFixed(2)}
                 </span>
               </div>
 
@@ -12029,7 +12049,7 @@ export default function Dashboard() {
                   Target Price
                 </span>
                 <span className="text-sm font-black font-mono text-emerald-700 dark:text-emerald-400">
-                  ₹{activeStock.target_num.toFixed(2)}
+                  ₹{(activeStock?.target_num ?? 0).toFixed(2)}
                 </span>
               </div>
 
@@ -12038,7 +12058,7 @@ export default function Dashboard() {
                   Stop Loss
                 </span>
                 <span className="text-sm font-black font-mono text-rose-700 dark:text-rose-400">
-                  ₹{activeStock.stoploss_num.toFixed(2)}
+                  ₹{(activeStock?.stoploss_num ?? 0).toFixed(2)}
                 </span>
               </div>
             </div>
@@ -12243,7 +12263,7 @@ export default function Dashboard() {
                             ₹{stock.price.toFixed(2)}
                           </p>
                           <p className={`text-[10px] font-bold ${stock.pct_change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                            {stock.pct_change >= 0 ? `+${stock.pct_change.toFixed(2)}%` : `${stock.pct_change.toFixed(2)}%`}
+                            {stock.pct_change >= 0 ? `+${(stock?.pct_change ?? 0).toFixed(2)}%` : `${(stock?.pct_change ?? 0).toFixed(2)}%`}
                           </p>
                         </div>
 
