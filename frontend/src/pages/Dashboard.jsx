@@ -11761,7 +11761,7 @@ export default function Dashboard() {
                   const isSelected = stock.symbol === activeStock.symbol;
                   const isUp = stock.pct_change >= 0;
                   const flashState = recentlyUpdatedSymbols[stock.symbol];
-                  const isPenny = stock.isIlliquid || stock.sector?.includes("Microcap") || stock.symbol.includes("PENNY");
+                  const isPenny = stock.price < 50 || stock.isIlliquid || stock.sector?.includes("Microcap") || stock.symbol.includes("PENNY") || stock.symbol === "IDEA" || stock.symbol === "SUZLON";
                   const isOffline = stock.isError || stock.sector?.includes("Offline") || stock.symbol.includes("BROKEN");
 
                   return (
@@ -11884,7 +11884,7 @@ export default function Dashboard() {
                   <p className="text-[11px] text-rose-700 dark:text-rose-400 mt-0.5">Deliberate mock failure active. Isolated error boundary prevents app crashes while 200+ neighboring stocks continue streaming live data.</p>
                 </div>
               </div>
-            ) : (activeStock.isIlliquid || activeStock.sector?.includes("Microcap") || activeStock.symbol.includes("PENNY")) ? (
+            ) : (activeStock.price < 50 || activeStock.isIlliquid || activeStock.sector?.includes("Microcap") || activeStock.symbol.includes("PENNY") || activeStock.symbol === "IDEA" || activeStock.symbol === "SUZLON") ? (
               <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-xl flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200 shadow-sm">
                 <span className="text-lg">⚠️</span>
                 <div className="min-w-0">
